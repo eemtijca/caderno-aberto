@@ -1,0 +1,108 @@
+\documentclass{notaaula}
+
+        \titulonota{Magnetismo e força magnética}
+        \creditos{Turma 3B · Física · Outubro/2026 · Prof. Josué Cavalcante}
+
+        \begin{document}
+        \cabecalho
+
+        \begin{sobre}
+        Ímãs, campo magnético e forças sobre cargas e fios percorridos por corrente. Habilidades em foco: EM13CNT304 e EM13CNT308.
+        \end{sobre}
+
+        \section{Ímãs e campo magnético}
+
+\begin{copiar}{Polos e linhas de campo}
+Todo ímã possui polos norte e sul. Polos iguais se repelem e polos opostos se atraem. Ao cortar um
+ímã, surgem ímãs menores com dois polos; não aparecem polos isolados no modelo clássico.
+
+O campo magnético $\vec B$ descreve a ação magnética em cada ponto. Fora de um ímã, as linhas saem
+do polo norte e entram no sul; onde estão mais próximas, o campo é mais intenso.
+\simbolos{$B$ é medido em tesla (T).}
+\diaadia{A bússola se alinha aproximadamente ao campo magnético terrestre.}
+\end{copiar}
+
+\section{Força sobre carga em movimento}
+
+\begin{copiar}{Força de Lorentz magnética}
+Uma carga $q$ com velocidade $\vec v$ em campo $\vec B$ recebe força magnética de módulo
+\[
+  F_m=|q|vB\sen\theta.
+\]
+A força é perpendicular a $\vec v$ e a $\vec B$. Ela é máxima em $90^\circ$ e nula quando a carga
+se move paralelamente ao campo. Para carga positiva, use a regra da mão direita; para carga negativa,
+inverta o sentido.
+\atencao{Como a força é perpendicular à velocidade, um campo magnético isolado não altera a energia cinética da carga.}
+\end{copiar}
+
+\begin{exemplo}
+Uma carga de módulo $2\times10^{-6}\un{C}$ atravessa perpendicularmente um campo
+$B=\dec{0,50}\un{T}$ com $v=3\times10^4\un{m/s}$.
+\[
+  F_m=2\times10^{-6}\cdot3\times10^4\cdot\dec{0,50}
+  =\resultado{3\times10^{-2}\un{N}}.
+\]
+\end{exemplo}
+
+\section{Trajetória circular}
+
+\begin{copiar}{Campo uniforme}
+Se $\vec v\perp\vec B$, a força magnética atua como força centrípeta:
+\[
+  |q|vB=\frac{mv^2}{r}
+  \Rightarrow
+  r=\frac{mv}{|q|B}.
+\]
+Maior massa ou rapidez aumenta o raio; maior carga ou campo diminui o raio. A frequência angular é
+$\omega=|q|B/m$ no regime não relativístico.
+\end{copiar}
+
+\section{Força sobre corrente}
+
+\begin{copiar}{Fio em campo magnético}
+Um trecho retilíneo de comprimento $L$, percorrido por corrente $i$, recebe força
+\[
+  F=B\,i\,L\sen\theta.
+\]
+A direção é perpendicular ao fio e ao campo. Esse efeito é a base de motores, alto-falantes e
+instrumentos eletromecânicos.
+\end{copiar}
+
+\begin{exemplo}[Fio perpendicular]
+Um fio de $\dec{0,20}\un{m}$ conduz $4\un{A}$ perpendicularmente a $B=\dec{0,50}\un{T}$:
+\[
+  F=\dec{0,50}\cdot4\cdot\dec{0,20}
+  =\resultado{\dec{0,40}\un{N}}.
+\]
+\end{exemplo}
+
+\begin{dica}
+Faça três passos na regra da mão: identifique primeiro $\vec v$ ou a corrente, depois $\vec B$ e,
+por fim, a direção perpendicular. Só então inverta para carga negativa.
+\end{dica}
+
+\begin{exercicios}
+\nivel{1}{Conceitos}
+\begin{questoes}
+\item O que ocorre ao cortar um ímã ao meio?
+\item Em que situação $F_m=0$ para uma carga em movimento?
+\item Em que situação o módulo da força magnética é máximo?
+\item O campo magnético sozinho realiza trabalho sobre uma carga? Justifique.
+\item Cite duas aplicações da força magnética sobre corrente.
+\nivel{2}{Aplicação}
+\item Calcule $F_m$ para $q=1\times10^{-6}\un{C}$, $v=2\times10^5\un{m/s}$, $B=\dec{0,30}\un{T}$ e $\theta=90^\circ$.
+\item Uma carga entra paralela ao campo. Descreva sua trajetória se nenhuma outra força atuar.
+\item Um fio de $\dec{0,50}\un{m}$ conduz $3\un{A}$ perpendicularmente a $B=\dec{0,20}\un{T}$. Ache $F$.
+\item No movimento circular, o que acontece com $r$ se $B$ dobra?
+\nivel{3}{Síntese}
+\item Uma partícula positiva move-se para a direita e $\vec B$ entra na página. Determine o sentido de $\vec F_m$.
+\item Compare as trajetórias de duas partículas de mesma carga e rapidez, mas massas $m$ e $2m$.
+\item Explique como a força sobre um fio pode produzir rotação em um motor.
+\end{questoes}
+\gabarito{2) movimento paralelo ou antiparalelo a $\vec B$; 3) $90^\circ$;
+6) $6\times10^{-2}\un{N}$; 7) retilínea uniforme; 8) $\dec{0,30}\un{N}$;
+9) cai à metade; 10) para cima; 11) a partícula $2m$ descreve raio duas vezes maior.}
+\end{exercicios}
+
+
+\end{document}

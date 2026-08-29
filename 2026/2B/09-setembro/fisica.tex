@@ -1,0 +1,109 @@
+\documentclass{notaaula}
+
+        \titulonota{Luz, reflexão e refração}
+        \creditos{Turma 2B · Física · Setembro/2026 · Prof. Josué Cavalcante}
+
+        \begin{document}
+        \cabecalho
+
+        \begin{sobre}
+        Introdução à óptica geométrica: fontes de luz, velocidade da luz, propagação, reflexão e refração. Habilidades em foco: EM13CNT102, EM13CNT104, EM13CNT303 e EM13CNT306.
+        \end{sobre}
+
+        \section{Luz e óptica geométrica}
+
+\begin{copiar}{Modelo de raios}
+A óptica geométrica representa a propagação da luz por raios. Em meio homogêneo e transparente,
+eles se propagam aproximadamente em linha reta. No vácuo,
+\[
+  c\approx3\times10^8\un{m/s}.
+\]
+Uma fonte \dest{primária} emite luz; uma fonte \dest{secundária} apenas reflete luz recebida.
+Feixes podem ser paralelos, convergentes ou divergentes.
+\diaadia{Sombras, eclipses e câmeras escuras são explicados pela propagação retilínea.}
+\end{copiar}
+
+\section{Reflexão}
+
+\begin{copiar}{Leis da reflexão}
+O raio incidente, a normal e o raio refletido pertencem ao mesmo plano. Os ângulos são medidos
+em relação à normal e obedecem a
+\[
+  \theta_i=\theta_r.
+\]
+Reflexão regular ocorre em superfície lisa e preserva a organização dos raios; reflexão difusa
+espalha os raios e permite enxergar objetos de muitos pontos.
+\atencao{Não meça o ângulo a partir da superfície. A referência é a normal, perpendicular a ela.}
+\end{copiar}
+
+\begin{exemplo}
+Um raio forma $25^\circ$ com a normal de um espelho plano. O ângulo de reflexão vale
+\resultado{$25^\circ$}; o ângulo entre o raio e o espelho vale $65^\circ$.
+\end{exemplo}
+
+\begin{copiar}{Espelho plano}
+A imagem em espelho plano é virtual, direita, do mesmo tamanho e fica à mesma distância atrás
+do espelho que o objeto está à frente. Há inversão de orientação frente--trás, percebida como
+inversão lateral na leitura de palavras.
+\end{copiar}
+
+\section{Refração}
+
+\begin{copiar}{Índice e lei de Snell}
+Ao mudar de meio, a frequência da luz permanece; a rapidez e o comprimento de onda podem mudar.
+\[
+  n=\frac{c}{v},
+  \qquad
+  n_1\sen\theta_1=n_2\sen\theta_2.
+\]
+Ao entrar em meio de maior índice, o raio se aproxima da normal. Ao entrar em meio de menor índice,
+afasta-se da normal.
+\simbolos{$n$ não tem unidade; $v$ é a rapidez da luz no meio.}
+\end{copiar}
+
+\begin{exemplo}[Rapidez no vidro]
+Para um vidro de índice $n=\dec{1,5}$,
+\[
+  v=\frac{c}{n}=\frac{3\times10^8}{\dec{1,5}}
+  =\resultado{2\times10^8\un{m/s}}.
+\]
+\end{exemplo}
+
+\begin{copiar}{Reflexão total}
+A reflexão interna total só pode ocorrer quando a luz tenta passar de maior para menor índice.
+Acima do ângulo limite $L$, não há raio refratado:
+\[
+  \sen L=\frac{n_{\mathrm{menor}}}{n_{\mathrm{maior}}}.
+\]
+Fibras ópticas conduzem luz por sucessivas reflexões internas totais.
+\end{copiar}
+
+\begin{dica}
+A frequência é definida pela fonte e não muda na passagem de um meio para outro. Como $v=\lambda f$,
+se $v$ muda e $f$ não, então $\lambda$ muda.
+\end{dica}
+
+\begin{exercicios}
+\nivel{1}{Conceitos}
+\begin{questoes}
+\item Diferencie fonte primária de fonte secundária.
+\item Qual é a rapidez aproximada da luz no vácuo?
+\item Um raio incide a $40^\circ$ da normal. Qual é o ângulo de reflexão?
+\item Dê duas características da imagem em espelho plano.
+\item O que permanece constante quando a luz refrata: frequência ou rapidez?
+\nivel{2}{Aplicação}
+\item Em um meio com $n=\dec{1,2}$, calcule a rapidez da luz.
+\item Um objeto está a $\dec{0,80}\un{m}$ de um espelho plano. Qual é a distância objeto--imagem?
+\item A luz passa do ar para o vidro. Ela se aproxima ou se afasta da normal?
+\item Calcule $\sen L$ para passagem de vidro ($n=\dec{1,5}$) para ar ($n=1$).
+\nivel{3}{Síntese}
+\item Explique por que uma piscina parece menos profunda do que realmente é.
+\item Um raio no ar incide com $30^\circ$ em vidro de $n=\dec{1,5}$. Use $\sen30^\circ=\dec{0,5}$ e determine $\sen\theta_2$.
+\item Relacione reflexão interna total e transmissão de dados em fibras ópticas.
+\end{questoes}
+\gabarito{3) $40^\circ$; 5) frequência; 6) $\dec{2,5}\times10^8\un{m/s}$;
+7) $\dec{1,6}\un{m}$; 8) aproxima-se; 9) $2/3$; 11) $1/3$.}
+\end{exercicios}
+
+
+\end{document}

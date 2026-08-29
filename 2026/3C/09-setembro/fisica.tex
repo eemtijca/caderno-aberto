@@ -1,0 +1,121 @@
+\documentclass{notaaula}
+
+        \titulonota{Potência e consumo elétrico}
+        \creditos{Turma 3C · Física · Setembro/2026 · Prof. Josué Cavalcante}
+
+        \begin{document}
+        \cabecalho
+
+        \begin{sobre}
+        Eletrodinâmica: potência elétrica, consumo de energia, quilowatt-hora e rendimento. Habilidades em foco: EM13CNT107, EM13CNT203 e EM13CNT304.
+        \end{sobre}
+
+        \section{Potência elétrica}
+
+\begin{copiar}{Taxa de transformação}
+A potência indica a rapidez com que a energia elétrica é transformada:
+\[
+  P=Ui.
+\]
+Para resistor ôhmico, usando $U=Ri$,
+\[
+  P=Ri^2=\frac{U^2}{R}.
+\]
+\simbolos{$P$ (W); $U$ (V); $i$ (A); $R$ ($\Omega$).}
+\atencao{Escolha a expressão compatível com as grandezas conhecidas; não misture valores de aparelhos diferentes.}
+\end{copiar}
+
+\begin{exemplo}
+Um chuveiro opera em $220\un{V}$ e corrente $25\un{A}$.
+\[
+  P=Ui=220\cdot25=5500\un{W}=
+  \resultado{\dec{5,5}\un{kW}}.
+\]
+Sua resistência de operação é $R=U/i=\dec{8,8}\,\Omega$.
+\end{exemplo}
+
+\section{Energia e quilowatt-hora}
+
+\begin{copiar}{Consumo}
+Para potência constante,
+\[
+  E=P\Delta t.
+\]
+A unidade do SI é o joule, mas a conta de eletricidade usa quilowatt-hora:
+\[
+  1\un{kWh}=3{,}6\times10^6\un{J}.
+\]
+Para obter kWh, use potência em kW e tempo em horas. O custo simples é
+\[
+  C=E_{\mathrm{kWh}}\times\text{tarifa}.
+\]
+\end{copiar}
+
+\begin{exemplo}[Consumo mensal]
+O chuveiro de $\dec{5,5}\un{kW}$ é usado $20$ minutos por dia durante 30 dias.
+O tempo total é $10\un{h}$; portanto,
+\[
+  E=\dec{5,5}\cdot10=\resultado{55\un{kWh}}.
+\]
+Com tarifa de $R\$\,\dec{0,90}/\un{kWh}$, o custo é $R\$\,\dec{49,50}$.
+\end{exemplo}
+
+\section{Rendimento e uso consciente}
+
+\begin{copiar}{Energia útil e perdas}
+\[
+  \eta=\frac{E_{\mathrm{útil}}}{E_{\mathrm{recebida}}}
+  =\frac{P_{\mathrm{útil}}}{P_{\mathrm{recebida}}}.
+\]
+Nenhum aparelho real tem rendimento acima de $100\%$. Reduzir desperdícios envolve diminuir o
+tempo de uso, escolher tecnologia mais eficiente e adequar a potência à necessidade.
+\diaadia{Em lâmpadas, a parcela luminosa é útil; aquecimento indesejado representa perda para essa finalidade.}
+\end{copiar}
+
+\begin{exemplo}[Rendimento]
+Um motor recebe $800\un{W}$ e fornece $600\un{W}$ de potência mecânica.
+\[
+  \eta=\frac{600}{800}=\dec{0,75}=
+  \resultado{75\%}.
+\]
+As perdas somam $200\un{W}$.
+\end{exemplo}
+
+\section{Segurança e leitura da conta}
+
+\begin{copiar}{Corrente e proteção}
+A corrente total de aparelhos ligados em paralelo soma-se. Condutores e disjuntores devem ser
+dimensionados para essa corrente. Sobrecarga eleva o aquecimento por efeito Joule e aumenta o risco
+de incêndio. A conta registra energia, não potência: kWh não é kW/h.
+\end{copiar}
+
+\begin{dica}
+Um aparelho potente pode consumir pouca energia se funcionar por pouco tempo. Consumo depende de
+potência e duração: compare sempre $P\Delta t$.
+\end{dica}
+
+\begin{exercicios}
+\nivel{1}{Conceitos}
+\begin{questoes}
+\item Calcule a potência de aparelho em $120\un{V}$ percorrido por $5\un{A}$.
+\item Converta $2\un{kWh}$ em joules.
+\item Diferencie potência de energia elétrica.
+\item Um resistor de $20\,\Omega$ é percorrido por $2\un{A}$. Ache $P$.
+\item O que significa rendimento de $80\%$?
+\nivel{2}{Aplicação}
+\item Uma TV de $150\un{W}$ funciona $4\un{h}$. Calcule o consumo em kWh.
+\item Um ferro de $1\un{kW}$ funciona 30 minutos por dia durante 20 dias. Ache o consumo.
+\item Com tarifa de $R\$\,\dec{0,80}/\un{kWh}$, calcule o custo do item anterior.
+\item Um motor recebe $2\un{kW}$ e tem rendimento de $70\%$. Ache a potência útil.
+\nivel{3}{Síntese}
+\item Dois chuveiros têm $5500\un{W}$ e $6800\un{W}$. Para o mesmo tempo de uso, qual consome mais e em que razão?
+\item Explique por que vários aparelhos potentes na mesma tomada podem causar sobrecarga.
+\item Proponha duas ações mensuráveis para reduzir o consumo mensal de energia.
+\end{questoes}
+\gabarito{1) $600\un{W}$; 2) $7{,}2\times10^6\un{J}$; 4) $80\un{W}$;
+6) $\dec{0,60}\un{kWh}$; 7) $10\un{kWh}$; 8) $R\$\,\dec{8,00}$;
+9) $\dec{1,4}\un{kW}$; 10) o de $6800\un{W}$, razão $68/55\approx\dec{1,24}$.}
+\end{exercicios}
+
+
+\end{document}

@@ -1,0 +1,100 @@
+% ============================================================
+%  Modelo de nota de aula — copie com ./nova-nota.sh
+%
+%  Compile com:  make pdf/<nome>.pdf
+%  Tema claro :  make claro
+% ============================================================
+\documentclass{notaaula}        % use [claro] para fundo branco
+
+\titulonota{Título da aula}
+\creditos{3º ano · Física · Mês/Ano · Prof. Josué Cavalcante}
+
+\begin{document}
+\cabecalho
+
+% Resumo de uma ou duas linhas: conteúdo, turmas, contexto.
+\begin{sobre}
+Assunto · subtópicos · turmas · escola.
+\end{sobre}
+
+% ============================================================
+\section{Primeiro tópico}
+
+% Caixa "COPIAR": o que o aluno leva para o caderno.
+\begin{copiar}{Nome curto do bloco}
+\definicao Texto da definição. Use \dest{negrito} nas palavras-chave.
+\[ y = a x + b \]
+\simbolos{$y$ (unidade); $x$ (unidade).}
+\diaadia{Uma frase ligando o conceito ao cotidiano.}
+\end{copiar}
+
+% Outros rótulos coloridos disponíveis dentro das caixas:
+%   \definicao  \formulas  \relacoes  \modelo  \resolucao
+%   \rotulo{Texto livre.}   -> rótulo azul qualquer
+%   \atencao{...}           -> alerta âmbar
+%   \resultado{...}         -> destaque coral (respostas)
+
+% Figura com legenda (TikZ, pgfplots ou \includegraphics).
+\begin{figuranota}{Legenda explicando o que a figura mostra.}
+\begin{tikzpicture}
+  \draw[naAzul, thick, -{Stealth}] (0,0) -- (3,0) node[right,
+        font=\tiny, color=naSuave] {$x$};
+\end{tikzpicture}
+\end{figuranota}
+
+% ============================================================
+\section{Segundo tópico}
+
+Texto corrido fora de caixa, para o que não precisa ser copiado.
+\begin{itens}
+\item primeiro item;
+\item segundo item.
+\end{itens}
+
+% Exemplo resolvido (caixa verde).
+\begin{exemplo}
+Enunciado do exemplo.
+\begin{alternativas}
+\item primeira pergunta;
+\item segunda pergunta.
+\end{alternativas}
+\resolucao (a) desenvolvimento. \resultado{Resposta em destaque.}
+
+(b) desenvolvimento.
+\end{exemplo}
+
+% Dica / erro comum (caixa âmbar).
+\begin{dica}
+O engano que a turma costuma cometer, e como evitar.
+\end{dica}
+
+% ============================================================
+% Lista de exercícios. A numeração das questões é contínua
+% entre os três níveis.
+\begin{exercicios}
+\nivel{1}{Conceitos}
+\begin{questoes}
+\item Questão de múltipla escolha.
+  \begin{alternativas}
+  \item alternativa a;
+  \item alternativa b;
+  \item alternativa c;
+  \item alternativa d.
+  \end{alternativas}
+\item Questão aberta.
+\end{questoes}
+
+\nivel{2}{Aplicação}
+\begin{questoes}
+\item Questão de aplicação.
+\end{questoes}
+
+\nivel{3}{Mais trabalhados}
+\begin{questoes}
+\item Questão mais longa.
+\end{questoes}
+
+\gabarito{1b · 2) resposta · 3) resposta · 4) resposta.}
+\end{exercicios}
+
+\end{document}

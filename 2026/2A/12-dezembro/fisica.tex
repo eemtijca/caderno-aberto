@@ -1,0 +1,111 @@
+\documentclass{notaaula}
+
+        \titulonota{Som e efeito Doppler}
+        \creditos{Turma 2A · Física · Dezembro/2026 · Prof. Josué Cavalcante}
+
+        \begin{document}
+        \cabecalho
+
+        \begin{sobre}
+        Acústica: produção e propagação do som, qualidades sonoras, intensidade e efeito Doppler. Habilidades em foco: EM13CNT106, EM13CNT107 e EM13CNT310.
+        \end{sobre}
+
+        \section{Produção e propagação do som}
+
+\begin{copiar}{Onda sonora}
+O som é uma onda mecânica produzida por vibração. No ar, propaga-se como compressões e rarefações
+longitudinais; não se propaga no vácuo. Vale a relação
+\[
+  v=\lambda f.
+\]
+No ar a $20^\circ\mathrm C$, usamos aproximadamente $v=340\un{m/s}$. Em geral, a rapidez é maior
+em sólidos do que em líquidos e gases, pois depende das propriedades elásticas e da densidade do meio.
+\end{copiar}
+
+\begin{exemplo}
+Um som de $680\un{Hz}$ propaga-se no ar a $340\un{m/s}$. Seu comprimento de onda é
+\[
+  \lambda=\frac{v}{f}=\frac{340}{680}
+  =\resultado{\dec{0,50}\un{m}}.
+\]
+\end{exemplo}
+
+\section{Qualidades sonoras}
+
+\begin{copiar}{Altura, intensidade e timbre}
+\begin{itens}
+\item \dest{Altura:} sensação de grave ou agudo; relaciona-se principalmente à frequência.
+\item \dest{Intensidade:} energia por área e por tempo; relaciona-se à amplitude e à sensação de volume.
+\item \dest{Timbre:} distingue fontes que emitem a mesma nota; depende da forma da onda e dos harmônicos.
+\end{itens}
+A faixa audível humana típica vai de cerca de $20\un{Hz}$ a $20\,000\un{Hz}$, variando com a pessoa e a idade.
+\atencao{Som alto no cotidiano pode significar intenso; em Física, altura sonora significa frequência.}
+\end{copiar}
+
+\begin{copiar}{Nível sonoro}
+A intensidade é $I=P/A$. O nível sonoro em decibéis é
+\[
+  \beta=10\log\left(\frac{I}{I_0}\right),
+  \qquad I_0=10^{-12}\un{W/m^2}.
+\]
+A escala é logarítmica: multiplicar a intensidade por 10 acrescenta $10\un{dB}$.
+Exposição prolongada a níveis elevados pode causar perda auditiva.
+\end{copiar}
+
+\section{Eco, reverberação e ressonância}
+
+\begin{copiar}{Acústica de ambientes}
+Eco é uma reflexão percebida separadamente do som original. Reverberação é a persistência causada
+por muitas reflexões próximas. Materiais porosos absorvem parte da energia sonora; superfícies duras
+refletem mais. Instrumentos musicais usam ressonância para reforçar frequências naturais.
+\end{copiar}
+
+\section{Efeito Doppler}
+
+\begin{copiar}{Movimento relativo}
+Quando fonte e observador se aproximam, a frequência percebida aumenta; quando se afastam, diminui.
+Para velocidades ao longo da linha que une fonte e observador,
+\[
+  f'=f\frac{v\pm v_o}{v\mp v_s}.
+\]
+Escolha os sinais para que aproximação aumente $f'$ e afastamento diminua $f'$.
+\simbolos{$v_o$ é a rapidez do observador; $v_s$, a da fonte; $v$, a do som.}
+\end{copiar}
+
+\begin{exemplo}[Fonte aproximando-se]
+Uma sirene de $600\un{Hz}$ aproxima-se de observador parado a $34\un{m/s}$, com $v=340\un{m/s}$.
+\[
+  f'=600\frac{340}{340-34}
+  \approx\resultado{667\un{Hz}}.
+\]
+\end{exemplo}
+
+\begin{dica}
+O efeito Doppler muda a frequência percebida, não a frequência de emissão da fonte. Para observador
+parado, cristas ficam comprimidas à frente da fonte e espaçadas atrás dela.
+\end{dica}
+
+\begin{exercicios}
+\nivel{1}{Conceitos}
+\begin{questoes}
+\item Por que o som não se propaga no vácuo?
+\item Relacione frequência às sensações de grave e agudo.
+\item O que diferencia o timbre de duas fontes?
+\item Diferencie eco de reverberação.
+\item Na aproximação entre fonte e observador, $f'$ aumenta ou diminui?
+\nivel{2}{Aplicação}
+\item Um som de $170\un{Hz}$ propaga-se a $340\un{m/s}$. Ache $\lambda$.
+\item Uma onda sonora tem $\lambda=\dec{0,85}\un{m}$ no ar. Ache $f$.
+\item Multiplicar a intensidade por 100 aumenta o nível em quantos decibéis?
+\item Um eco retorna $\dec{0,40}\un{s}$ após a emissão. Com $v=340\un{m/s}$, ache a distância da parede.
+\nivel{3}{Síntese}
+\item Uma sirene de $500\un{Hz}$ aproxima-se a $20\un{m/s}$ de observador parado. Use $v=340\un{m/s}$ e ache $f'$.
+\item Explique por que ambulâncias parecem mais agudas quando se aproximam.
+\item Proponha duas medidas para reduzir reverberação em uma sala.
+\end{questoes}
+\gabarito{5) aumenta; 6) $2\un{m}$; 7) $400\un{Hz}$; 8) $20\un{dB}$;
+9) $68\un{m}$; 10) aproximadamente $531\un{Hz}$.}
+\end{exercicios}
+
+
+\end{document}

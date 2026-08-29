@@ -1,0 +1,115 @@
+\documentclass{notaaula}
+
+        \titulonota{Fluidos em repouso e movimento}
+        \creditos{Turma 1B · Física · Novembro/2026 · Prof. Josué Cavalcante}
+
+        \begin{document}
+        \cabecalho
+
+        \begin{sobre}
+        Noções básicas de hidrostática e hidrodinâmica, com situações de pressão, empuxo e escoamento. Habilidades em foco: EM13CNT101, EM13CNT306 e EM13CNT307.
+        \end{sobre}
+
+        \section{Densidade e pressão}
+
+\begin{copiar}{Grandezas básicas}
+A densidade relaciona massa e volume; a pressão relaciona força normal e área:
+\[
+  \rho=\frac{m}{V},
+  \qquad
+  p=\frac{F}{A}.
+\]
+No SI, densidade é medida em $\mathrm{kg/m^3}$ e pressão em pascal:
+$1\un{Pa}=1\un{N/m^2}$.
+\atencao{A mesma força produz maior pressão quando atua em uma área menor.}
+\diaadia{Agulhas perfuram com facilidade porque concentram a força em uma área muito pequena.}
+\end{copiar}
+
+\begin{exemplo}
+Uma força de $600\un{N}$ atua sobre área de $\dec{0,020}\un{m^2}$.
+\[
+  p=\frac{600}{\dec{0,020}}=
+  \resultado{3\times10^4\un{Pa}}.
+\]
+\end{exemplo}
+
+\section{Pressão em líquidos}
+
+\begin{copiar}{Lei de Stevin}
+Em um líquido homogêneo em repouso, a pressão aumenta com a profundidade:
+\[
+  p=p_0+\rho gh,
+  \qquad
+  \Delta p=\rho g\Delta h.
+\]
+Pontos no mesmo líquido e na mesma profundidade têm a mesma pressão. A forma do recipiente
+não altera $\rho gh$.
+\simbolos{$p_0$ é a pressão na superfície; $h$ é a profundidade.}
+\end{copiar}
+
+\begin{copiar}{Pascal e Arquimedes}
+Em um fluido confinado, uma variação de pressão é transmitida a todos os pontos:
+\[
+  \frac{F_1}{A_1}=\frac{F_2}{A_2}.
+\]
+Um corpo imerso recebe empuxo para cima igual ao peso do fluido deslocado:
+\[
+  E=\rho_{\mathrm{fluido}}gV_{\mathrm{deslocado}}.
+\]
+O corpo flutua em equilíbrio quando $E=P$.
+\end{copiar}
+
+\begin{exemplo}[Prensa hidráulica]
+O êmbolo menor tem área $5\un{cm^2}$ e recebe $100\un{N}$. O maior tem $200\un{cm^2}$.
+\[
+  F_2=F_1\frac{A_2}{A_1}=100\frac{200}{5}
+  =\resultado{4000\un{N}}.
+\]
+A prensa multiplica a força, mas o êmbolo menor percorre distância maior: energia não é criada.
+\end{exemplo}
+
+\section{Fluidos em movimento}
+
+\begin{copiar}{Vazão e continuidade}
+A vazão volumétrica é o volume que atravessa uma seção por unidade de tempo:
+\[
+  Q=\frac{\Delta V}{\Delta t}=Av.
+\]
+Para escoamento permanente de líquido incompressível,
+\[
+  A_1v_1=A_2v_2.
+\]
+Assim, onde o tubo fica mais estreito, a rapidez do líquido aumenta. Em escoamentos ideais,
+pressão, rapidez e altura trocam energia entre si; perdas reais aparecem por viscosidade e turbulência.
+\end{copiar}
+
+\begin{dica}
+Não confunda pressão com força. Pressão é força distribuída por área; dois êmbolos podem ter a
+mesma pressão e forças diferentes.
+\end{dica}
+
+\begin{exercicios}
+\nivel{1}{Conceitos}
+\begin{questoes}
+\item Calcule a densidade de $2\un{kg}$ ocupando $\dec{0,001}\un{m^3}$.
+\item Uma força de $100\un{N}$ atua em $\dec{0,50}\un{m^2}$. Ache a pressão.
+\item Em um mesmo líquido, qual ponto tem maior pressão: a $1\un{m}$ ou a $3\un{m}$ de profundidade?
+\item Enuncie o princípio de Arquimedes.
+\item O que ocorre com a rapidez quando a seção de um tubo diminui?
+\nivel{2}{Aplicação}
+\item Na água ($\rho=1000\un{kg/m^3}$), calcule $\Delta p$ a $2\un{m}$ de profundidade, com $g=10\un{m/s^2}$.
+\item Um corpo desloca $\dec{0,030}\un{m^3}$ de água. Ache o empuxo.
+\item Uma prensa tem $A_2=20A_1$. Qual força aparece no êmbolo maior se $F_1=150\un{N}$?
+\item Água escoa em tubo de área $4\un{cm^2}$ a $2\un{m/s}$. Em área $2\un{cm^2}$, qual é a rapidez?
+\nivel{3}{Síntese}
+\item Por que uma barragem costuma ser mais espessa perto da base?
+\item Um objeto de densidade média menor que a da água flutua. Explique usando peso e empuxo.
+\item Uma mangueira estreitada lança água mais rapidamente. Relacione isso à continuidade.
+\end{questoes}
+\gabarito{1) $2000\un{kg/m^3}$; 2) $200\un{Pa}$; 3) a $3\un{m}$;
+5) aumenta; 6) $2\times10^4\un{Pa}$; 7) $300\un{N}$; 8) $3000\un{N}$;
+9) $4\un{m/s}$.}
+\end{exercicios}
+
+
+\end{document}

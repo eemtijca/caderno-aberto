@@ -1,0 +1,4 @@
+# auxiliares de compilação
+build/
+# PDFs do tema claro (gere com "make claro" quando for imprimir)
+pdf/claro/

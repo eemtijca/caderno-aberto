@@ -1,0 +1,334 @@
+\documentclass{notaaula}
+
+\titulonota{Corrente elétrica alternada}
+\creditos{3º ano · Física · Agosto/2026 · Prof. Josué Cavalcante}
+
+\begin{document}
+\cabecalho
+
+\begin{sobre}
+Eletrodinâmica · noções de CA · $i(t)$ com seno e cosseno · 3º A/B/C · FGB.
+\end{sobre}
+
+% ============================================================
+\section{Corrente contínua e corrente alternada}
+
+\begin{copiar}{Noção de CA}
+\definicao Na corrente \dest{contínua} (CC), a intensidade não troca de sinal
+com o tempo: as cargas seguem \dest{sempre o mesmo sentido} no fio. Na corrente
+\dest{alternada} (CA), a intensidade \dest{muda de sinal} periodicamente: o
+sentido no fio \dest{inverte} a cada meio ciclo. Nesta aula descrevemos só
+\textit{como} $i$ varia no tempo, com seno e cosseno.
+\diaadia{A tomada da casa entrega CA. A pilha, no circuito simples, entrega CC.}
+\end{copiar}
+
+\begin{figuranota}{Eixo horizontal: tempo $t$. Mesma amplitude $i_0$: em azul,
+CC constante; em vermelho, CA que oscila e troca de sinal.}
+\begin{tikzpicture}
+\begin{axis}[
+  width=1.06\linewidth, height=4.3cm,
+  axis lines=middle, axis line style={naSuave, -{Stealth[length=4pt]}},
+  xmin=-0.12, xmax=2.22, ymin=-1.55, ymax=1.95,
+  xtick={0,0.5,1,1.5,2}, xticklabels={$0$,$T/2$,$T$,$3T/2$,$2T$},
+  ytick={-1,1}, yticklabels={$-i_0$,$i_0$},
+  tick style={naSuave},
+  tick label style={font=\tiny, color=naSuave},
+  xlabel={$t$ (tempo)}, xlabel style={font=\tiny, color=naSuave},
+  clip=false,
+]
+  \addplot[naAzul,  very thick, domain=0:2, samples=2]   {1};
+  \addplot[naCoral, very thick, domain=0:2, samples=300] {sin(deg(2*pi*x))};
+  \node[font=\tiny, color=naAzul,  anchor=west] at (axis cs:0.05,1.28) {CC\ \ $i=i_0$};
+  \node[font=\tiny, color=naCoral, anchor=west] at (axis cs:0.95,1.66) {CA\ \ $i=i_0\sen(\omega t)$};
+\end{axis}
+\end{tikzpicture}
+\end{figuranota}
+
+% ============================================================
+\section{Radiano e conversão para graus}
+
+\begin{copiar}{Radiano}
+\definicao O \dest{radiano} mede ângulo pelo arco: se um arco tem comprimento
+$s$ sobre um círculo de raio $R$,
+\[ \theta = \frac{s}{R} \quad \text{(em rad)} \]
+Quando $s=R$, $\theta = 1$ rad. A volta inteira tem arco $2\pi R$, logo
+\[ 2\pi\ \mathrm{rad} = 360^\circ \qquad \pi\ \mathrm{rad} = 180^\circ \]
+\simbolos{$\theta$ (rad ou °); $s$ (m); $R$ (m).}
+\end{copiar}
+
+\begin{copiar}{Graus $\leftrightarrow$ radianos}
+\formulas
+\[ \theta^\circ = \theta_{\mathrm{rad}}\cdot\frac{180}{\pi}
+   \qquad
+   \theta_{\mathrm{rad}} = \theta^\circ\cdot\frac{\pi}{180} \]
+Valores que você vai usar o tempo todo:
+\[ 30^\circ = \frac{\pi}{6},\quad 45^\circ = \frac{\pi}{4},\quad
+   60^\circ = \frac{\pi}{3},\quad 90^\circ = \frac{\pi}{2}. \]
+\atencao{Na fórmula $i = i_0\sen(\omega t)$, o produto $\omega t$ entra em
+\dest{radianos}. Se o calculador estiver em graus, o seno sai errado.}
+\end{copiar}
+
+\begin{figuranota}{Ângulo de 1 rad: o arco vermelho tem o mesmo comprimento do
+raio. À direita, a conversão.}
+\begin{tikzpicture}[scale=0.86]
+  \def\R{1.75}
+  \draw[naTexto, thick] (0,0) circle (\R);
+  \draw[naAzul, thick] (0,0) -- (0:\R);
+  \draw[naAzul, thick] (0,0) -- (57.2958:\R);
+  \draw[naCoral, very thick] (0:\R) arc (0:57.2958:\R);
+  \node[font=\tiny, color=naSuave] at (0:{\R/2}) [below] {$R$};
+  \node[font=\tiny, color=naCoral] at (28.6:{\R+0.30}) {$s=R$};
+  \node[font=\tiny, color=naSuave] at (28.6:0.62) {rad};
+  % legenda à direita
+  \begin{scope}[shift={(2.55,1.35)}, font=\tiny]
+    \node[anchor=west, color=naTexto, font=\tiny\bfseries] at (0,0.55) {volta completa};
+    \node[anchor=west, color=naVerde] at (0,0.05) {$2\pi$ rad $=360^\circ$};
+    \node[anchor=west, color=naVerde] at (0,-0.35) {$\pi$ rad $=180^\circ$};
+    \node[anchor=west, color=naSuave] at (0,-1.05) {graus $=$ rad $\cdot\,180/\pi$};
+    \node[anchor=west, color=naSuave] at (0,-1.45) {rad $=$ graus $\cdot\,\pi/180$};
+    \node[anchor=west, color=naAmbar] at (0,-2.15) {$1$ rad $\approx 57{,}3^\circ$};
+    \node[anchor=west, color=naAmbar] at (0,-2.55) {$1^\circ \approx 0{,}0175$ rad};
+  \end{scope}
+\end{tikzpicture}
+\end{figuranota}
+
+% ============================================================
+\section{Funções seno e cosseno}
+
+\begin{copiar}{Seno e cosseno}
+\rotulo{No triângulo retângulo} (ângulo agudo $\alpha$):
+\[
+\begin{aligned}
+  \sen\alpha &= \frac{\text{cateto oposto}}{\text{hipotenusa}},\\[2pt]
+  \cos\alpha &= \frac{\text{cateto adjacente}}{\text{hipotenusa}}.
+\end{aligned}
+\]
+No círculo de raio $1$, $\sen\theta$ é a ordenada e $\cos\theta$ é a abscissa
+do ponto no arco $\theta$.
+
+\rotulo{Ciclo e sinal.} Um período é $2\pi$ rad ($360^\circ$).
+\begin{center}\footnotesize
+\begin{tabular}{r|cccc}
+\toprule
+$\theta$      & $0$  & $\pi/2$ ($90^\circ$) & $\pi$ ($180^\circ$) & $3\pi/2$ ($270^\circ$)\\
+\midrule
+$\sen\theta$  & $0$  & $+1$ & $0$  & $-1$\\
+$\cos\theta$  & $+1$ & $0$  & $-1$ & $0$\\
+\bottomrule
+\end{tabular}
+\end{center}
+O cosseno está adiantado de $\pi/2$ em relação ao seno:
+$\cos\theta = \sen(\theta + \pi/2)$.
+\atencao{Seno (ou cosseno) \dest{negativo} não é erro: na CA, $i<0$ é o sentido
+contrário ao positivo combinado.}
+\end{copiar}
+
+\begin{figuranota}{Um período do seno: zeros em $0$, $\pi$ e $2\pi$; máximo em
+$\pi/2$; mínimo em $3\pi/2$.}
+\begin{tikzpicture}
+\begin{axis}[
+  width=1.06\linewidth, height=4.3cm,
+  axis lines=middle, axis line style={naSuave, -{Stealth[length=4pt]}},
+  xmin=-0.35, xmax=7.1, ymin=-1.70, ymax=1.6,
+  xtick=\empty, ytick={-1,1}, yticklabels={$-1$,$+1$},
+  tick style={naSuave}, tick label style={font=\tiny, color=naSuave},
+  xlabel={$\omega t$}, xlabel style={font=\tiny, color=naSuave},
+  clip=false,
+]
+  \addplot[naVerde, very thick, domain=0:2*pi, samples=300] {sin(deg(x))};
+  \foreach \x/\lab in {0/$0$, 1.5708/$\pi/2$, 3.1416/$\pi$,
+                       4.7124/$3\pi/2$, 6.2832/$2\pi$} {
+    \edef\temp{\noexpand\addplot[naCoral, mark=*, mark size=1.3pt, only marks]
+      coordinates {(\x, {sin(deg(\x))})};}\temp
+  }
+  \node[font=\tiny, color=naSuave] at (axis cs:0,-0.30)      {$0$};
+  \node[font=\tiny, color=naSuave] at (axis cs:1.5708,1.28)  {$\pi/2$};
+  \node[font=\tiny, color=naSuave] at (axis cs:3.1416,-0.30) {$\pi$};
+  \node[font=\tiny, color=naSuave] at (axis cs:4.7124,-0.66) {$3\pi/2$};
+  \node[font=\tiny, color=naSuave] at (axis cs:6.2832,0.28)  {$2\pi$};
+  \draw[naAzul, {Stealth[length=4pt]}-{Stealth[length=4pt]}]
+    (axis cs:0,-1.52) -- (axis cs:6.2832,-1.52)
+    node[midway, below, font=\tiny, color=naAzul] {$T$};
+\end{axis}
+\end{tikzpicture}
+\end{figuranota}
+
+% ============================================================
+\section{Intensidade instantânea \texorpdfstring{$i(t)$}{i(t)}}
+
+\begin{copiar}{Corrente senoidal}
+\modelo A intensidade \dest{instantânea} de uma CA senoidal é
+\[ i(t) = i_0\sen(\omega t) \]
+$i_0 > 0$ é a \dest{amplitude} (valor máximo de $|i|$). O argumento $\omega t$
+está em radianos.
+
+Se a oscilação começa no máximo ($t=0 \Rightarrow i=i_0$), usamos o cosseno:
+\[ i(t) = i_0\cos(\omega t) \]
+As duas descrevem a \dest{mesma} forma de onda, só mudam o instante em que
+começamos a contar o tempo.
+\simbolos{$i$ (A); $i_0$ (A); $\omega$ (rad/s); $t$ (s).}
+\end{copiar}
+
+\begin{copiar}{Pulso, frequência e período}
+\relacoes
+\[ \omega = 2\pi f = \frac{2\pi}{T} \]
+Logo as formas equivalentes
+\[ i(t) = i_0\sen(2\pi f t) \qquad i(t) = i_0\sen\!\left(\frac{2\pi}{T}\,t\right) \]
+$T$ é o \dest{período} (tempo de um ciclo); $f = 1/T$ é a \dest{frequência}
+(ciclos por segundo, hertz).
+\diaadia{Na rede residencial brasileira, $f = 60\un{Hz}$, então
+$T = 1/60\un{s}$.}
+\end{copiar}
+
+% ============================================================
+\section{Instantes especiais}
+
+Com $i(t) = i_0\sen(\omega t)$:
+\begin{itens}
+\item $\omega t = 0$ ou $\pi$ ou $2\pi$: $\sen = 0 \Rightarrow i = 0$
+      (passa pelo zero).
+\item $\omega t = \pi/2$: $\sen = 1 \Rightarrow i = +i_0$
+      (pico no sentido positivo).
+\item $\omega t = 3\pi/2$: $\sen = -1 \Rightarrow i = -i_0$
+      (pico no sentido contrário).
+\end{itens}
+
+\begin{exemplo}
+Uma CA tem $i_0 = \dec{4,0}\un{A}$ e $f = 60\un{Hz}$, com
+$i(t) = i_0\sen(2\pi f t)$.
+\begin{alternativas}
+\item Escreva $i(t)$ com números.
+\item Ache $i$ em $t=0$ e em $t = T/4$.
+\item Ache o período $T$.
+\end{alternativas}
+\resolucao (a) $2\pi f = 2\pi\cdot 60 = 120\pi$, logo
+\resultado{$i(t) = \dec{4,0}\sen(120\pi\,t)$} (com $t$ em segundos).
+
+(b) Em $t=0$, $\sen 0 = 0 \Rightarrow i = 0$. $T = 1/60\un{s}$, então
+$t = T/4$ corresponde a $\omega t = 2\pi f\cdot T/4 = 2\pi/4 = \pi/2$,
+$\sen(\pi/2) = 1 \Rightarrow i = +\dec{4,0}\un{A}$.
+
+(c) \resultado{$T = 1/f = 1/60\un{s} \approx \dec{0,017}\un{s}$.}
+\end{exemplo}
+
+\begin{dica}
+Não troque $i_0$ (pico) pela leitura “do dia a dia” da tomada: o número
+$127\un{V}$ da rede é um \dest{valor eficaz}, menor que o pico. Nesta aula o
+foco é $i(t)$ e o seno — o valor eficaz volta com calma.
+\end{dica}
+
+% ============================================================
+\begin{exercicios}
+\nivel{1}{Conceitos}
+\begin{questoes}
+\item O ângulo de 1 rad é aquele em que
+  \begin{alternativas}
+  \item o arco mede o dobro do raio.
+  \item o arco mede a metade do raio.
+  \item o arco tem o mesmo comprimento do raio.
+  \item a volta completa vale 1 rad.
+  \end{alternativas}
+\item A volta completa do círculo corresponde a
+  \begin{alternativas}
+  \item $\pi$ radianos, ou seja, $180^\circ$.
+  \item $2\pi$ radianos, ou seja, $360^\circ$.
+  \item $90^\circ$, ou seja, $\pi/2$ radianos.
+  \item 1 radiano, ou seja, $57^\circ$.
+  \end{alternativas}
+\item Converta, usando $\pi$ rad $= 180^\circ$ (sem calculadora).
+  \begin{alternativas}
+  \item $30^\circ$ em radianos
+  \item $45^\circ$ em radianos
+  \item $180^\circ$ em radianos
+  \item $270^\circ$ em radianos
+  \item $\pi/3$ em graus
+  \item $3\pi/2$ em graus
+  \item $2\pi$ em graus
+  \end{alternativas}
+\item Na corrente alternada, a intensidade $i(t)$
+  \begin{alternativas}
+  \item mantém o sinal e só muda o módulo.
+  \item inverte o sentido a cada meio ciclo.
+  \item é nula em qualquer instante $t>0$.
+  \item coincide com a corrente de uma pilha.
+  \end{alternativas}
+\item Converta $90^\circ$ para radianos e diga $\sen 90^\circ$.
+\item Complete: $\sen\pi = \ldots$ e $\cos 0 = \ldots$ . O que isso implica
+      para $i$ no seno e no cosseno.
+\end{questoes}
+
+\nivel{2}{Aplicação}
+\begin{questoes}
+\item A conversão de $60^\circ$ para radianos dá
+  \begin{alternativas}
+  \item $\pi/2$, e o seno desse ângulo vale 1.
+  \item $\pi/3$, e o seno desse ângulo vale $\sqrt{3}/2$.
+  \item $\pi/4$, e o seno desse ângulo vale 1.
+  \item $\pi/6$, e o seno desse ângulo vale 0.
+  \end{alternativas}
+\item Se $i(t) = i_0\sen(\omega t)$ e $\omega t = \pi/2$, então
+  \begin{alternativas}
+  \item $i = 0$, porque o seno se anula.
+  \item $i = -i_0$, pico no sentido contrário.
+  \item $i = +i_0$, pico no sentido positivo.
+  \item $i = i_0/2$, metade da amplitude.
+  \end{alternativas}
+\item Uma CA é $i(t) = \dec{2,5}\sen(100\pi\,t)$ (SI). Os valores de $i_0$ e
+      $f$ são
+  \begin{alternativas}
+  \item $i_0 = 100\un{A}$ e $f = \dec{2,5}\un{Hz}$.
+  \item $i_0 = \dec{2,5}\un{A}$ e $f = 50\un{Hz}$.
+  \item $i_0 = \dec{2,5}\un{A}$ e $f = 100\un{Hz}$.
+  \item $i_0 = 50\un{A}$ e $f = \dec{2,5}\un{Hz}$.
+  \end{alternativas}
+\item Passe $\pi/6$ para graus e calcule $\sen(\pi/6)$.
+\item Com $i(t) = \dec{6,0}\cos(\omega t)$ e $\omega t = 0$, a corrente vale
+  \begin{alternativas}
+  \item 0, pois o cosseno começa nulo.
+  \item $-\dec{6,0}\un{A}$, pico negativo.
+  \item $+\dec{3,0}\un{A}$, metade do pico.
+  \item $+\dec{6,0}\un{A}$, pico positivo.
+  \end{alternativas}
+\item A rede tem $f = 60\un{Hz}$. Quantos ciclos completos ocorrem em
+      $\dec{0,10}\un{s}$? Qual o período $T$?
+\end{questoes}
+
+\nivel{3}{Mais trabalhados}
+\begin{questoes}
+\item Converta $120^\circ$ para radianos. Em seguida, usando
+      $\sen 120^\circ = \sen 60^\circ = \sqrt{3}/2$, ache $i$ se
+      $i = \dec{4,0}\sen(\omega t)$ e $\omega t = 120^\circ$.
+\item Uma CA de amplitude $\dec{8,0}\un{A}$ e $f = 60\un{Hz}$ é
+      $i(t) = i_0\sen(2\pi f t)$. Determine: (a) $i(t)$ explícita;
+      (b) $i$ em $t = T/4$; (c) o ângulo $\omega t$ em $t = T/4$, em rad e
+      em graus.
+\tcbbreak
+\item Sobre $i(t) = i_0\sen(\omega t)$ e $i(t) = i_0\cos(\omega t)$, assinale
+      a correta.
+  \begin{alternativas}
+  \item são ondas diferentes: uma é CC e a outra é CA.
+  \item só o seno descreve CA; o cosseno descreve CC.
+  \item descrevem a mesma forma, com origem dos tempos distinta.
+  \item o cosseno não pode ser negativo, logo não inverte.
+  \end{alternativas}
+\item Em $t = \dec{5,0}\times 10^{-3}\un{s}$, $i = \dec{4,0}\sen(100\pi t)$
+      vale quanto? Passe $\omega t$ também para graus.
+\item Um aluno coloca a calculadora em \dest{graus} e calcula $\sen(\pi/2)$
+      como se $\pi/2$ fosse $\dec{1,57}^\circ$. O que sai de errado e como
+      consertar?
+\item Mostre que $\omega = 2\pi f$ e $f = 1/T$ implicam
+      $i(t) = i_0\sen(2\pi t/T)$. Se $T = 1/60\un{s}$, escreva $\omega$
+      em rad/s.
+\end{questoes}
+
+\gabarito{1c · 2b · 3) (a) $\pi/6$ · (b) $\pi/4$ · (c) $\pi$ · (d) $3\pi/2$ ·
+(e) $60^\circ$ · (f) $270^\circ$ · (g) $360^\circ$ · 4b · 5) $\pi/2$;
+$\sen = 1$ · 6) 0; 1 · 7b · 8c · 9b · 10) $30^\circ$; $1/2$ · 11d ·
+12) 6 ciclos; $T = 1/60\un{s}$ · 13) $2\pi/3$; $i = 2\sqrt{3}\un{A}$ ·
+14) $i = \dec{8,0}\sen(120\pi t)$; $+\dec{8,0}\un{A}$; $\pi/2 = 90^\circ$ ·
+15c · 16) $\omega t = \pi/2 = 90^\circ \Rightarrow i = \dec{4,0}\un{A}$ ·
+17) $\pi/2$ é radiano ($90^\circ$); em graus daria seno quase nulo ·
+18) $\omega = 120\pi$ rad/s.}
+\end{exercicios}
+
+\end{document}
