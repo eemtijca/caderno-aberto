@@ -1,4 +1,38 @@
-# auxiliares de compilação
+# dependências / build
+node_modules/
+.next/
+out/
 build/
-# PDFs do tema claro (gere com "make claro" quando for imprimir)
-pdf/claro/
+
+# ambiente
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+dev.log
+server.log
+
+# dados locais de teste (Postgres embutido / shim)
+tools/
+tests/shim/dados/
+
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
+
+# sistema
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+
+# TikZJax vendor (gerado via postinstall)
+public/vendor/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
