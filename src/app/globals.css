@@ -1,0 +1,307 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-corpo);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono-latex);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ============================================================
+   Identidade "Caderno Aberto" — verde institucional #008241
+   sobre neutros quentes (stone). Acentos semânticos vindos dos
+   blocos pedagógicos (âmbar, coral, azul, lilás).
+   ============================================================ */
+
+:root {
+  --radius: 0.75rem;
+
+  /* escala da marca (#008241) */
+  --brand-50: oklch(0.967 0.013 159.9);
+  --brand-100: oklch(0.927 0.033 159.4);
+  --brand-200: oklch(0.846 0.064 159.6);
+  --brand-300: oklch(0.752 0.1 158.6);
+  --brand-400: oklch(0.651 0.124 157.4);
+  --brand-500: oklch(0.556 0.132 154.7);
+  --brand-600: oklch(0.531 0.139 152.1); /* #008241 */
+  --brand-700: oklch(0.469 0.121 152.7);
+  --brand-800: oklch(0.404 0.103 153.6);
+  --brand-900: oklch(0.34 0.083 155.3);
+  --brand-950: oklch(0.233 0.055 157.6);
+
+  --background: oklch(0.985 0.003 106);
+  --foreground: oklch(0.226 0.004 107);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.226 0.004 107);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.226 0.004 107);
+  --primary: var(--brand-600);
+  --primary-hover: var(--brand-700);
+  --primary-foreground: oklch(0.99 0.005 160);
+  --secondary: oklch(0.955 0.004 106);
+  --secondary-foreground: oklch(0.3 0.006 107);
+  --muted: oklch(0.955 0.004 106);
+  --muted-foreground: oklch(0.52 0.008 107);
+  --accent: oklch(0.95 0.015 160);
+  --accent-foreground: oklch(0.33 0.05 155);
+  --destructive: oklch(0.577 0.215 25);
+  --border: oklch(0.9 0.004 106);
+  --input: oklch(0.9 0.004 106);
+  --ring: var(--brand-600);
+  --chart-1: var(--brand-600);
+  --chart-2: oklch(0.62 0.16 75);
+  --chart-3: oklch(0.55 0.18 300);
+  --chart-4: oklch(0.646 0.12 185);
+  --chart-5: oklch(0.64 0.19 20);
+  --sidebar: oklch(0.978 0.005 150);
+  --sidebar-foreground: oklch(0.25 0.01 120);
+  --sidebar-primary: var(--brand-600);
+  --sidebar-primary-foreground: oklch(0.99 0.005 160);
+  --sidebar-accent: oklch(0.94 0.02 158);
+  --sidebar-accent-foreground: oklch(0.33 0.05 155);
+  --sidebar-border: oklch(0.905 0.008 140);
+  --sidebar-ring: var(--brand-600);
+}
+
+.dark {
+  --background: oklch(0.165 0.004 106);
+  --foreground: oklch(0.955 0.003 106);
+  --card: oklch(0.21 0.005 106);
+  --card-foreground: oklch(0.955 0.003 106);
+  --popover: oklch(0.21 0.005 106);
+  --popover-foreground: oklch(0.955 0.003 106);
+  --primary: oklch(0.8 0.16 152);
+  --primary-hover: oklch(0.84 0.15 152);
+  --primary-foreground: oklch(0.2 0.04 155);
+  --secondary: oklch(0.26 0.006 106);
+  --secondary-foreground: oklch(0.955 0.003 106);
+  --muted: oklch(0.26 0.006 106);
+  --muted-foreground: oklch(0.68 0.008 106);
+  --accent: oklch(0.28 0.02 155);
+  --accent-foreground: oklch(0.85 0.1 152);
+  --destructive: oklch(0.704 0.191 22);
+  --border: oklch(0.3 0.006 106);
+  --input: oklch(0.32 0.006 106);
+  --ring: oklch(0.8 0.16 152);
+  --chart-1: oklch(0.8 0.16 152);
+  --chart-2: oklch(0.72 0.15 75);
+  --chart-3: oklch(0.55 0.18 300);
+  --chart-4: oklch(0.646 0.12 185);
+  --chart-5: oklch(0.64 0.19 20);
+  --sidebar: oklch(0.19 0.008 140);
+  --sidebar-foreground: oklch(0.955 0.003 106);
+  --sidebar-primary: oklch(0.8 0.16 152);
+  --sidebar-primary-foreground: oklch(0.2 0.04 155);
+  --sidebar-accent: oklch(0.28 0.02 155);
+  --sidebar-accent-foreground: oklch(0.85 0.1 152);
+  --sidebar-border: oklch(0.3 0.008 130);
+  --sidebar-ring: oklch(0.8 0.16 152);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
+/* Títulos de display com Sora */
+.fonte-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ============================================================
+   KaTeX — ajustes finos
+   ============================================================ */
+
+.katex {
+  font-size: 1.06em;
+}
+
+.katex-display {
+  margin: 0;
+}
+
+/* \resultado{...} → \htmlClass{na-resultado} */
+.katex .na-resultado {
+  color: oklch(0.55 0.19 20);
+  font-weight: 600;
+}
+
+.dark .katex .na-resultado {
+  color: oklch(0.75 0.14 20);
+}
+
+/* fórmulas em telas estreitas: rolagem horizontal */
+.na-formula-display {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* ============================================================
+   Impressão — A4 claro, duas colunas, caixas sem quebrar
+   ============================================================ */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm 11mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #1c1c1c !important;
+  }
+
+  /* oculta a interface do app; só a área de impressão aparece */
+  body * {
+    visibility: hidden;
+  }
+
+  .na-imprime-esconder {
+    display: none !important;
+  }
+
+  .area-impressao,
+  .area-impressao * {
+    visibility: visible;
+  }
+
+  .area-impressao {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    padding: 0 !important;
+  }
+
+  /* tema claro forçado na impressão */
+  .area-impressao,
+  .area-impressao * {
+    --background: #fff !important;
+    --foreground: #1c1c1c !important;
+    --card: #fff !important;
+    --muted-foreground: #555 !important;
+    --border: #ddd !important;
+    background-color: transparent !important;
+    color: #1c1c1c !important;
+    box-shadow: none !important;
+  }
+
+  /* duas colunas no papel (como o original), sem quebrar caixas curtas */
+  .imprime-colunas {
+    column-count: 2;
+    column-gap: 7mm;
+  }
+
+  .na-imprime-caixa,
+  .na-secao,
+  figure {
+    break-inside: avoid;
+  }
+
+  .na-secao {
+    border-top: 0.4pt solid #bbb !important;
+    margin-top: 6pt !important;
+    padding-top: 5pt !important;
+  }
+
+  /* alternativas do quiz viram texto simples no papel */
+  .na-quiz-alternativa {
+    border: none !important;
+    padding: 0 !important;
+    background: none !important;
+    display: block !important;
+  }
+
+  /* imagens não passam da coluna */
+  .area-impressao img {
+    max-width: 100% !important;
+  }
+
+  .katex,
+  .katex * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* TikZJax. Diagrama SVG */
+.tikzjax-wrapper {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tikzjax-wrapper svg {
+  max-width: 100%;
+  height: auto;
+}
+
+@media print {
+  .tikzjax-wrapper svg {
+    background: #fff !important;
+    color: #1c1c1c !important;
+  }
+  .tikzjax-wrapper {
+    break-inside: avoid;
+  }
+}
