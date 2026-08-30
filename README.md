@@ -119,6 +119,16 @@ Detalhes da implementação:
 
 Verificações de qualidade: `npm run lint`, `npm run tsc`, `npm run build` e `npx supabase db reset`.
 
+## CI (GitHub Actions)
+
+O workflow em `.github/workflows/ci.yml` roda a cada push em `main` e pull request (Node 24, Ubuntu):
+
+- **qualidade**: `npm run format:check`, `npm run lint` e `npm run tsc`.
+- **build**: `npm run build` com variáveis de ambiente fictícias (o prerender não depende de um Supabase real).
+- **testes**: `npm run test:all` (RLS + Shim) com Postgres embutido, sem Docker. Em falha, o log do servidor (`tools/pg/pg.log`) é enviado como artefato.
+
+Os testes E2E (Playwright com Supabase local) não fazem parte do CI e devem ser executados localmente com `npm run test:e2e`.
+
 ## Deploy
 
 1. Supabase: criar o projeto e aplicar as migrations (etapas 1 e 2 acima).
