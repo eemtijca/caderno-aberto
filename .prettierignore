@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+build
+dist
+supabase/.temp
+supabase/.branches
+tests/shim/dados
+tools
+*.tsbuildinfo
+package-lock.json
+pnpm-lock.yaml
