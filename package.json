@@ -94,7 +94,7 @@
     "@types/react-dom": "^19",
     "bun-types": "^1.4.0",
     "embedded-postgres": "^18.4.0-beta.17",
-    "eslint": "^9.39.5",
+    "eslint": "^10.9.1",
     "eslint-config-next": "^16.3.3",
     "pg": "^8.23.0",
     "prettier": "^3.9.6",
