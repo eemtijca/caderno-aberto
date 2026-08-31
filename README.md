@@ -4,12 +4,12 @@ Plataforma web gratuita, multiusuário e mobile-first destinada a professores do
 
 O professor cria uma conta, utiliza um editor visual de blocos (caixas COPIAR, exemplos resolvidos, dicas, exercícios em três níveis com gabarito, fórmulas com LaTeX) e a plataforma gera, a partir da mesma fonte, os seguintes artefatos:
 
-| Artefato                  | Descrição                                                                                                                                        |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Versão web responsiva     | Página de leitura mobile-first com KaTeX, tema claro/escuro, gabarito ocultável e quiz interativo, entregue aos alunos por link controlável      |
-| PDF de impressão (A4)     | Layout em duas colunas com as caixas coloridas, gerado pelo navegador (Ctrl+P) a partir da vista de leitura                                      |
-| Markdown (.md)            | Formato de intercâmbio legível, com importação de volta ao aplicativo                                                                            |
-| JSON (.json)              | Dados completos da nota (incluindo blocos) para backup e migração                                                                                |
+| Artefato              | Descrição                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versão web responsiva | Página de leitura mobile-first com KaTeX, tema claro/escuro, gabarito ocultável e quiz interativo, entregue aos alunos por link controlável |
+| PDF de impressão (A4) | Layout em duas colunas com as caixas coloridas, gerado pelo navegador (Ctrl+P) a partir da vista de leitura                                 |
+| Markdown (.md)        | Formato de intercâmbio legível, com importação de volta ao aplicativo                                                                       |
+| JSON (.json)          | Dados completos da nota (incluindo blocos) para backup e migração                                                                           |
 
 ## Recursos
 
