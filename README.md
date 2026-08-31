@@ -4,12 +4,12 @@ Plataforma web gratuita, multiusuário e mobile-first destinada a professores do
 
 O professor cria uma conta, utiliza um editor visual de blocos (caixas COPIAR, exemplos resolvidos, dicas, exercícios em três níveis com gabarito, fórmulas com LaTeX) e a plataforma gera, a partir da mesma fonte, os seguintes artefatos:
 
-| Artefato                  | Descrição                                                                                                                                        |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Versão web responsiva     | Página de leitura mobile-first com KaTeX, tema claro/escuro, gabarito ocultável e quiz interativo, entregue aos alunos por link controlável      |
-| PDF de impressão (A4)     | Layout em duas colunas com as caixas coloridas, gerado pelo navegador (Ctrl+P) a partir da vista de leitura                                      |
-| Markdown (.md)            | Formato de intercâmbio legível, com importação de volta ao aplicativo                                                                            |
-| JSON (.json)              | Dados completos da nota (incluindo blocos) para backup e migração                                                                                |
+| Artefato              | Descrição                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versão web responsiva | Página de leitura mobile-first com KaTeX, tema claro/escuro, gabarito ocultável e quiz interativo, entregue aos alunos por link controlável |
+| PDF de impressão (A4) | Layout em duas colunas com as caixas coloridas, gerado pelo navegador (Ctrl+P) a partir da vista de leitura                                 |
+| Markdown (.md)        | Formato de intercâmbio legível, com importação de volta ao aplicativo                                                                       |
+| JSON (.json)          | Dados completos da nota (incluindo blocos) para backup e migração                                                                           |
 
 ## Recursos
 
@@ -118,6 +118,16 @@ Detalhes da implementação:
 - `tests/shim/servidor.mjs` é um servidor local que implementa a linguagem do Supabase (autenticação com PKCE, PostgREST com filtros, Storage com políticas), servindo de base para testes de aplicação completos.
 
 Verificações de qualidade: `npm run lint`, `npm run tsc`, `npm run build` e `npx supabase db reset`.
+
+## CI (GitHub Actions)
+
+O workflow em `.github/workflows/ci.yml` roda a cada push em `main` e pull request (Node 24, Ubuntu):
+
+- **qualidade**: `npm run format:check`, `npm run lint` e `npm run tsc`.
+- **build**: `npm run build` com variáveis de ambiente fictícias (o prerender não depende de um Supabase real).
+- **testes**: `npm run test:all` (RLS + Shim) com Postgres embutido, sem Docker. Em falha, o log do servidor (`tools/pg/pg.log`) é enviado como artefato.
+
+Os testes E2E (Playwright com Supabase local) não fazem parte do CI e devem ser executados localmente com `npm run test:e2e`.
 
 ## Deploy
 
