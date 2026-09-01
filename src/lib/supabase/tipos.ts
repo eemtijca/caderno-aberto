@@ -1,5 +1,7 @@
 // Tipos do banco. Espelha migrations. Manter sincronizado.
 
+import type { AparenciaNota } from "@/lib/notas/tipos"
+
 export type PerfilLinha = {
   id: string
   nome: string
@@ -48,6 +50,8 @@ export type NotaLinha = {
   habilidades: string
   status: "rascunho" | "publicada"
   blocos: unknown
+  /** Aparência da leitura (fonte/escala/entrelinha). Vazio = padrão do app. */
+  aparencia: AparenciaNota
   busca: string
   criado_em: string
   atualizado_em: string

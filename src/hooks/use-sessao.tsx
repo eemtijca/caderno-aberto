@@ -35,18 +35,43 @@ interface SessaoValor {
 
 const ContextoSessao = createContext<SessaoValor | null>(null)
 
+// Dicionário de erros do Supabase Auth para mensagens claras em pt-BR.
 function traduzirErro(mensagem: string): string {
   const m = mensagem.toLowerCase()
   if (m.includes("invalid login credentials")) return "E-mail ou senha incorretos."
   if (m.includes("user already registered") || m.includes("already been registered"))
     return "Já existe uma conta com este e-mail."
-  if (m.includes("password should be at least")) return "A senha deve ter pelo menos 6 caracteres."
+  if (m.includes("password should be at least") || m.includes("password is too short"))
+    return "A senha deve ter pelo menos 6 caracteres."
+  if (m.includes("password too common"))
+    return "Esta senha é muito comum. Escolha uma mais difícil de adivinhar."
+  if (m.includes("signup requires a valid password") || m.includes("valid password"))
+    return "Defina uma senha válida (mínimo de 6 caracteres)."
   if (m.includes("email not confirmed"))
     return "Confirme o e-mail antes de entrar. Verifique a caixa de entrada."
-  if (m.includes("rate limit")) return "Muitas tentativas. Aguarde um momento e tente novamente."
+  if (m.includes("rate limit") || m.includes("over_request_rate_limit"))
+    return "Muitas tentativas. Aguarde um momento e tente novamente."
+  if (m.includes("over_email_send_rate_limit"))
+    return "Muitos e-mails enviados em pouco tempo. Tente de novo em alguns minutos."
   if (m.includes("new email address is the same")) return "O novo e-mail é igual ao atual."
   if (m.includes("same password")) return "A nova senha é igual à atual."
-  if (m.includes("email address is invalid")) return "E-mail inválido."
+  if (m.includes("email address is invalid") || m.includes("unable to validate email"))
+    return "E-mail inválido. Confira o endereço digitado."
+  if (m.includes("user not found")) return "Não encontramos uma conta com este e-mail."
+  if (m.includes("email provider is disabled"))
+    return "O login por e-mail está desativado nesta instalação."
+  if (m.includes("signups not allowed") || m.includes("signup is disabled"))
+    return "Novos cadastros estão temporariamente desativados."
+  if (
+    m.includes("session expired") ||
+    m.includes("refresh_token_not_found") ||
+    m.includes("invalid refresh token")
+  )
+    return "Sua sessão expirou. Entre novamente para continuar."
+  if (m.includes("network") || m.includes("fetch failed"))
+    return "Falha de conexão com o servidor. Verifique sua internet."
+  if (m.includes("unexpected failure")) return "Serviço indisponível no momento. Tente novamente."
+  if (m.includes("duplicate") && m.includes("email")) return "Já existe uma conta com este e-mail."
   return mensagem
 }
 

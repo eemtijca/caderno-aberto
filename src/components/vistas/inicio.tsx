@@ -4,7 +4,8 @@
 
 import { ArrowRight, BookOpenText, CalendarRange, Eye, Link2, Plus, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useDisciplinas, useLinks, useNotas, useTurmas } from "@/lib/notas/api-client"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useDisciplinas, useLinks, useNotas } from "@/lib/notas/api-client"
 import { useSessao } from "@/hooks/use-sessao"
 import { CartaoNota } from "@/components/notas/cartao-nota"
 import { MESES_CAP } from "@/lib/notas/texto"
@@ -16,12 +17,14 @@ export function VistaInicio({
   navegar: (para: string) => void
   onNovaNota: () => void
 }) {
-  const { data: notas } = useNotas()
-  const { data: disciplinas } = useDisciplinas()
-  const { data: turmas } = useTurmas()
-  const { data: links } = useLinks()
+  // cada consulta carrega de forma independente: o painel inteiro não
+  // espera o conjunto — cada número/Lista tem seu esqueleto próprio
+  const notasQ = useNotas()
+  const disciplinasQ = useDisciplinas()
+  const linksQ = useLinks()
   const { perfil } = useSessao()
 
+  const notas = notasQ.data
   const mesAtual = new Date().getMonth() + 1
   const anoAtual = new Date().getFullYear()
   const publicadas = (notas ?? []).filter((n) => n.status === "publicada").length
@@ -37,7 +40,7 @@ export function VistaInicio({
   return (
     <div className="space-y-8">
       {/* cabeçalho */}
-      <section className="bg-primary text-primary-foreground rounded-3xl p-6 sm:p-8">
+      <section className="na-cascata bg-primary text-primary-foreground rounded-3xl p-6 sm:p-8">
         <p className="text-sm font-medium opacity-80">
           {MESES_CAP[mesAtual - 1]} de {anoAtual}
           {perfil?.escola ? ` · ${perfil.escola}` : ""}
@@ -47,8 +50,8 @@ export function VistaInicio({
           {professor ? `, ${professor.replace(/^Prof(?:essor|essora|a|o)?\.?\s*/i, "")}` : ""}!
         </h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed opacity-85">
-          Escreva a nota de qualquer disciplina . O sistema gera a versão web responsiva, o PDF de
-          impressão e os arquivos de impressão e de texto automaticamente.
+          Escreva a nota de qualquer disciplina. O sistema gera a versão web responsiva, o PDF de
+          impressão e os arquivos de texto automaticamente.
         </p>
         <div className="mt-5 flex flex-wrap gap-2.5">
           <Button variant="secondary" onClick={onNovaNota} className="gap-2 rounded-xl">
@@ -70,27 +73,35 @@ export function VistaInicio({
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Numero
           icone={BookOpenText}
+          carregando={notasQ.isLoading}
           valor={notas?.length ?? 0}
           rotulo="notas"
           onClick={() => navegar("/notas")}
+          indice={0}
         />
         <Numero
           icone={Eye}
+          carregando={notasQ.isLoading}
           valor={publicadas}
-          rotulo="públicas"
+          rotulo="publicadas"
           onClick={() => navegar("/notas")}
+          indice={1}
         />
         <Numero
           icone={CalendarRange}
-          valor={disciplinas?.length ?? 0}
+          carregando={disciplinasQ.isLoading}
+          valor={disciplinasQ.data?.length ?? 0}
           rotulo="disciplinas"
           onClick={() => navegar("/conta")}
+          indice={2}
         />
         <Numero
           icone={Link2}
-          valor={links?.length ?? 0}
+          carregando={linksQ.isLoading}
+          valor={linksQ.data?.length ?? 0}
           rotulo="links para os alunos"
           onClick={() => navegar("/links")}
+          indice={3}
         />
       </section>
 
@@ -102,10 +113,11 @@ export function VistaInicio({
             acao={{ rotulo: "Ver turmas", onClick: () => navegar("/organizacao") }}
           />
           <div className="grid gap-3 sm:grid-cols-2">
-            {doMes.map((n) => (
+            {doMes.map((n, i) => (
               <CartaoNota
                 key={n.id}
                 nota={n}
+                indice={i}
                 onAbrir={() => navegar(`/nota/${n.id}`)}
                 onEditar={() => navegar(`/editor/${n.id}`)}
               />
@@ -117,19 +129,25 @@ export function VistaInicio({
       {/* recentes */}
       <section className="space-y-3">
         <CabecalhoSecao titulo="Últimas edições" />
-        {recentes.length > 0 ? (
+        {notasQ.isLoading ? (
           <div className="grid gap-3 sm:grid-cols-2">
-            {recentes.map((n) => (
+            <Skeleton className="h-40 rounded-2xl" />
+            <Skeleton className="h-40 rounded-2xl" />
+          </div>
+        ) : recentes.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {recentes.map((n, i) => (
               <CartaoNota
                 key={n.id}
                 nota={n}
+                indice={i}
                 onAbrir={() => navegar(`/nota/${n.id}`)}
                 onEditar={() => navegar(`/editor/${n.id}`)}
               />
             ))}
           </div>
         ) : (
-          <div className="border-border rounded-2xl border border-dashed p-8 text-center">
+          <div className="na-cascata border-border rounded-2xl border border-dashed p-8 text-center">
             <p className="font-semibold">Nenhuma nota ainda</p>
             <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm">
               Comece criando sua primeira disciplina em Conta, ou crie a nota agora e defina a
@@ -159,20 +177,32 @@ function Numero({
   valor,
   rotulo,
   onClick,
+  carregando,
+  indice,
 }: {
   icone: typeof BookOpenText
   valor: number
   rotulo: string
   onClick: () => void
+  carregando?: boolean
+  indice?: number
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="border-border bg-card flex flex-col items-start gap-1 rounded-2xl border p-4 text-left transition-shadow hover:shadow-md"
+      className="na-cascata border-border bg-card flex min-h-[5.75rem] flex-col items-start gap-1 rounded-2xl border p-4 text-left transition-shadow hover:shadow-md"
+      style={{ "--na-i": indice ?? 0 } as React.CSSProperties}
+      aria-busy={carregando || undefined}
     >
       <Icone className="text-muted-foreground h-4 w-4" aria-hidden />
-      <span className="fonte-display text-2xl font-bold tabular-nums">{valor}</span>
+      {carregando ? (
+        <span className="na-pulso fonte-display text-2xl font-bold text-stone-300 tabular-nums dark:text-stone-600">
+          –
+        </span>
+      ) : (
+        <span className="fonte-display text-2xl font-bold tabular-nums">{valor}</span>
+      )}
       <span className="text-muted-foreground text-[0.78rem]">{rotulo}</span>
     </button>
   )

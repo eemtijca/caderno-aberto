@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from "next"
-import { Sora, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google"
+import {
+  Sora,
+  Plus_Jakarta_Sans,
+  JetBrains_Mono,
+  Lora,
+  Atkinson_Hyperlegible,
+  Lexend,
+} from "next/font/google"
 import "katex/dist/katex.min.css"
 import "@rod2ik/tikzjax/dist/fonts.min.css"
 import "./globals.css"
 import Script from "next/script"
 import { headers } from "next/headers"
-import { Toaster } from "@/components/ui/toaster"
 import { Toaster as ToasterSonner } from "@/components/ui/sonner"
 import { Provedores } from "@/components/provedores"
 import { ThemeProvider } from "next-themes"
@@ -30,13 +36,33 @@ const mono = JetBrains_Mono({
   weight: ["400", "500"],
 })
 
+// fontes alternativas escolhidas pelo professor em cada nota (aparência)
+const lora = Lora({
+  variable: "--font-serifada",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+})
+
+const atkinson = Atkinson_Hyperlegible({
+  variable: "--font-legivel",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+})
+
+const lexend = Lexend({
+  variable: "--font-lexend",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+})
+
 export const metadata: Metadata = {
   title: {
     default: "Caderno Aberto",
     template: "%s · Caderno Aberto",
   },
   description:
-    "Escreva notas de aula de qualquer disciplina e gere automaticamente a versão web responsiva, o PDF de impressão e os arquivos de impressão e de texto . E compartilhe com os alunos por links únicos e gerenciáveis.",
+    "Escreva notas de aula de qualquer disciplina e gere automaticamente a versão web responsiva, o PDF de impressão e os arquivos de texto. E compartilhe com os alunos por links únicos e gerenciáveis.",
   applicationName: "Caderno Aberto",
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
@@ -61,7 +87,7 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
-        className={`${sora.variable} ${jakarta.variable} ${mono.variable} bg-background text-foreground font-[family-name:var(--font-corpo)] antialiased`}
+        className={`${sora.variable} ${jakarta.variable} ${mono.variable} ${lora.variable} ${atkinson.variable} ${lexend.variable} bg-background text-foreground font-[family-name:var(--font-corpo)] antialiased`}
       >
         <Script id="tikzjax-config" strategy="beforeInteractive" nonce={nonce}>
           {`window.TikzJaxOptions={assetBaseUrl:"/vendor/tikzjax",workerMode:"direct",renderTimeout:30000,maxRetries:1,restartWorkerOnFail:true,workerPool:{enabled:true,maxWorkers:3},tex:{tikzLibraries:"arrows.meta,positioning,calc,decorations.markings"}}`}
@@ -75,8 +101,7 @@ export default async function RootLayout({
         >
           <Provedores>
             {children}
-            <Toaster />
-            <ToasterSonner position="top-center" richColors />
+            <ToasterSonner position="top-center" richColors closeButton />
           </Provedores>
         </ThemeProvider>
       </body>

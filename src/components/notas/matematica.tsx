@@ -22,7 +22,8 @@ export function Matematica({ latex, bloco = false, className }: PropsMatematica)
         strict: false,
         trust: true,
         macros: MACROS_KATEX,
-        output: "html",
+        // HTML para a exibição + MathML para leitores de tela e copiar/colar
+        output: "htmlAndMathml",
       })
     } catch {
       return `<span class="text-rose-600 dark:text-rose-400">${latex

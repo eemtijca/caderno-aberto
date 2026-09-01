@@ -8,7 +8,8 @@ O professor cria uma conta, utiliza um editor visual de blocos (caixas COPIAR, e
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Versão web responsiva | Página de leitura mobile-first com KaTeX, tema claro/escuro, gabarito ocultável e quiz interativo, entregue aos alunos por link controlável |
 | PDF de impressão (A4) | Layout em duas colunas com as caixas coloridas, gerado pelo navegador (Ctrl+P) a partir da vista de leitura                                 |
-| Markdown (.md)        | Formato de intercâmbio legível, com importação de volta ao aplicativo                                                                       |
+| LaTeX (.tex)          | Documento **autocontido** (só pacotes padrão do Overleaf/TeX Live, sem arquivo .cls externo) reproduzindo as caixas coloridas em A4         |
+| Markdown (.md)        | Formato de intercâmbio legível, com importação de volta ao aplicativo (round-trip completo, incluindo aparência)                            |
 | JSON (.json)          | Dados completos da nota (incluindo blocos) para backup e migração                                                                           |
 
 ## Recursos
@@ -24,12 +25,15 @@ O professor cria uma conta, utiliza um editor visual de blocos (caixas COPIAR, e
 - Compartilhamento de uma nota, de uma turma inteira ou de uma disciplina completa.
 - Cada link possui token próprio, com opções de copiar, pausar, reativar, regenerar o token (invalidando o anterior), agendar expiração ou excluir.
 - Contador de acessos por link.
+- Endereço em caminho real (`/l/<token>`): WhatsApp, Telegram e redes mostram **preview com imagem, título e descrição gerados por nota** (OpenGraph). Links antigos em `/#/l/<token>` continuam funcionando.
 - Rascunhos nunca ficam visíveis; links revogados ou expirados exibem a mensagem "Link indisponível".
 - Vista do aluno: leitura mobile, busca entre as aulas do link, quiz com correção instantânea, gabarito ocultável, impressão A4 e tema claro/escuro.
 
 ### Escrita e organização
 
 - Editor visual de blocos com arrastar e soltar, prévia ao vivo, salvamento automático e barra de formato inline.
+- Editor **mobile-first**: todos os controles de bloco (arrastar, inserir, duplicar, mover e remover) ficam disponíveis no celular, não só no desktop.
+- **Aparência por nota**: fonte (padrão, serifada, alta legibilidade, leitura fluida ou monoespaçada), tamanho e entrelinha escolhidos no editor, vistos por professores e alunos e aplicados na impressão (a migração `20260901*` cria a coluna `notas.aparencia`).
 - Matemática em português: comandos `\sen`, `\tg`, `\cotg`, `\cossec`, vírgula decimal (`\dec{4,0}`), unidades (`\un{m/s^2}`) e `\resultado{...}`, correspondentes aos comandos do LaTeX original.
 - Fórmulas químicas por meio de mhchem ($\ce{H2O}$).
 - Campos BNCC/ENEM por nota.
@@ -37,6 +41,8 @@ O professor cria uma conta, utiliza um editor visual de blocos (caixas COPIAR, e
 - CRUD completo: notas (criar, editar, duplicar, excluir, importar .md ou .json), disciplinas, turmas e links.
 - Busca global (Ctrl+K) sem acentos, abrangendo títulos, conteúdo, fórmulas, gabaritos e habilidades.
 - Backup completo em um único arquivo JSON (notas, links e imagens em base64), com restauração, incluindo o formato do aplicativo anterior "Notas de Aula".
+- Notificações toast em todas as ações, com mensagens de erro do Supabase traduzidas para o português.
+- Estados de carregamento independentes por elemento (esqueletos por cartão, filtro, número e seção) e animações sutis que respeitam `prefers-reduced-motion`.
 
 ## Stack
 
@@ -59,7 +65,7 @@ Paleta: verde institucional #008241.
    - anon/public key, que corresponde a NEXT_PUBLIC_SUPABASE_ANON_KEY.
    - service_role key, que corresponde a SUPABASE_SERVICE_ROLE_KEY (utilizada somente no servidor).
 
-### 2. Aplicar o banco de dados (migration única)
+### 2. Aplicar o banco de dados (migrations)
 
 Com o Supabase CLI:
 
@@ -71,7 +77,7 @@ npx supabase db push
 
 O comando `supabase db reset` pode ser utilizado para reiniciar o banco local.
 
-Alternativa sem CLI: copiar o conteúdo do arquivo `supabase/migrations/20260830111154_schema_inicial.sql` e executá-lo no SQL Editor do Dashboard.
+Alternativa sem CLI: copiar o conteúdo dos arquivos `supabase/migrations/20260830111154_schema_inicial.sql` e `supabase/migrations/20260901120000_aparencia_notas.sql`, nesta ordem, e executá-los no SQL Editor do Dashboard.
 
 ### 3. Configurar autenticação
 
@@ -101,6 +107,7 @@ O repositório inclui uma suíte completa que executa sem Docker e com Supabase 
 npm run test:rls
 npm run test:shim
 npm run test:all
+npm run test:unit
 npm run test:e2e
 ```
 
@@ -109,6 +116,7 @@ Os comandos correspondem a:
 - `test:rls`: 28 testes de isolamento (professor A/B, anônimo, links, gatilhos, storage, carência).
 - `test:shim`: 9 testes de ponta a ponta da camada Supabase (auth, REST, storage, PKCE).
 - `test:all`: executa RLS e Shim.
+- `test:unit`: testes puros de geração LaTeX/Markdown (autocontenção, round-trip, aparência) — também grava `.tex` de exemplo em `tests/tex/` para compilação manual com `tectonic`.
 - `test:e2e`: 93 testes Playwright em 3 navegadores, headless, cobrindo autenticação com confirmação e reenvio, notas com disciplina inline, links, conta com carência, ícones e casos extremos. Utiliza Supabase local real (npx supabase start) e Mailpit em http://127.0.0.1:54324.
 
 Detalhes da implementação:
@@ -148,7 +156,7 @@ src/
     supabase/         clientes (browser, servidor, admin) e tipos do banco
     api/              helpers de sessão e serialização das rotas
 supabase/
-  migrations/         migration única 20260830111154_schema_inicial.sql (fonte da verdade)
+  migrations/         schema inicial + aparencia_notas (fonte da verdade)
 tests/                harness (stubs), suíte de RLS e shim do Supabase
 e2e/                  suíte Playwright headless com Mailpit para confirmação
 ```

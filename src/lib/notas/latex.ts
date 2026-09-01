@@ -82,6 +82,19 @@ export function preprocessarLatex(latex: string): string {
   return r
 }
 
+/**
+ * Expande os comandos pt-BR para LaTeX puro no .tex gerado
+ * (pdfLaTeX não conhece \dec/\un/\resultado, então traduzimos
+ * para construções de amsmath/xcolor definidas no preâmbulo).
+ */
+export function prepararMatematicaTex(latex: string): string {
+  let r = latex
+  r = substituirComando(r, "dec", (c) => c.replace(/,/g, "{,}"))
+  r = substituirComando(r, "un", (c) => `\\,\\mathrm{${c}}`)
+  r = substituirComando(r, "resultado", (c) => `\\textcolor{caresultado}{${c}}`)
+  return r
+}
+
 /** Macros pt-BR passadas ao KaTeX (sen, tg, cotg, cossec). */
 export const MACROS_KATEX: Record<string, string> = {
   "\\sen": "\\operatorname{sen}",
@@ -117,14 +130,14 @@ export function inlineParaLatex(texto: string): string {
   let i = 0
   const n = texto.length
   while (i < n) {
-    // matemática inline $...$
+    // matemática inline $...$ (comandos pt-BR expandidos para pdfLaTeX)
     if (texto[i] === "$") {
       const fim = acharFimMatematica(texto, i)
       if (fim === -1) {
         saida += escaparLatex(texto.slice(i))
         break
       }
-      saida += texto.slice(i, fim + 1)
+      saida += `$${prepararMatematicaTex(texto.slice(i + 1, fim))}$`
       i = fim + 1
       continue
     }

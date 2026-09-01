@@ -14,6 +14,7 @@
     "test:rls": "node tests/harness/preparar.mjs && node tests/rls.test.mjs",
     "test:shim": "node tests/harness/preparar.mjs && node tests/shim.test.mjs",
     "test:all": "node tests/harness/preparar.mjs && node tests/rls.test.mjs && node tests/harness/preparar.mjs && node tests/shim.test.mjs",
+    "test:unit": "node tests/unit/rodar.mjs",
     "postinstall": "node scripts/copy-tikzjax.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"

@@ -11,6 +11,7 @@ import { useNota } from "@/lib/notas/api-client"
 import { useSessao } from "@/hooks/use-sessao"
 import { corDisciplina } from "@/lib/notas/cores"
 import { MESES_CAP, separarHabilidades } from "@/lib/notas/texto"
+import { variaveisAparencia } from "@/lib/notas/tipos"
 import { BlocosView } from "@/components/notas/blocos-view"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DialogoCompartilhar } from "@/components/dialogo-compartilhar"
@@ -24,9 +25,14 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-8">
+      <div className="mx-auto max-w-3xl space-y-4 px-4 py-8" aria-busy="true">
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-9 rounded-lg" />
+          <Skeleton className="h-9 w-1/2 rounded-lg" />
+        </div>
         <Skeleton className="h-10 w-3/4" />
         <Skeleton className="h-5 w-1/2" />
+        <Skeleton className="h-24 w-full rounded-2xl" />
         <Skeleton className="h-40 w-full rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
@@ -123,19 +129,25 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
         </div>
       </div>
 
-      {/* conteúdo */}
-      <div className="area-impressao mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6">
+      {/* conteúdo (a aparência da nota vem do editor: fonte/escala/entrelinha) */}
+      <div
+        className="na-entra area-impressao na-nota mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6"
+        style={variaveisAparencia(nota.aparencia) as React.CSSProperties}
+      >
         {/* cabeçalho da nota */}
         <header className="mb-8 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className={`rounded-md ${cor.chip}`} variant="secondary">
-              {nota.disciplina?.nome ?? "Sem disciplina"}
+            <Badge className={`max-w-full rounded-md ${cor.chip}`} variant="secondary">
+              <span className="break-words">{nota.disciplina?.nome ?? "Sem disciplina"}</span>
             </Badge>
             <Badge variant="outline" className="rounded-md font-normal">
               {MESES_CAP[nota.mes - 1]}/{nota.anoLetivo}
             </Badge>
             {nota.turmas.length > 0 ? (
-              <Badge variant="outline" className="rounded-md font-normal">
+              <Badge
+                variant="outline"
+                className="max-w-full rounded-md font-normal break-words whitespace-normal"
+              >
                 {nota.turmas.map((t) => t.nome).join(" · ")}
               </Badge>
             ) : null}
@@ -187,13 +199,13 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
         </header>
 
         {/* blocos */}
-        <div className="imprime-colunas space-y-5 text-[1.02rem] leading-relaxed">
+        <div className="imprime-colunas space-y-5">
           <BlocosView blocos={nota.blocos} mostrarGabarito={mostrarGabarito} />
         </div>
 
         <footer className="na-imprime-esconder border-border text-muted-foreground mt-10 border-t pt-5 pb-6 text-center text-[0.75rem]">
           {nota.disciplina?.nome} · {MESES_CAP[nota.mes - 1]}/{nota.anoLetivo}
-          {nota.turmas.length > 0 ? ` · ${nota.turmas.map((t) => t.nome).join(", ")}` : ""} . Gerado
+          {nota.turmas.length > 0 ? ` · ${nota.turmas.map((t) => t.nome).join(", ")}` : ""} · Gerado
           por Caderno Aberto
         </footer>
       </div>

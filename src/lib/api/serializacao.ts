@@ -3,7 +3,7 @@ import "server-only"
 // Serialização: linhas do banco -> tipos da AST do app (NotaDados/DisciplinaInfo/TurmaInfo seguem em tipos.ts).
 
 import type { Bloco, NotaDados } from "@/lib/notas/tipos"
-import { normalizarBlocos } from "@/lib/notas/tipos"
+import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
 import { slugificar } from "@/lib/notas/texto"
 import type { Database, DisciplinaLinha, NotaLinha, TurmaLinha } from "@/lib/supabase/tipos"
 
@@ -55,6 +55,7 @@ export function linhaParaNota(
     habilidades: linha.habilidades,
     status: linha.status,
     blocos: normalizarBlocos(linha.blocos) as Bloco[],
+    aparencia: normalizarAparencia(linha.aparencia),
     criadoEm: linha.criado_em,
     atualizadoEm: linha.atualizado_em,
     turmas,

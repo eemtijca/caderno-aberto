@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
 import { clienteAdmin } from "@/lib/supabase/admin"
 import { camposDenormalizados } from "@/lib/api/serializacao"
-import { normalizarBlocos } from "@/lib/notas/tipos"
+import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
 import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 
 export const dynamic = "force-dynamic"
@@ -72,6 +72,7 @@ export async function GET() {
       status: n.status,
       turmasIds: n.turmas_ids,
       blocos: n.blocos,
+      aparencia: n.aparencia,
     })),
     links: (links ?? []).map((l) => ({
       tipo: l.tipo,
@@ -232,6 +233,7 @@ export async function POST(req: NextRequest) {
     const blocos = reescreverBlocos(normalizarBlocos(n.blocos))
     const sobre = String(n.sobre ?? "")
     const habilidades = String(n.habilidades ?? "")
+    const aparencia = normalizarAparencia(n.aparencia)
 
     const { data: criada, error } = await cliente
       .from("notas")
@@ -245,6 +247,7 @@ export async function POST(req: NextRequest) {
         habilidades,
         status: n.status === "publicada" ? "publicada" : "rascunho",
         blocos,
+        aparencia,
         busca: normalizar(
           textoDeBusca({
             titulo,

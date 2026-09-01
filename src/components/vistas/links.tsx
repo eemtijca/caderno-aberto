@@ -5,7 +5,6 @@
 import { useMemo, useState } from "react"
 import {
   BookOpenText,
-  CalendarRange,
   Check,
   Copy,
   ExternalLink,
@@ -13,6 +12,7 @@ import {
   Hourglass,
   Link2,
   Loader2,
+  MoreHorizontal,
   Pencil,
   Plus,
   Power,
@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
   SelectContent,
@@ -31,6 +32,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,10 +71,11 @@ const ROTULO_TIPO: Record<TipoLink, string> = {
 }
 
 export function VistaLinks() {
-  const { data: links, isLoading } = useLinks()
-  const { data: notas } = useNotas({ status: "publicada" })
-  const { data: disciplinas } = useDisciplinas()
-  const { data: turmas } = useTurmas()
+  const linksQ = useLinks()
+  const notasQ = useNotas({ status: "publicada" })
+  const disciplinasQ = useDisciplinas()
+  const turmasQ = useTurmas()
+  const { data: links, isLoading } = linksQ
 
   return (
     <div className="space-y-6 pb-8">
@@ -79,18 +88,19 @@ export function VistaLinks() {
       </div>
 
       <SecaoNovoLink
-        notas={(notas ?? []).map((n) => ({ id: n.id, titulo: n.titulo }))}
-        disciplinas={(disciplinas ?? []).map((d) => ({ id: d.id, nome: d.nome }))}
-        turmas={(turmas ?? []).map((t) => ({ id: t.id, nome: t.nome, ano: t.anoLetivo }))}
+        notas={(notasQ.data ?? []).map((n) => ({ id: n.id, titulo: n.titulo }))}
+        disciplinas={(disciplinasQ.data ?? []).map((d) => ({ id: d.id, nome: d.nome }))}
+        turmas={(turmasQ.data ?? []).map((t) => ({ id: t.id, nome: t.nome, ano: t.anoLetivo }))}
       />
 
       {isLoading ? (
-        <div className="space-y-3">
-          <div className="bg-muted h-28 animate-pulse rounded-2xl" />
-          <div className="bg-muted h-28 animate-pulse rounded-2xl" />
+        <div className="space-y-3" aria-busy="true">
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 w-5/6 rounded-2xl" />
         </div>
       ) : (links ?? []).length === 0 ? (
-        <div className="border-border rounded-2xl border border-dashed p-10 text-center">
+        <div className="na-cascata border-border rounded-2xl border border-dashed p-10 text-center">
           <Link2 className="text-muted-foreground/60 mx-auto h-8 w-8" aria-hidden />
           <p className="fonte-display mt-3 font-bold">Nenhum link ainda</p>
           <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm">
@@ -100,8 +110,8 @@ export function VistaLinks() {
         </div>
       ) : (
         <div className="space-y-3">
-          {(links ?? []).map((l) => (
-            <CartaoLink key={l.id} link={l} />
+          {(links ?? []).map((l, i) => (
+            <CartaoLink key={l.id} link={l} indice={i} />
           ))}
         </div>
       )}
@@ -140,7 +150,7 @@ function SecaoNovoLink({
         : "Cadastre disciplinas primeiro."
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-5">
+    <section className="na-cascata border-border bg-card rounded-2xl border p-5">
       <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
         <Plus className="h-4.5 w-4.5" aria-hidden /> Novo link
       </h2>
@@ -218,11 +228,13 @@ function SecaoNovoLink({
             setAlvo("")
             setNome("")
             toast.success("Link criado", {
-              description: "Copie e envie para os alunos.",
+              description: "O endereço já foi copiado. Envie para os alunos.",
             })
             void navigator.clipboard?.writeText(urlDoLink(r.link.token)).catch(() => undefined)
           } catch (e) {
-            toast.error(e instanceof Error ? e.message : "Erro ao criar o link.")
+            toast.error("Não foi possível criar o link", {
+              description: e instanceof Error ? e.message : "Tente novamente em instantes.",
+            })
           }
         }}
       >
@@ -235,7 +247,7 @@ function SecaoNovoLink({
 
 // Cartão de cada link
 
-function CartaoLink({ link }: { link: LinkInfo }) {
+function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
   const editar = useEditarLink()
   const excluir = useExcluirLink()
   const [copiado, setCopiado] = useState(false)
@@ -260,7 +272,7 @@ function CartaoLink({ link }: { link: LinkInfo }) {
       toast.success("Link copiado", { description: "Envie para a turma." })
       setTimeout(() => setCopiado(false), 2000)
     } catch {
-      toast.error("Não foi possível copiar.")
+      toast.error("Não foi possível copiar. Selecione o endereço acima e copie manualmente.")
     }
   }
 
@@ -276,13 +288,16 @@ function CartaoLink({ link }: { link: LinkInfo }) {
       setEditando(false)
       toast.success("Link atualizado")
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro.")
+      toast.error("Não foi possível salvar", {
+        description: e instanceof Error ? e.message : undefined,
+      })
     }
   }
 
   return (
     <article
-      className={`bg-card rounded-2xl border p-4 sm:p-5 ${disponivel ? "border-border" : "border-dashed opacity-80"}`}
+      className={`na-cascata bg-card rounded-2xl border p-4 sm:p-5 ${disponivel ? "border-border" : "border-dashed opacity-80"}`}
+      style={{ "--na-i": indice } as React.CSSProperties}
     >
       <div className="flex flex-wrap items-start gap-3">
         <span
@@ -374,7 +389,8 @@ function CartaoLink({ link }: { link: LinkInfo }) {
           )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-1">
+        {/* ações: copiar e abrir sempre visíveis; o resto no menu */}
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="outline"
             size="sm"
@@ -398,92 +414,104 @@ function CartaoLink({ link }: { link: LinkInfo }) {
           >
             <ExternalLink className="h-4 w-4" aria-hidden />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg"
-            aria-label="Editar nome e expiração"
-            title="Editar nome e expiração"
-            onClick={() => setEditando(!editando)}
-          >
-            <Pencil className="h-4 w-4" aria-hidden />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg"
-            aria-label={link.ativo ? "Pausar link" : "Reativar link"}
-            title={link.ativo ? "Pausar link" : "Reativar link"}
-            disabled={editar.isPending}
-            onClick={async () => {
-              try {
-                await editar.mutateAsync({ id: link.id, dados: { ativo: !link.ativo } })
-                toast.success(link.ativo ? "Link pausado" : "Link reativado")
-              } catch (e) {
-                toast.error(e instanceof Error ? e.message : "Erro.")
-              }
-            }}
-          >
-            <Power className="h-4 w-4" aria-hidden />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg"
-            aria-label="Gerar novo endereço (o link atual deixará de funcionar)"
-            title="Gerar novo endereço (o link atual deixará de funcionar)"
-            disabled={editar.isPending}
-            onClick={async () => {
-              try {
-                await editar.mutateAsync({ id: link.id, dados: { regenerar: true } })
-                toast.success("Novo link gerado", {
-                  description: "O endereço antigo deixará de funcionar.",
-                })
-              } catch (e) {
-                toast.error(e instanceof Error ? e.message : "Erro.")
-              }
-            }}
-          >
-            <RefreshCw className="h-4 w-4" aria-hidden />
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8 rounded-lg"
-                aria-label="Excluir link"
-                title="Excluir link"
+                className="h-8 w-8 rounded-lg"
+                aria-label="Mais ações do link"
+                title="Mais ações"
               >
-                <Trash2 className="h-4 w-4" aria-hidden />
+                <MoreHorizontal className="h-4 w-4" aria-hidden />
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir este link?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Os alunos que ainda tiverem o endereço perderão o acesso imediatamente. As notas
-                  não são afetadas.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive hover:bg-destructive/90 text-white"
-                  onClick={async () => {
-                    try {
-                      await excluir.mutateAsync(link.id)
-                      toast.success("Link excluído")
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Erro.")
-                    }
-                  }}
-                >
-                  Excluir
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="gap-2"
+                onClick={() => {
+                  setNome(link.nome)
+                  setExpira(link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "")
+                  setEditando(true)
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar nome e expiração
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2"
+                disabled={editar.isPending}
+                onClick={async () => {
+                  try {
+                    await editar.mutateAsync({ id: link.id, dados: { ativo: !link.ativo } })
+                    toast.success(link.ativo ? "Link pausado" : "Link reativado")
+                  } catch (e) {
+                    toast.error("Não foi possível atualizar o link", {
+                      description: e instanceof Error ? e.message : undefined,
+                    })
+                  }
+                }}
+              >
+                <Power className="h-3.5 w-3.5" aria-hidden />
+                {link.ativo ? "Pausar link" : "Reativar link"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2"
+                disabled={editar.isPending}
+                onClick={async () => {
+                  try {
+                    await editar.mutateAsync({ id: link.id, dados: { regenerar: true } })
+                    toast.success("Novo link gerado", {
+                      description: "O endereço antigo deixará de funcionar.",
+                    })
+                  } catch (e) {
+                    toast.error("Não foi possível gerar novo endereço", {
+                      description: e instanceof Error ? e.message : undefined,
+                    })
+                  }
+                }}
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Gerar novo endereço
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive gap-2"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden /> Excluir link
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir este link?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Os alunos que ainda tiverem o endereço perderão o acesso imediatamente. As
+                      notas não são afetadas.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive hover:bg-destructive/90 text-white"
+                      onClick={async () => {
+                        try {
+                          await excluir.mutateAsync(link.id)
+                          toast.success("Link excluído")
+                        } catch (e) {
+                          toast.error("Não foi possível excluir o link", {
+                            description: e instanceof Error ? e.message : undefined,
+                          })
+                        }
+                      }}
+                    >
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </article>

@@ -168,6 +168,79 @@
 }
 
 /* ============================================================
+   Aparência da leitura, por nota (--na-fonte/--na-escala/
+   --na-entrelinha definidas pelo editor via style inline).
+   ============================================================ */
+
+.na-nota {
+  font-family: var(--na-fonte, var(--font-corpo)), ui-sans-serif, system-ui, sans-serif;
+  font-size: calc(1.02rem * var(--na-escala, 1));
+  line-height: var(--na-entrelinha, 1.65);
+}
+
+/* KaTeX acompanha a escala escolhida (tamanhos em em) */
+.na-nota .katex {
+  font-size: 1.06em;
+}
+
+/* ============================================================
+   Animações sutis de interface (respeitam prefers-reduced-motion)
+   ============================================================ */
+
+/* entrada de vista (fade + 6px para cima) */
+@keyframes na-entra {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.na-entra {
+  animation: na-entra 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* cascata de cards: --na-i (índice) atrasa cada item */
+.na-cascata {
+  animation: na-entra 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(var(--na-i, 0) * 45ms);
+}
+
+/* realce suave de foco em listas */
+@keyframes na-pulso {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.na-pulso {
+  animation: na-pulso 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .na-entra,
+  .na-cascata,
+  .na-pulso {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
    KaTeX — ajustes finos
    ============================================================ */
 
@@ -249,12 +322,43 @@
   .imprime-colunas {
     column-count: 2;
     column-gap: 7mm;
+    column-fill: auto;
+  }
+
+  /* tipografia da nota (fonte/escala/entrelinha escolhidas pelo professor) */
+  .area-impressao .na-nota,
+  .area-impressao.na-nota {
+    font-size: calc(11pt * var(--na-escala, 1)) !important;
+  }
+
+  /* viúvas e órfãs: mínimo de linhas por coluna/página */
+  .area-impressao p,
+  .area-impressao li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* títulos de seção nunca ficam órfãos no fim da coluna */
+  .na-secao,
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
   }
 
   .na-imprime-caixa,
-  .na-secao,
-  figure {
+  figure,
+  .katex-display,
+  table {
     break-inside: avoid;
+  }
+
+  /* cores das caixas e chips no papel (sem depender do usuário marcar
+     "imprimir fundos" no navegador) */
+  .area-impressao *,
+  .area-impressao .na-quiz-alternativa {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .na-secao {

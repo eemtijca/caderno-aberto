@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
 import { gerarToken } from "@/lib/api/token"
+import sharp from "sharp"
 
 export const dynamic = "force-dynamic"
 
@@ -36,7 +37,11 @@ export async function POST(req: NextRequest) {
   return json({ caminho, url: `/api/imagens?path=${encodeURIComponent(caminho)}` }, 201)
 }
 
-/** GET /api/imagens?path=<uid>/<arquivo> . Serve a figura (RLS do storage) */
+/**
+ * GET /api/imagens?path=<uid>/<arquivo>&png=1 . Serve a figura (RLS do storage).
+ * `png=1` converte webp/svg para PNG — pdfLaTeX (arquivo .tex exportado)
+ * só aceita png/jpg.
+ */
 export async function GET(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -58,6 +63,24 @@ export async function GET(req: NextRequest) {
     webp: "image/webp",
     gif: "image/gif",
     svg: "image/svg+xml",
+  }
+
+  const converterPng =
+    req.nextUrl.searchParams.get("png") === "1" && (ext === "webp" || ext === "svg")
+  if (converterPng) {
+    try {
+      const png = await sharp(Buffer.from(await arquivo.arrayBuffer()))
+        .png()
+        .toBuffer()
+      return new NextResponse(png, {
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "private, max-age=3600",
+        },
+      })
+    } catch {
+      return erroApi("Não foi possível converter a imagem para PNG.", 500)
+    }
   }
 
   return new NextResponse(await arquivo.arrayBuffer(), {
