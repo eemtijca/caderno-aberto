@@ -122,7 +122,7 @@ export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onP
       <TextareaAuto
         valor={bloco.texto}
         onChange={(texto) => onPatch({ texto })}
-        placeholder="Texto do parágrafo . Use **negrito**, $fórmulas$ e \\resultado{…}"
+        placeholder="Texto do parágrafo. Use **negrito**, $fórmulas$ e \resultado{…}"
         ariaLabel="Texto do parágrafo"
       />
     </div>
@@ -135,7 +135,7 @@ export function EditorFormula({ bloco, onPatch }: { bloco: { latex: string }; on
       <TextareaAuto
         valor={bloco.latex}
         onChange={(latex) => onPatch({ latex })}
-        placeholder="LaTeX da fórmula . Ex.: P = U i  ou  \dec{5,5}\un{kW}"
+        placeholder="LaTeX da fórmula. Ex.: P = U i ou \dec{5,5}\un{kW}"
         mono
         rowsMin={2}
         ariaLabel="Equação em destaque"
@@ -501,7 +501,8 @@ export function EditorCaixa({
             key={filho.id}
             className="group/filho bg-background/60 hover:border-border relative rounded-xl border border-transparent px-2.5 py-2 transition-colors"
           >
-            <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover/filho:opacity-100">
+            <div className="mb-1 flex items-center justify-end gap-0.5">
+              {/* ações do filho: sempre visíveis (toque não tem hover) */}
               <BotaoMini
                 rotulo="Mover para cima"
                 onClick={() => acoes.onMoverFilho(filho.id, -1)}
@@ -561,7 +562,7 @@ function BotaoMini({
       disabled={disabled}
       aria-label={rotulo}
       title={rotulo}
-      className={`rounded-md p-1 transition-colors disabled:opacity-30 ${
+      className={`rounded-md p-1.5 transition-colors disabled:opacity-30 ${
         perigo
           ? "text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive"
           : "text-muted-foreground/70 hover:bg-accent hover:text-foreground"

@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useTurmas, useCriarNota, useDisciplinas, useCriarDisciplina } from "@/lib/notas/api-client"
 import {
   CORES,
@@ -40,8 +41,10 @@ interface Props {
 }
 
 export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
-  const { data: disciplinas } = useDisciplinas()
-  const { data: turmas } = useTurmas()
+  const disciplinasQ = useDisciplinas()
+  const turmasQ = useTurmas()
+  const disciplinas = disciplinasQ.data
+  const turmas = turmasQ.data
   const criar = useCriarNota()
   const criarDisciplina = useCriarDisciplina()
 
@@ -219,6 +222,8 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                   ))}
                 </SelectContent>
               </Select>
+            ) : disciplinasQ.isLoading ? (
+              <Skeleton className="h-9 w-full rounded-lg" aria-label="Carregando disciplinas" />
             ) : (
               <p className="border-border text-muted-foreground rounded-lg border border-dashed px-3 py-2.5 text-sm">
                 Nenhuma disciplina cadastrada. Crie uma acima.
@@ -257,9 +262,21 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
 
           <div className="grid gap-1.5">
             <Label>
-              Turmas ({turmasDoAno.length > 0 ? "opcional" : "nenhuma em " + anoLetivo})
+              Turmas (
+              {turmasQ.isLoading
+                ? "carregando…"
+                : turmasDoAno.length > 0
+                  ? "opcional"
+                  : "nenhuma em " + anoLetivo}
+              )
             </Label>
-            {turmasDoAno.length > 0 ? (
+            {turmasQ.isLoading ? (
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-8 w-16 rounded-lg" />
+                <Skeleton className="h-8 w-16 rounded-lg" />
+                <Skeleton className="h-8 w-14 rounded-lg" />
+              </div>
+            ) : turmasDoAno.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {turmasDoAno.map((t) => {
                   const sel = turmasSel.includes(t.id)

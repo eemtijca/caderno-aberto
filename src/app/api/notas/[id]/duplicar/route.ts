@@ -32,6 +32,7 @@ export async function POST(_req: NextRequest, ctx: Ctx) {
       habilidades: original.habilidades,
       status: "rascunho",
       blocos: original.blocos,
+      aparencia: original.aparencia ?? {},
       busca: original.busca,
     })
     .select("*, disciplina:disciplinas(*)")

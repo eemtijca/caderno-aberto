@@ -1,6 +1,8 @@
 // Formato de intercâmbio em Markdown. Exportação (.md) e importação (parse) com round-trip da AST. Sintaxe dos contêineres (uma por linha):: copiar Rótulo :: exemplo Rótulo :: dica Rótulo :: atencao | :: diaadia | :: simbolos :: exercicios Fórmula display: $$... $$ | Destaque coral: ==texto==
 
 import {
+  AparenciaNota,
+  APARENCIA_PADRAO,
   Bloco,
   BlocoExercicios,
   BlocoFilho,
@@ -10,6 +12,7 @@ import {
   Rotulo,
   RotuloTipo,
   idBloco,
+  normalizarAparencia,
   normalizarBlocos,
 } from "./tipos"
 import { MESES_CAP } from "./texto"
@@ -110,7 +113,7 @@ function blocoParaMd(b: Bloco): string {
       let numero = 0
       for (const nivel of b.niveis) {
         if (nivel.questoes.length === 0) continue
-        partes.push(`### Nível ${nivel.numero} . ${nivel.titulo}`)
+        partes.push(`### Nível ${nivel.numero} · ${nivel.titulo}`)
         for (const q of nivel.questoes) {
           numero++
           partes.push(questaoParaMd(q, numero))
@@ -143,7 +146,18 @@ export interface MarkdownNota {
   sobre: string
   status: string
   slug?: string
+  aparencia?: AparenciaNota
   blocos: Bloco[]
+}
+
+/** Front-matter da aparência: só escreve chaves com valor não padrão. */
+function aparenciaParaMd(ap: AparenciaNota | null | undefined): string[] {
+  const linhas: string[] = []
+  if (ap?.fonte && ap.fonte !== APARENCIA_PADRAO.fonte) linhas.push(`fonte: ${ap.fonte}`)
+  if (ap?.escala && ap.escala !== APARENCIA_PADRAO.escala) linhas.push(`escala: ${ap.escala}`)
+  if (ap?.entrelinha && ap.entrelinha !== APARENCIA_PADRAO.entrelinha)
+    linhas.push(`entrelinha: ${ap.entrelinha}`)
+  return linhas
 }
 
 export function gerarMarkdown(nota: NotaDados): string {
@@ -157,6 +171,7 @@ export function gerarMarkdown(nota: NotaDados): string {
     `habilidades: ${nota.habilidades}`,
     `status: ${nota.status}`,
     `slug: ${nota.slug}`,
+    ...aparenciaParaMd(nota.aparencia),
     "---",
   ]
   const cabecalho = fm.join("\n")
@@ -239,6 +254,11 @@ export function analisarMarkdown(md: string): MarkdownNota {
   let emCite = false
   while (i < linhas.length) {
     const l = linhas[i]
+    // título principal (# ...): o título já veio no front-matter, pula
+    if (!emCite && /^#\s+/.test(l.trim())) {
+      i++
+      continue
+    }
     if (/^>\s?/.test(l)) {
       emCite = true
       sobreLinhas.push(l.replace(/^>\s?/, ""))
@@ -397,12 +417,13 @@ export function analisarMarkdown(md: string): MarkdownNota {
     // dentro de exercícios
     const topo = pilha[pilha.length - 1]
     if (topo.tipo === "exercicios" && topo.exercicios) {
-      const mNivel = /^###\s*N[íi]vel\s*([123])\s*[:\-\s]\s*(.*)$/.exec(linha.trim())
+      const mNivel = /^###\s*N[íi]vel\s*([123])\s*[·:\-.]?\s*(.*)$/.exec(linha.trim())
       if (mNivel) {
         flushExercicioAtual()
         topo.nivelAtual = {
           numero: Number(mNivel[1]) as 1 | 2 | 3,
-          titulo: mNivel[2].trim() || "Conceitos",
+          // tolera separadores antigos ("Nível 1 . Conceitos")
+          titulo: mNivel[2].trim().replace(/^[·:\-.]+\s*/, "") || "Conceitos",
           questoes: [],
         }
         i++
@@ -589,6 +610,11 @@ export function analisarMarkdown(md: string): MarkdownNota {
     sobre,
     status: meta["status"] === "publicada" ? "publicada" : "rascunho",
     slug: meta["slug"],
+    aparencia: normalizarAparencia({
+      fonte: meta["fonte"],
+      escala: meta["escala"],
+      entrelinha: meta["entrelinha"],
+    }),
     blocos: normalizarBlocos(raiz),
   }
 }

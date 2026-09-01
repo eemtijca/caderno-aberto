@@ -3,18 +3,22 @@
 // Vista Organização. As visões automáticas geradas pelos metadados: Ano → Turma → Mês (como a pasta 2026/) e Disciplina → Ano.
 
 import { useMemo, useState } from "react"
-import { ChevronDown, ChevronRight, Plus, Settings } from "lucide-react"
+import { ChevronDown, ChevronRight, Pencil, Plus, Settings } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client"
 import { corDisciplina } from "@/lib/notas/cores"
 import { MESES_CAP } from "@/lib/notas/texto"
 
 export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void }) {
-  const { data: notas } = useNotas()
-  const { data: disciplinas } = useDisciplinas()
+  const notasQ = useNotas()
+  const disciplinasQ = useDisciplinas()
   const { data: turmas } = useTurmas()
+  const notas = notasQ.data
+  const disciplinas = disciplinasQ.data
+  const carregando = notasQ.isLoading || disciplinasQ.isLoading
 
   const anos = useMemo(
     () => [...new Set((notas ?? []).map((n) => n.anoLetivo))].sort((a, b) => b - a),
@@ -35,7 +39,16 @@ export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void 
         </Button>
       </div>
 
-      {(notas ?? []).length === 0 ? (
+      {carregando ? (
+        <div className="space-y-3" aria-busy="true">
+          <Skeleton className="h-12 w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Skeleton className="h-36 rounded-2xl" />
+            <Skeleton className="h-36 rounded-2xl" />
+          </div>
+        </div>
+      ) : (notas ?? []).length === 0 ? (
         <div className="border-border rounded-2xl border border-dashed p-10 text-center">
           <p className="font-semibold">Ainda não há nada para organizar</p>
           <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm">
@@ -47,7 +60,10 @@ export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void 
           </Button>
         </div>
       ) : (
-        <Tabs defaultValue={anos[0] ? String(anos[0]) : "2026"} className="w-full">
+        <Tabs
+          defaultValue={anos[0] ? String(anos[0]) : String(new Date().getFullYear())}
+          className="w-full"
+        >
           <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-xl p-1">
             {anos.map((a) => (
               <TabsTrigger key={a} value={String(a)} className="rounded-lg px-4">
@@ -73,9 +89,11 @@ export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void 
 }
 
 function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string) => void }) {
-  const { data: turmas } = useTurmas(ano)
-  const { data: notas } = useNotas({ ano })
+  const turmasQ = useTurmas(ano)
+  const notasQ = useNotas({ ano })
   const [abertas, setAbertas] = useState<Record<string, boolean>>({})
+  const { data: turmas, isLoading: carregandoTurmas } = turmasQ
+  const { data: notas } = notasQ
 
   const porTurma = useMemo(() => {
     const mapa = new Map<string, typeof notas>()
@@ -96,7 +114,13 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
   return (
     <section className="space-y-2">
       <h2 className="fonte-display px-1 text-lg font-bold">Por turma</h2>
-      {lista.length === 0 ? (
+      {carregandoTurmas ? (
+        <div className="border-border space-y-2 rounded-2xl border p-3" aria-busy="true">
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <Skeleton className="h-11 w-2/3 rounded-xl" />
+        </div>
+      ) : lista.length === 0 ? (
         <p className="border-border text-muted-foreground rounded-xl border border-dashed p-4 text-sm">
           Nenhuma turma cadastrada em {ano}. Cadastre em Conta → Turmas.
         </p>
@@ -192,11 +216,15 @@ function PainelDisciplinas({
     <section className="space-y-2">
       <h2 className="fonte-display px-1 text-lg font-bold">Por disciplina</h2>
       <div className="grid gap-3 sm:grid-cols-2">
-        {disciplinas.map((d) => {
+        {disciplinas.map((d, i) => {
           const cor = corDisciplina(d.cor)
           const notasD = doAno.filter((n) => n.disciplinaId === d.id)
           return (
-            <div key={d.id} className={`border-border rounded-2xl border ${cor.fundoSuave} p-4`}>
+            <div
+              key={d.id}
+              className={`na-cascata border-border rounded-2xl border ${cor.fundoSuave} p-4`}
+              style={{ "--na-i": i } as React.CSSProperties}
+            >
               <div className="flex items-center justify-between gap-2">
                 <span className="fonte-display flex items-center gap-2 font-bold">
                   <span className={`h-2.5 w-2.5 rounded-full ${cor.ponto}`} aria-hidden />
@@ -245,25 +273,27 @@ function LinhaNota({
   navegar: (para: string) => void
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <button
         type="button"
         onClick={() => navegar(`/nota/${nota.id}`)}
-        className="hover:bg-accent flex-1 truncate rounded-lg px-2 py-1.5 text-left text-sm transition-colors"
+        className="hover:bg-accent min-w-0 flex-1 truncate rounded-lg px-2 py-1.5 text-left text-sm transition-colors"
       >
         {nota.titulo}
       </button>
       {nota.status === "rascunho" ? (
-        <Badge variant="outline" className="rounded-md text-[0.62rem]">
+        <Badge variant="outline" className="shrink-0 rounded-md text-[0.62rem]">
           Rascunho
         </Badge>
       ) : null}
       <button
         type="button"
         onClick={() => navegar(`/editor/${nota.id}`)}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-lg px-2 py-1 text-[0.75rem] font-semibold transition-colors"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
+        aria-label={`Editar a nota ${nota.titulo}`}
+        title="Editar"
       >
-        editar
+        <Pencil className="h-3.5 w-3.5" aria-hidden />
       </button>
     </div>
   )

@@ -75,42 +75,48 @@ export default function Home() {
       <VistaEditor id={rota.id} navegar={navegar} />
     ) : null
 
+  // a chave remonta o contêiner a cada troca de vista: dispara a
+  // animação de entrada (fade + deslize sutil)
+  const chaveVista = rota.vista === "editor" ? `${rota.vista}:${rota.id}` : rota.vista
+
   return (
     <AppShell rota={rota} navegar={navegar} onNovaNota={() => setNovaNotaAberta(true)}>
-      {exclusaoPendente ? (
-        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
-          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-            Exclusão solicitada. A conta será removida em{" "}
-            {expiraEm ? new Date(expiraEm).toLocaleString("pt-BR") : "24 horas"}.
-          </p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            É possível restaurar a conta dentro do prazo.
-          </p>
-          <div className="mt-3 flex gap-2">
-            <button
-              onClick={async () => {
-                setRestaurando(true)
-                try {
-                  await restaurarConta()
-                } finally {
-                  setRestaurando(false)
-                }
-              }}
-              disabled={restaurando}
-              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
-            >
-              {restaurando ? "Restaurando..." : "Restaurar conta"}
-            </button>
-            <button
-              onClick={() => navegar("/conta")}
-              className="border-border rounded-lg border px-4 py-2 text-sm"
-            >
-              Ver detalhes
-            </button>
+      <div key={chaveVista} className="na-entra">
+        {exclusaoPendente ? (
+          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              Exclusão solicitada. A conta será removida em{" "}
+              {expiraEm ? new Date(expiraEm).toLocaleString("pt-BR") : "24 horas"}.
+            </p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              É possível restaurar a conta dentro do prazo.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={async () => {
+                  setRestaurando(true)
+                  try {
+                    await restaurarConta()
+                  } finally {
+                    setRestaurando(false)
+                  }
+                }}
+                disabled={restaurando}
+                className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                {restaurando ? "Restaurando…" : "Restaurar conta"}
+              </button>
+              <button
+                onClick={() => navegar("/conta")}
+                className="border-border rounded-lg border px-4 py-2 text-sm"
+              >
+                Ver detalhes
+              </button>
+            </div>
           </div>
-        </div>
-      ) : null}
-      {conteudo}
+        ) : null}
+        {conteudo}
+      </div>
       {novaNotaAberta ? (
         <DialogoNovaNota
           aberto

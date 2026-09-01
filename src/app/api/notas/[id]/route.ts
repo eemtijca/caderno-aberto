@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
 import { linhaParaNota, mapaTurmasProfessor, camposDenormalizados } from "@/lib/api/serializacao"
-import { normalizarBlocos, type Bloco } from "@/lib/notas/tipos"
+import { normalizarAparencia, normalizarBlocos, type Bloco } from "@/lib/notas/tipos"
 import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 
 export const dynamic = "force-dynamic"
@@ -105,6 +105,8 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   if (corpo.status === "publicada" || corpo.status === "rascunho")
     dados.status = corpo.status as "publicada" | "rascunho"
   if (corpo.blocos !== undefined) dados.blocos = normalizarBlocos(corpo.blocos)
+  // aparência da leitura (fonte/escala/entrelinha): validada e sempre objeto
+  if (corpo.aparencia !== undefined) dados.aparencia = normalizarAparencia(corpo.aparencia)
 
   // recalcula o texto de busca com o estado final
   const tituloFinal = dados.titulo ?? atual.titulo

@@ -24,6 +24,7 @@ import {
   BookOpenText,
   Check,
   ChevronDown,
+  ChevronUp,
   CloudUpload,
   Copy,
   CopyPlus,
@@ -85,8 +86,15 @@ import {
 import { useSessao } from "@/hooks/use-sessao"
 import { DialogoCompartilhar } from "@/components/dialogo-compartilhar"
 import { MESES_CAP } from "@/lib/notas/texto"
-import type { Bloco, NotaDados } from "@/lib/notas/tipos"
-import { idBloco } from "@/lib/notas/tipos"
+import type { AparenciaNota, Bloco, NotaDados } from "@/lib/notas/tipos"
+import {
+  APARENCIA_PADRAO,
+  ENTRELINHAS_NOTA,
+  ESCALAS_NOTA,
+  FONTES_NOTA,
+  idBloco,
+  variaveisAparencia,
+} from "@/lib/notas/tipos"
 import { BlocosView } from "@/components/notas/blocos-view"
 import {
   atualizarBloco,
@@ -237,6 +245,10 @@ function FormularioNota({
   const [status, setStatus] = useState<"rascunho" | "publicada">(notaInicial.status)
   const [turmasSel, setTurmasSel] = useState<string[]>(notaInicial.turmas.map((t) => t.id))
   const [blocos, setBlocos] = useState<Bloco[]>(notaInicial.blocos)
+  // aparência da leitura: vale para o professor, os alunos e a impressão
+  const [aparencia, setAparencia] = useState<AparenciaNota>(
+    notaInicial.aparencia ?? APARENCIA_PADRAO,
+  )
 
   const [sujo, setSujo] = useState(false)
   const [estadoSalvamento, setEstadoSalvamento] = useState<"salvo" | "salvando" | "erro">("salvo")
@@ -260,6 +272,7 @@ function FormularioNota({
           status,
           turmasIds: turmasSel,
           blocos,
+          aparencia,
         })
         setEstadoSalvamento("salvo")
         setSujo(false)
@@ -270,7 +283,19 @@ function FormularioNota({
     return () => {
       if (timerAutoSave.current) clearTimeout(timerAutoSave.current)
     }
-  }, [titulo, disciplinaId, anoLetivo, mes, sobre, habilidades, status, turmasSel, blocos, sujo])
+  }, [
+    titulo,
+    disciplinaId,
+    anoLetivo,
+    mes,
+    sobre,
+    habilidades,
+    status,
+    turmasSel,
+    blocos,
+    aparencia,
+    sujo,
+  ])
 
   const marcar =
     <T,>(fn: (v: T) => void) =>
@@ -315,7 +340,9 @@ function FormularioNota({
           : "Arquivo de backup gerado",
       {
         description:
-          formato === "tex" ? "Pronto para gerar PDF com o modelo da escola." : undefined,
+          formato === "tex"
+            ? "Autocontido: compila direto no Overleaf ou TeX Live, sem arquivos externos."
+            : undefined,
       },
     )
   }
@@ -592,6 +619,87 @@ function FormularioNota({
               className="rounded-lg font-mono text-sm"
             />
           </div>
+
+          {/* aparência da leitura: fonte, tamanho e entrelinha da nota */}
+          <div className="border-border grid gap-4 border-t pt-4">
+            <div className="space-y-1">
+              <p className="text-xs font-bold">Aparência da leitura</p>
+              <p className="text-muted-foreground text-[0.72rem] leading-snug">
+                Vale para o professor, para os alunos que abrirem o link e para a impressão. A
+                prévia ao lado já acompanha a escolha.
+              </p>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label className="text-xs">Fonte</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {FONTES_NOTA.map((f) => (
+                  <button
+                    key={f.chave}
+                    type="button"
+                    onClick={() => marcar(setAparencia)({ ...aparencia, fonte: f.chave })}
+                    aria-pressed={(aparencia.fonte ?? APARENCIA_PADRAO.fonte) === f.chave}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[0.78rem] font-semibold transition-colors ${
+                      (aparencia.fonte ?? APARENCIA_PADRAO.fonte) === f.chave
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card hover:bg-accent"
+                    }`}
+                  >
+                    <span
+                      className="text-base leading-none"
+                      style={{ fontFamily: f.familia }}
+                      aria-hidden
+                    >
+                      Aa
+                    </span>
+                    {f.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label className="text-xs">Tamanho do texto</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {ESCALAS_NOTA.map((e) => (
+                  <button
+                    key={e.chave}
+                    type="button"
+                    onClick={() => marcar(setAparencia)({ ...aparencia, escala: e.chave })}
+                    aria-pressed={(aparencia.escala ?? APARENCIA_PADRAO.escala) === e.chave}
+                    className={`rounded-lg border px-3 py-1.5 text-[0.78rem] font-semibold transition-colors ${
+                      (aparencia.escala ?? APARENCIA_PADRAO.escala) === e.chave
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card hover:bg-accent"
+                    }`}
+                  >
+                    {e.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label className="text-xs">Entrelinha</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {ENTRELINHAS_NOTA.map((e) => (
+                  <button
+                    key={e.chave}
+                    type="button"
+                    onClick={() => marcar(setAparencia)({ ...aparencia, entrelinha: e.chave })}
+                    aria-pressed={(aparencia.entrelinha ?? APARENCIA_PADRAO.entrelinha) === e.chave}
+                    className={`rounded-lg border px-3 py-1.5 text-[0.78rem] font-semibold transition-colors ${
+                      (aparencia.entrelinha ?? APARENCIA_PADRAO.entrelinha) === e.chave
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card hover:bg-accent"
+                    }`}
+                  >
+                    {e.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </details>
 
@@ -617,7 +725,7 @@ function FormularioNota({
             />
           </TabsContent>
           <TabsContent value="previa" className="mt-4">
-            <Previa blocos={blocos} titulo={titulo} />
+            <Previa blocos={blocos} titulo={titulo} aparencia={aparencia} />
           </TabsContent>
         </Tabs>
       </div>
@@ -637,7 +745,7 @@ function FormularioNota({
           <p className="text-muted-foreground mb-4 flex items-center gap-1.5 text-[0.7rem] font-bold tracking-wider uppercase">
             <Eye className="h-3.5 w-3.5" aria-hidden /> Prévia ao vivo
           </p>
-          <Previa blocos={blocos} titulo={titulo} />
+          <Previa blocos={blocos} titulo={titulo} aparencia={aparencia} />
         </div>
       </div>
 
@@ -768,13 +876,13 @@ function CartaoBloco({
       style={estilo}
       className={`group bg-card relative rounded-2xl border px-3 py-3 transition-shadow hover:shadow-sm sm:px-4 ${classesCaixa}`}
     >
-      {/* controles laterais */}
+      {/* controles laterais (desktop) */}
       <div className="absolute top-2 -left-11 hidden flex-col items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
         <button
           type="button"
           {...attributes}
           {...listeners}
-          className="text-muted-foreground/60 hover:bg-accent hover:text-foreground cursor-grab rounded-md p-1.5 active:cursor-grabbing"
+          className="text-muted-foreground/60 hover:bg-accent hover:text-foreground cursor-grab touch-none rounded-md p-1.5 active:cursor-grabbing"
           aria-label="Arrastar para reordenar"
         >
           <GripVertical className="h-4 w-4" aria-hidden />
@@ -802,7 +910,7 @@ function CartaoBloco({
           className="text-muted-foreground/60 hover:bg-accent hover:text-foreground rounded-md p-1 disabled:opacity-25"
           aria-label="Mover para cima"
         >
-          <ChevronDown className="h-3.5 w-3.5 rotate-180" aria-hidden />
+          <ChevronUp className="h-3.5 w-3.5" aria-hidden />
         </button>
         <button
           type="button"
@@ -823,12 +931,37 @@ function CartaoBloco({
         </button>
       </div>
 
-      {/* etiqueta do tipo (mobile) */}
-      <div className="mb-1.5 flex items-center justify-between sm:mb-0">
+      {/* etiqueta do tipo + controles completos (mobile — os mesmos do desktop) */}
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 sm:mb-0">
         <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-[0.6rem] font-bold tracking-widest text-stone-500 uppercase dark:bg-stone-800 dark:text-stone-400">
           {PALETA.find((p) => p.tipo === bloco.tipo)?.rotulo ?? bloco.tipo}
         </span>
-        <div className="flex gap-0.5 sm:hidden">
+        <div className="flex items-center gap-0.5 sm:hidden">
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            className="text-muted-foreground/70 hover:bg-accent hover:text-foreground cursor-grab touch-none rounded-md p-1.5 active:cursor-grabbing"
+            aria-label="Arrastar para reordenar"
+          >
+            <GripVertical className="h-4 w-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={onInserirAqui}
+            className="text-muted-foreground/70 hover:bg-accent hover:text-foreground rounded-md p-1.5"
+            aria-label="Inserir bloco abaixo"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => mudarBlocos((bs) => duplicarBloco(bs, bloco.id))}
+            className="text-muted-foreground/70 hover:bg-accent hover:text-foreground rounded-md p-1.5"
+            aria-label="Duplicar bloco"
+          >
+            <Copy className="h-4 w-4" aria-hidden />
+          </button>
           <button
             type="button"
             onClick={() => mudarBlocos((bs) => moverBloco(bs, bloco.id, -1))}
@@ -836,7 +969,7 @@ function CartaoBloco({
             className="text-muted-foreground rounded-md p-1.5 disabled:opacity-25"
             aria-label="Mover para cima"
           >
-            <ChevronDown className="h-4 w-4 rotate-180" aria-hidden />
+            <ChevronUp className="h-4 w-4" aria-hidden />
           </button>
           <button
             type="button"
@@ -850,7 +983,7 @@ function CartaoBloco({
           <button
             type="button"
             onClick={() => mudarBlocos((bs) => removerBloco(bs, bloco.id))}
-            className="text-muted-foreground/70 rounded-md p-1.5"
+            className="text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive rounded-md p-1.5"
             aria-label="Remover bloco"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
@@ -949,10 +1082,18 @@ function PaletaInsercao({
 
 // Prévia
 
-function Previa({ blocos, titulo }: { blocos: Bloco[]; titulo: string }) {
+function Previa({
+  blocos,
+  titulo,
+  aparencia,
+}: {
+  blocos: Bloco[]
+  titulo: string
+  aparencia: AparenciaNota
+}) {
   const [gabarito, setGabarito] = useState(false)
   return (
-    <div>
+    <div className="na-nota" style={variaveisAparencia(aparencia) as React.CSSProperties}>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="fonte-display text-xl font-extrabold">{titulo || "Sem título"}</h3>
         <Button
@@ -964,7 +1105,7 @@ function Previa({ blocos, titulo }: { blocos: Bloco[]; titulo: string }) {
           {gabarito ? "Ocultar gabarito" : "Mostrar gabarito"}
         </Button>
       </div>
-      <div className="space-y-5 text-[0.95rem]">
+      <div className="space-y-5">
         <BlocosView blocos={blocos} mostrarGabarito={gabarito} />
       </div>
       <p className="border-border text-muted-foreground mt-8 flex items-center gap-1.5 border-t pt-4 text-[0.7rem]">

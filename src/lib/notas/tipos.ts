@@ -173,6 +173,86 @@ export interface NotaDados {
   criadoEm: string
   atualizadoEm: string
   turmas: TurmaInfo[]
+  /** Aparência da leitura definida pelo professor (ausente = padrão do app). */
+  aparencia?: AparenciaNota
+}
+
+// Aparência da leitura, por nota. Escolhida no editor e aplicada na leitura
+// do professor, na vista pública dos alunos, na prévia e na impressão.
+
+export type FonteNota = "corpo" | "serifada" | "legivel" | "lexend" | "mono"
+export type EscalaNota = "p" | "m" | "g" | "gg"
+export type EntrelinhaNota = "compacta" | "normal" | "ampla"
+
+export interface AparenciaNota {
+  fonte?: FonteNota
+  escala?: EscalaNota
+  entrelinha?: EntrelinhaNota
+}
+
+export const APARENCIA_PADRAO: Required<AparenciaNota> = {
+  fonte: "corpo",
+  escala: "m",
+  entrelinha: "normal",
+}
+
+/** Catálogo de fontes exibido no editor (familia é a CSS var aplicada). */
+export const FONTES_NOTA: { chave: FonteNota; nome: string; familia: string }[] = [
+  { chave: "corpo", nome: "Padrão", familia: "var(--font-corpo)" },
+  { chave: "serifada", nome: "Serifada", familia: "var(--font-serifada)" },
+  { chave: "legivel", nome: "Alta legibilidade", familia: "var(--font-legivel)" },
+  { chave: "lexend", nome: "Leitura fluida", familia: "var(--font-lexend)" },
+  { chave: "mono", nome: "Monoespaçada", familia: "var(--font-mono-latex)" },
+]
+
+/** Escalas do texto de leitura (fator multiplicado no tamanho base). */
+export const ESCALAS_NOTA: { chave: EscalaNota; nome: string; fator: number }[] = [
+  { chave: "p", nome: "Pequena", fator: 0.94 },
+  { chave: "m", nome: "Média", fator: 1 },
+  { chave: "g", nome: "Grande", fator: 1.08 },
+  { chave: "gg", nome: "Muito grande", fator: 1.16 },
+]
+
+/** Entrelinha (altura de linha relativa) da leitura. */
+export const ENTRELINHAS_NOTA: { chave: EntrelinhaNota; nome: string; altura: number }[] = [
+  { chave: "compacta", nome: "Compacta", altura: 1.45 },
+  { chave: "normal", nome: "Normal", altura: 1.65 },
+  { chave: "ampla", nome: "Ampla", altura: 1.85 },
+]
+
+/** Garante um objeto de aparência válido a partir de JSON desconhecido. */
+export function normalizarAparencia(entrada: unknown): AparenciaNota {
+  if (!entrada || typeof entrada !== "object") return {}
+  const a = entrada as Record<string, unknown>
+  const saida: AparenciaNota = {}
+  if (typeof a.fonte === "string" && FONTES_NOTA.some((f) => f.chave === a.fonte)) {
+    saida.fonte = a.fonte as FonteNota
+  }
+  if (typeof a.escala === "string" && ESCALAS_NOTA.some((e) => e.chave === a.escala)) {
+    saida.escala = a.escala as EscalaNota
+  }
+  if (typeof a.entrelinha === "string" && ENTRELINHAS_NOTA.some((e) => e.chave === a.entrelinha)) {
+    saida.entrelinha = a.entrelinha as EntrelinhaNota
+  }
+  return saida
+}
+
+/**
+ * Variáveis CSS do contêiner de leitura, prontas para spread em `style`.
+ * Aparencia ausente devolve o objeto vazio (o CSS aplica os padrões).
+ */
+export function variaveisAparencia(ap: AparenciaNota | null | undefined): Record<string, string> {
+  const fonte = ap?.fonte ?? APARENCIA_PADRAO.fonte
+  const escala = ap?.escala ?? APARENCIA_PADRAO.escala
+  const entrelinha = ap?.entrelinha ?? APARENCIA_PADRAO.entrelinha
+  const familia = FONTES_NOTA.find((f) => f.chave === fonte)?.familia ?? "var(--font-corpo)"
+  const fator = ESCALAS_NOTA.find((e) => e.chave === escala)?.fator ?? 1
+  const altura = ENTRELINHAS_NOTA.find((e) => e.chave === entrelinha)?.altura ?? 1.65
+  return {
+    "--na-fonte": familia,
+    "--na-escala": String(fator),
+    "--na-entrelinha": String(altura),
+  }
 }
 
 // Normalização defensiva de JSON desconhecido (imports, API)

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
 import { linhaParaNota, mapaTurmasProfessor, camposDenormalizados } from "@/lib/api/serializacao"
-import { normalizarBlocos } from "@/lib/notas/tipos"
+import { normalizarAparencia, normalizarBlocos, type AparenciaNota } from "@/lib/notas/tipos"
 import { analisarMarkdown } from "@/lib/notas/render-markdown"
 import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 
@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
     status: "rascunho" | "publicada"
     turmas: string[]
     blocos: unknown
+    aparencia: AparenciaNota
   }
 
   if (formato === "json") {
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest) {
           )
         : [],
       blocos: n.blocos,
+      aparencia: normalizarAparencia(n.aparencia),
     }
   } else {
     const md = analisarMarkdown(corpo.conteudo)
@@ -67,6 +69,7 @@ export async function POST(req: NextRequest) {
       status: md.status === "publicada" ? "publicada" : "rascunho",
       turmas: md.turmas,
       blocos: md.blocos,
+      aparencia: normalizarAparencia(md.aparencia),
     }
   }
 
@@ -139,6 +142,7 @@ export async function POST(req: NextRequest) {
       habilidades: dados.habilidades,
       status: dados.status,
       blocos,
+      aparencia: dados.aparencia,
       busca: normalizar(
         textoDeBusca({
           titulo: dados.titulo,

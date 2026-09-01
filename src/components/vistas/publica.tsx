@@ -24,7 +24,8 @@ import { BlocosView } from "@/components/notas/blocos-view"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MESES_CAP, separarHabilidades } from "@/lib/notas/texto"
 import { corDisciplina } from "@/lib/notas/cores"
-import type { Bloco } from "@/lib/notas/tipos"
+import type { AparenciaNota, Bloco } from "@/lib/notas/tipos"
+import { variaveisAparencia } from "@/lib/notas/tipos"
 import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo"
 
 interface NotaPublica {
@@ -38,6 +39,8 @@ interface NotaPublica {
   sobre: string
   habilidades: string
   blocos: Bloco[]
+  /** Aparência escolhida pelo professor: o aluno vê a mesma. */
+  aparencia: AparenciaNota
   atualizadoEm: string
 }
 
@@ -87,6 +90,7 @@ export function VistaPublica({
             sobre: DEMO_NOTA.sobre,
             habilidades: DEMO_NOTA.habilidades,
             blocos: DEMO_NOTA.blocos,
+            aparencia: {},
             atualizadoEm: DEMO_NOTA.atualizadoEm,
           },
         ],
@@ -138,7 +142,11 @@ export function VistaPublica({
 
   if (carregando) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-10">
+      <div className="mx-auto max-w-3xl space-y-4 px-4 py-10" aria-busy="true">
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-9 rounded-lg" />
+          <Skeleton className="h-9 w-2/5 rounded-lg" />
+        </div>
         <Skeleton className="h-8 w-1/2" />
         <Skeleton className="h-6 w-1/3" />
         <Skeleton className="h-24 w-full rounded-2xl" />
@@ -243,7 +251,7 @@ export function VistaPublica({
 
       {/* lista de notas (links de turma/disciplina) */}
       {varias && !selecionada ? (
-        <div className="mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6">
+        <div className="na-entra mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6">
           <header className="mb-6">
             <h1 className="fonte-display text-2xl font-extrabold sm:text-3xl">
               {dados.link.nome ||
@@ -275,14 +283,15 @@ export function VistaPublica({
           </div>
 
           <div className="space-y-2.5">
-            {filtradas.map((n) => {
+            {filtradas.map((n, i) => {
               const cor = corDisciplina(n.disciplinaCor)
               return (
                 <button
                   key={n.id}
                   type="button"
                   onClick={() => setSelecionada(n.id)}
-                  className={`border-border bg-card flex w-full items-start gap-3 rounded-2xl border border-l-4 p-4 text-left transition-shadow hover:shadow-md ${cor.borda}`}
+                  className={`na-cascata border-border bg-card flex w-full items-start gap-3 rounded-2xl border border-l-4 p-4 text-left transition-shadow hover:shadow-md ${cor.borda}`}
+                  style={{ "--na-i": i } as React.CSSProperties}
                 >
                   <BookOpenText
                     className="text-muted-foreground mt-0.5 h-5 w-5 shrink-0"
@@ -321,24 +330,30 @@ export function VistaPublica({
         </div>
       ) : null}
 
-      {/* leitura da nota */}
+      {/* leitura da nota (aparência definida pelo professor) */}
       {nota ? (
-        <div className="area-impressao mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6">
+        <div
+          className="na-entra area-impressao na-nota mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6"
+          style={variaveisAparencia(nota.aparencia) as React.CSSProperties}
+        >
           <header className="mb-8 space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               {nota.disciplinaNome ? (
                 <Badge
-                  className={`rounded-md ${corDisciplina(nota.disciplinaCor).chip}`}
+                  className={`max-w-full rounded-md ${corDisciplina(nota.disciplinaCor).chip}`}
                   variant="secondary"
                 >
-                  {nota.disciplinaNome}
+                  <span className="break-words">{nota.disciplinaNome}</span>
                 </Badge>
               ) : null}
               <Badge variant="outline" className="rounded-md font-normal">
                 {MESES_CAP[nota.mes - 1]}/{nota.anoLetivo}
               </Badge>
               {nota.turmasNomes.length > 0 ? (
-                <Badge variant="outline" className="rounded-md font-normal">
+                <Badge
+                  variant="outline"
+                  className="max-w-full rounded-md font-normal break-words whitespace-normal"
+                >
                   {nota.turmasNomes.join(" · ")}
                 </Badge>
               ) : null}
@@ -383,7 +398,7 @@ export function VistaPublica({
             ) : null}
           </header>
 
-          <div className="imprime-colunas space-y-5 text-[1.02rem] leading-relaxed">
+          <div className="imprime-colunas space-y-5">
             <BlocosView blocos={nota.blocos} mostrarGabarito={mostrarGabarito} />
           </div>
 

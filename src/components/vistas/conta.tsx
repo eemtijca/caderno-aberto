@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
   SelectContent,
@@ -72,8 +73,7 @@ export function VistaConta({ navegar }: { navegar: (para: string) => void }) {
       <div>
         <h1 className="fonte-display text-2xl font-bold">Conta</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Perfil, segurança, disciplinas, turmas e dados. Tudo no espaço privado espaço privado do
-          Caderno Aberto.
+          Perfil, segurança, disciplinas, turmas e dados. Tudo no espaço privado do Caderno Aberto.
         </p>
       </div>
 
@@ -100,7 +100,7 @@ function SecaoPerfil() {
   const sujo = nome !== null || escola !== null
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-5">
+    <section className="na-cascata border-border bg-card rounded-2xl border p-5">
       <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
         <UserRound className="h-4.5 w-4.5" aria-hidden /> Perfil
       </h2>
@@ -171,7 +171,10 @@ function SecaoSeguranca() {
   const [salvandoEmail, setSalvandoEmail] = useState(false)
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-5">
+    <section
+      className="na-cascata border-border bg-card rounded-2xl border p-5"
+      style={{ "--na-i": 1 } as React.CSSProperties}
+    >
       <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
         <ShieldAlert className="h-4.5 w-4.5" aria-hidden /> Segurança
       </h2>
@@ -207,7 +210,9 @@ function SecaoSeguranca() {
                 setSenha2("")
                 toast.success("Senha alterada")
               } catch (e) {
-                toast.error(e instanceof Error ? e.message : "Erro.")
+                toast.error("Não foi possível alterar a senha.", {
+                  description: e instanceof Error ? e.message : undefined,
+                })
               } finally {
                 setSalvandoSenha(false)
               }
@@ -245,7 +250,9 @@ function SecaoSeguranca() {
                   description: "Siga as instruções no novo e-mail para concluir.",
                 })
               } catch (e) {
-                toast.error(e instanceof Error ? e.message : "Erro.")
+                toast.error("Não foi possível enviar a confirmação.", {
+                  description: e instanceof Error ? e.message : undefined,
+                })
               } finally {
                 setSalvandoEmail(false)
               }
@@ -263,7 +270,8 @@ function SecaoSeguranca() {
 // Disciplinas
 
 function SecaoDisciplinas() {
-  const { data: disciplinas } = useDisciplinas()
+  const disciplinasQ = useDisciplinas()
+  const { data: disciplinas, isLoading: carregando } = disciplinasQ
   const criar = useCriarDisciplina()
   const editar = useEditarDisciplina()
   const excluir = useExcluirDisciplina()
@@ -275,136 +283,155 @@ function SecaoDisciplinas() {
   const [nomeEditado, setNomeEditado] = useState("")
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-5">
+    <section
+      className="na-cascata border-border bg-card rounded-2xl border p-5"
+      style={{ "--na-i": 2 } as React.CSSProperties}
+    >
       <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
         <GraduationCap className="h-4.5 w-4.5" aria-hidden /> Disciplinas
       </h2>
       <p className="text-muted-foreground mt-1 text-sm">
-        Qualquer componente curricular . Cada disciplina tem cor e ícone próprios.
+        Qualquer componente curricular. Cada disciplina tem cor e ícone próprios.
       </p>
 
-      <div className="mt-4 space-y-2">
-        {(disciplinas ?? []).map((d) => {
-          const c = corDisciplina(d.cor)
-          const emEdicao = editando === d.id
-          return (
-            <div
-              key={d.id}
-              className={`flex flex-wrap items-center gap-2.5 rounded-xl border ${c.borda} ${c.fundoSuave} px-3.5 py-2.5`}
-            >
-              {emEdicao ? (
-                <>
-                  <Input
-                    value={nomeEditado}
-                    onChange={(e) => setNomeEditado(e.target.value)}
-                    className="h-8 w-44 rounded-lg"
-                    aria-label="Novo nome da disciplina"
-                  />
-                  <Select value={cor} onValueChange={setCor}>
-                    <SelectTrigger size="sm" className="h-8 w-36 rounded-lg">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CORES.map((cc) => (
-                        <SelectItem key={cc.chave} value={cc.chave}>
-                          <span className="flex items-center gap-2">
-                            <span className={`h-2.5 w-2.5 rounded-full ${cc.ponto}`} aria-hidden />
-                            {cc.nome}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    size="sm"
-                    className="h-8 rounded-lg"
-                    onClick={async () => {
-                      try {
-                        await editar.mutateAsync({
-                          id: d.id,
-                          dados: { nome: nomeEditado, cor },
-                        })
-                        setEditando(null)
-                        toast.success("Disciplina atualizada")
-                      } catch (e) {
-                        toast.error(e instanceof Error ? e.message : "Erro ao salvar.")
-                      }
-                    }}
-                  >
-                    Salvar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 rounded-lg"
-                    onClick={() => setEditando(null)}
-                  >
-                    Cancelar
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <span className={`h-3 w-3 rounded-full ${c.ponto}`} aria-hidden />
-                  <span className="font-bold">{d.nome}</span>
-                  <Badge variant="secondary" className={`rounded-md text-[0.65rem] ${c.chip}`}>
-                    {d.totalNotas} {d.totalNotas === 1 ? "nota" : "notas"}
-                  </Badge>
-                  <div className="ml-auto flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditando(d.id)
-                        setNomeEditado(d.nome)
-                        setCor(d.cor)
+      <div className="mt-4 space-y-2" aria-busy={carregando || undefined}>
+        {carregando ? (
+          <>
+            <Skeleton className="h-12 w-full rounded-xl" />
+            <Skeleton className="h-12 w-5/6 rounded-xl" />
+          </>
+        ) : (
+          (disciplinas ?? []).map((d) => {
+            const c = corDisciplina(d.cor)
+            const emEdicao = editando === d.id
+            return (
+              <div
+                key={d.id}
+                className={`flex flex-wrap items-center gap-2.5 rounded-xl border ${c.borda} ${c.fundoSuave} px-3.5 py-2.5`}
+              >
+                {emEdicao ? (
+                  <>
+                    <Input
+                      value={nomeEditado}
+                      onChange={(e) => setNomeEditado(e.target.value)}
+                      className="h-8 w-44 rounded-lg"
+                      aria-label="Novo nome da disciplina"
+                    />
+                    <Select value={cor} onValueChange={setCor}>
+                      <SelectTrigger size="sm" className="h-8 w-36 rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CORES.map((cc) => (
+                          <SelectItem key={cc.chave} value={cc.chave}>
+                            <span className="flex items-center gap-2">
+                              <span
+                                className={`h-2.5 w-2.5 rounded-full ${cc.ponto}`}
+                                aria-hidden
+                              />
+                              {cc.nome}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="h-8 rounded-lg"
+                      onClick={async () => {
+                        try {
+                          await editar.mutateAsync({
+                            id: d.id,
+                            dados: { nome: nomeEditado, cor },
+                          })
+                          setEditando(null)
+                          toast.success("Disciplina atualizada")
+                        } catch (e) {
+                          toast.error("Não foi possível salvar a disciplina.", {
+                            description: e instanceof Error ? e.message : undefined,
+                          })
+                        }
                       }}
-                      className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5 transition-colors"
-                      aria-label={`Editar ${d.nome}`}
                     >
-                      <Pencil className="h-3.5 w-3.5" aria-hidden />
-                    </button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <button
-                          type="button"
-                          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-md p-1.5 transition-colors"
-                          aria-label={`Excluir ${d.nome}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                        </button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir {d.nome}?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {d.totalNotas > 0
-                              ? `Esta disciplina tem ${d.totalNotas} nota(s). As notas continuam existindo, apenas perdem a disciplina.`
-                              : "A disciplina será removida. Não há notas vinculadas."}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-destructive hover:bg-destructive/90 text-white"
-                            onClick={async () => {
-                              try {
-                                await excluir.mutateAsync(d.id)
-                                toast.success("Disciplina excluída")
-                              } catch (e) {
-                                toast.error(e instanceof Error ? e.message : "Erro.")
-                              }
-                            }}
+                      Salvar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 rounded-lg"
+                      onClick={() => setEditando(null)}
+                    >
+                      Cancelar
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className={`h-3 w-3 rounded-full ${c.ponto}`} aria-hidden />
+                    <span className="font-bold">{d.nome}</span>
+                    <Badge variant="secondary" className={`rounded-md text-[0.65rem] ${c.chip}`}>
+                      {d.totalNotas} {d.totalNotas === 1 ? "nota" : "notas"}
+                    </Badge>
+                    <div className="ml-auto flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditando(d.id)
+                          setNomeEditado(d.nome)
+                          setCor(d.cor)
+                        }}
+                        className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+                        aria-label={`Editar ${d.nome}`}
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" aria-hidden />
+                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+                            aria-label={`Excluir ${d.nome}`}
+                            title="Excluir"
                           >
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </>
-              )}
-            </div>
-          )
-        })}
+                            <Trash2 className="h-4 w-4" aria-hidden />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir {d.nome}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {d.totalNotas > 0
+                                ? `Esta disciplina tem ${d.totalNotas} nota(s). As notas continuam existindo, apenas perdem a disciplina.`
+                                : "A disciplina será removida. Não há notas vinculadas."}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive hover:bg-destructive/90 text-white"
+                              onClick={async () => {
+                                try {
+                                  await excluir.mutateAsync(d.id)
+                                  toast.success("Disciplina excluída")
+                                } catch (e) {
+                                  toast.error("Não foi possível excluir a disciplina.", {
+                                    description: e instanceof Error ? e.message : undefined,
+                                  })
+                                }
+                              }}
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })
+        )}
       </div>
 
       <div className="border-border mt-4 grid gap-2.5 rounded-xl border border-dashed p-3.5 sm:grid-cols-[1fr_auto_auto_auto]">
@@ -479,7 +506,8 @@ function SecaoDisciplinas() {
 // Turmas
 
 function SecaoTurmas() {
-  const { data: turmas } = useTurmas()
+  const turmasQ = useTurmas()
+  const { data: turmas, isLoading: carregando } = turmasQ
   const criar = useCriarTurma()
   const editar = useEditarTurma()
   const excluir = useExcluirTurma()
@@ -494,7 +522,10 @@ function SecaoTurmas() {
   const anos = [...new Set((turmas ?? []).map((t) => t.anoLetivo))].sort((a, b) => b - a)
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-5">
+    <section
+      className="na-cascata border-border bg-card rounded-2xl border p-5"
+      style={{ "--na-i": 3 } as React.CSSProperties}
+    >
       <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
         <GraduationCap className="h-4.5 w-4.5" aria-hidden /> Turmas
       </h2>
@@ -502,7 +533,12 @@ function SecaoTurmas() {
         As turmas alimentam a organização automática (Ano → Turma → Mês) e os links por turma.
       </p>
 
-      {anos.length > 0 ? (
+      {carregando ? (
+        <div className="mt-4 space-y-3" aria-busy="true">
+          <Skeleton className="h-12 w-40 rounded-xl" />
+          <Skeleton className="h-12 w-64 rounded-xl" />
+        </div>
+      ) : anos.length > 0 ? (
         <div className="mt-4 space-y-3">
           {anos.map((ano) => (
             <div key={ano}>
@@ -550,7 +586,9 @@ function SecaoTurmas() {
                               setEditando(null)
                               toast.success("Turma atualizada")
                             } catch (e) {
-                              toast.error(e instanceof Error ? e.message : "Erro.")
+                              toast.error("Não foi possível salvar a turma.", {
+                                description: e instanceof Error ? e.message : undefined,
+                              })
                             }
                           }}
                         >
@@ -582,19 +620,21 @@ function SecaoTurmas() {
                             setNomeEditado(t.nome)
                             setSerieEditada(t.serie)
                           }}
-                          className="text-muted-foreground/70 hover:bg-accent hover:text-foreground rounded-md p-1 transition-colors"
+                          className="text-muted-foreground/70 hover:bg-accent hover:text-foreground flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
                           aria-label={`Editar turma ${t.nome}`}
+                          title="Editar"
                         >
-                          <Pencil className="h-3.5 w-3.5" aria-hidden />
+                          <Pencil className="h-4 w-4" aria-hidden />
                         </button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <button
                               type="button"
-                              className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive rounded-md p-1 transition-colors"
+                              className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
                               aria-label={`Excluir turma ${t.nome}`}
+                              title="Excluir"
                             >
-                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                              <Trash2 className="h-4 w-4" aria-hidden />
                             </button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -615,7 +655,9 @@ function SecaoTurmas() {
                                     await excluir.mutateAsync(t.id)
                                     toast.success("Turma excluída")
                                   } catch (e) {
-                                    toast.error(e instanceof Error ? e.message : "Erro.")
+                                    toast.error("Não foi possível excluir a turma.", {
+                                      description: e instanceof Error ? e.message : undefined,
+                                    })
                                   }
                                 }}
                               >
@@ -729,7 +771,10 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
   }
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-5">
+    <section
+      className="na-cascata border-border bg-card rounded-2xl border p-5"
+      style={{ "--na-i": 4 } as React.CSSProperties}
+    >
       <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
         <Download className="h-4.5 w-4.5" aria-hidden /> Backup e importação
       </h2>
@@ -742,7 +787,7 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
         <div className="border-border space-y-2 rounded-xl border p-4">
           <p className="text-sm font-bold">Exportar tudo</p>
           <p className="text-muted-foreground text-[0.8rem] leading-snug">
-            Baixe o arquivo JSON com todos os dados. Guarde uma cópia. E a garantia contra perdas.
+            Baixe o arquivo JSON com todos os dados. Guarde uma cópia: é a garantia contra perdas.
           </p>
           <Button
             variant="outline"

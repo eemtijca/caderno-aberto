@@ -37,10 +37,10 @@ import type { Rota } from "@/lib/rota"
 
 const ITENS_NAV: { rotulo: string; icone: typeof Home; hash: string; vistas: Rota["vista"][] }[] = [
   { rotulo: "Início", icone: Home, hash: "/", vistas: ["inicio"] },
-  { rotulo: "Notas", icone: BookOpenText, hash: "/notas", vistas: ["notas"] },
+  { rotulo: "Notas", icone: BookOpenText, hash: "/notas", vistas: ["notas", "editor", "leitura"] },
   { rotulo: "Turmas", icone: CalendarRange, hash: "/organizacao", vistas: ["organizacao"] },
   { rotulo: "Links", icone: Link2, hash: "/links", vistas: ["links"] },
-  { rotulo: "Conta", icone: Settings, hash: "/conta", vistas: ["conta", "editor"] },
+  { rotulo: "Conta", icone: Settings, hash: "/conta", vistas: ["conta"] },
 ]
 
 interface PropsShell {
@@ -215,7 +215,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
 
       {/* ---------------- Conteúdo ---------------- */}
       <main className="pb-24 lg:pb-10 lg:pl-64">
-        <div className="mx-auto w-full max-w-5xl px-4 pt-6 sm:px-6 lg:px-10 lg:pt-10">
+        <div className="na-entra mx-auto w-full max-w-5xl px-4 pt-6 sm:px-6 lg:px-10 lg:pt-10">
           {children}
         </div>
       </main>
@@ -235,7 +235,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
         <ItemNavBaixo
           icone={BookOpenText}
           rotulo="Notas"
-          ativo={vistaAtual === "notas"}
+          ativo={vistaAtual === "notas" || vistaAtual === "editor"}
           onClick={() => navegar("/notas")}
         />
         <div className="flex items-center justify-center">
@@ -257,7 +257,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
         <ItemNavBaixo
           icone={Settings}
           rotulo="Conta"
-          ativo={vistaAtual === "conta" || vistaAtual === "editor"}
+          ativo={vistaAtual === "conta"}
           onClick={() => navegar("/conta")}
         />
       </nav>

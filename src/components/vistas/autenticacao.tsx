@@ -144,7 +144,7 @@ function Landing({ navegar }: { navegar: (para: string) => void }) {
             <Recurso
               icone={BookOpenCheck}
               titulo="2. Organize"
-              texto="Ano letivo, turma e disciplina organizam tudo automaticamente. Rascunhos ficam só com você."
+              texto="Ano letivo, turma e disciplina organizam tudo automaticamente. Rascunhos ficam só com o professor."
             />
             <Recurso
               icone={Link2}
@@ -221,7 +221,7 @@ function Landing({ navegar }: { navegar: (para: string) => void }) {
                 O aluno precisa criar conta?
               </summary>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                Não. Basta abrir o link. Você acompanha quantos acessos cada link recebeu.
+                Não. Basta abrir o link. O painel de links mostra quantos acessos cada um recebeu.
               </p>
             </details>
             <details className="border-border bg-card rounded-xl border p-4">
@@ -245,8 +245,8 @@ function Landing({ navegar }: { navegar: (para: string) => void }) {
             <details className="border-border bg-card rounded-xl border p-4">
               <summary className="cursor-pointer font-semibold">É realmente gratuito?</summary>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                Sim. Código aberto com licença MIT. Você pode usar a instância pública ou hospedar a
-                sua.
+                Sim. Código aberto com licença MIT. É possível usar a instância pública ou hospedar
+                a própria.
               </p>
             </details>
           </div>
@@ -405,6 +405,21 @@ function Recurso({
 
 type Modo = "entrar" | "cadastro" | "redefinir"
 
+/** Força relativa da senha só pelo comprimento/variedade (dica simples). */
+function forcaSenha(senha: string): { nivel: 0 | 1 | 2 | 3; rotulo: string; cor: string } {
+  let pontos = 0
+  if (senha.length >= 6) pontos++
+  if (senha.length >= 10) pontos++
+  if (/[a-zA-Z]/.test(senha) && /\d/.test(senha)) pontos++
+  if (senha.length === 0) return { nivel: 0, rotulo: "", cor: "" }
+  const niveis = [
+    { nivel: 1 as const, rotulo: "fraca", cor: "bg-rose-400" },
+    { nivel: 2 as const, rotulo: "média", cor: "bg-amber-400" },
+    { nivel: 3 as const, rotulo: "boa", cor: "bg-emerald-500" },
+  ]
+  return niveis[Math.max(0, pontos - 1)] ?? niveis[0]
+}
+
 function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => void }) {
   const sessao = useSessao()
   const [email, setEmail] = useState("")
@@ -449,7 +464,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
         }
       }
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Erro inesperado.")
+      setErro(err instanceof Error ? err.message : "Erro inesperado. Tente novamente.")
     } finally {
       setEnviando(false)
     }
@@ -472,7 +487,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
 
   return (
     <div className="bg-background flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm">
+      <div className="na-entra w-full max-w-sm">
         <button
           type="button"
           onClick={() => navegar("/")}
@@ -539,16 +554,44 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                   valor={senha}
                   onChange={setSenha}
                   placeholder="••••••••"
+                  olho
+                  autoComplete={modo === "entrar" ? "current-password" : "new-password"}
                 />
                 {modo !== "entrar" ? (
-                  <Campo
-                    id="senha2"
-                    rotulo="Confirmar senha"
-                    tipo="password"
-                    valor={senha2}
-                    onChange={setSenha2}
-                    placeholder="••••••••"
-                  />
+                  <>
+                    <Campo
+                      id="senha2"
+                      rotulo="Confirmar senha"
+                      tipo="password"
+                      valor={senha2}
+                      onChange={setSenha2}
+                      placeholder="••••••••"
+                      olho
+                      autoComplete="new-password"
+                    />
+                    {/* dica de senha: mínimos e força relativa */}
+                    {senha ? (
+                      <div className="space-y-1.5" aria-live="polite">
+                        <div className="flex items-center justify-between text-[0.72rem]">
+                          <span className="text-muted-foreground">Força da senha</span>
+                          <span className="font-semibold">{forcaSenha(senha).rotulo}</span>
+                        </div>
+                        <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                          <div
+                            className={`h-full rounded-full transition-all ${forcaSenha(senha).cor}`}
+                            style={{ width: `${(forcaSenha(senha).nivel / 3) * 100}%` }}
+                          />
+                        </div>
+                        {senha !== senha2 && senha2 ? (
+                          <p className="text-destructive text-[0.72rem]">As senhas não conferem.</p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-[0.72rem]">
+                        Mínimo de 6 caracteres. Combine letras e números para uma senha mais forte.
+                      </p>
+                    )}
+                  </>
                 ) : null}
               </>
             ) : null}
@@ -667,6 +710,8 @@ function Campo({
   onChange,
   placeholder,
   autoFocus,
+  olho,
+  autoComplete,
 }: {
   id: string
   rotulo: string
@@ -675,20 +720,41 @@ function Campo({
   onChange: (v: string) => void
   placeholder?: string
   autoFocus?: boolean
+  /** senha: botão de mostrar/ocultar */
+  olho?: boolean
+  autoComplete?: string
 }) {
+  const [visivel, setVisivel] = useState(false)
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>{rotulo}</Label>
-      <Input
-        id={id}
-        type={tipo}
-        value={valor}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="rounded-xl"
-        autoFocus={autoFocus}
-        autoComplete={tipo === "password" ? "current-password" : "on"}
-      />
+      <div className="relative">
+        <Input
+          id={id}
+          type={olho && visivel ? "text" : tipo}
+          value={valor}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={olho ? "rounded-xl pr-10" : "rounded-xl"}
+          autoFocus={autoFocus}
+          autoComplete={autoComplete ?? (tipo === "password" ? "current-password" : "on")}
+        />
+        {olho ? (
+          <button
+            type="button"
+            onClick={() => setVisivel(!visivel)}
+            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-1"
+            aria-label={visivel ? "Ocultar a senha" : "Mostrar a senha"}
+            title={visivel ? "Ocultar a senha" : "Mostrar a senha"}
+          >
+            {visivel ? (
+              <EyeOff className="h-4 w-4" aria-hidden />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden />
+            )}
+          </button>
+        ) : null}
+      </div>
     </div>
   )
 }

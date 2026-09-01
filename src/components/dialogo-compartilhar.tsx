@@ -6,6 +6,7 @@ import { useState } from "react"
 import { Check, Copy, Link2, Loader2, Power, RefreshCw, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog,
   DialogContent,
@@ -69,12 +70,16 @@ export function DialogoCompartilhar({
                 try {
                   const r = await criar.mutateAsync({ tipo: "nota", notaId, nome: nome.trim() })
                   setNome("")
-                  toast.success("Link criado")
+                  toast.success("Link criado", {
+                    description: "O endereço já foi copiado. Envie para os alunos.",
+                  })
                   void navigator.clipboard
                     ?.writeText(urlDoLink(r.link.token))
                     .catch(() => undefined)
                 } catch (e) {
-                  toast.error(e instanceof Error ? e.message : "Erro.")
+                  toast.error("Não foi possível criar o link.", {
+                    description: e instanceof Error ? e.message : undefined,
+                  })
                 }
               }}
             >
@@ -86,7 +91,10 @@ export function DialogoCompartilhar({
 
         {/* lista */}
         {isLoading ? (
-          <p className="text-muted-foreground py-4 text-center text-sm">Carregando links…</p>
+          <div className="space-y-2" aria-busy="true">
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-24 w-5/6 rounded-xl" />
+          </div>
         ) : meusLinks.length === 0 ? (
           <p className="border-border text-muted-foreground rounded-xl border border-dashed px-4 py-6 text-center text-sm">
             Nenhum link para notas ainda. Crie acima ou abra <b>Links</b> no menu para compartilhar
@@ -121,9 +129,15 @@ export function DialogoCompartilhar({
                       size="sm"
                       className="h-7 gap-1.5 rounded-md text-[0.72rem]"
                       onClick={async () => {
-                        await navigator.clipboard.writeText(url)
-                        setCopiado(l.id)
-                        setTimeout(() => setCopiado(null), 2000)
+                        try {
+                          await navigator.clipboard.writeText(url)
+                          setCopiado(l.id)
+                          setTimeout(() => setCopiado(null), 2000)
+                        } catch {
+                          toast.error(
+                            "Não foi possível copiar. Selecione o endereço e copie manualmente.",
+                          )
+                        }
                       }}
                     >
                       {copiado === l.id ? (
@@ -143,7 +157,9 @@ export function DialogoCompartilhar({
                           await editar.mutateAsync({ id: l.id, dados: { ativo: !l.ativo } })
                           toast.success(l.ativo ? "Link pausado" : "Link reativado")
                         } catch (e) {
-                          toast.error(e instanceof Error ? e.message : "Erro.")
+                          toast.error("Não foi possível atualizar o link.", {
+                            description: e instanceof Error ? e.message : undefined,
+                          })
                         }
                       }}
                     >
@@ -160,7 +176,9 @@ export function DialogoCompartilhar({
                           await editar.mutateAsync({ id: l.id, dados: { regenerar: true } })
                           toast.success("Novo link gerado")
                         } catch (e) {
-                          toast.error(e instanceof Error ? e.message : "Erro.")
+                          toast.error("Não foi possível gerar novo endereço.", {
+                            description: e instanceof Error ? e.message : undefined,
+                          })
                         }
                       }}
                     >
@@ -176,7 +194,9 @@ export function DialogoCompartilhar({
                           await excluir.mutateAsync(l.id)
                           toast.success("Link excluído")
                         } catch (e) {
-                          toast.error(e instanceof Error ? e.message : "Erro.")
+                          toast.error("Não foi possível excluir o link.", {
+                            description: e instanceof Error ? e.message : undefined,
+                          })
                         }
                       }}
                     >

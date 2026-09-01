@@ -36,3 +36,8 @@ public/vendor/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# artefatos dos testes unitários (gerados por tests/unit/rodar.mjs)
+tests/unit/build/
+tests/tex/*.tex
+tests/tex/*.pdf

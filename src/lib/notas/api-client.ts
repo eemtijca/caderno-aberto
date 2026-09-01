@@ -3,17 +3,23 @@
 // Cliente de API + hooks TanStack Query (rotas /api do app. Sessão via cookies do Supabase)
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { Bloco, DisciplinaInfo, NotaDados, TurmaInfo } from "./tipos"
+import type { AparenciaNota, Bloco, DisciplinaInfo, NotaDados, TurmaInfo } from "./tipos"
 
 async function pedir<T>(url: string, init?: RequestInit): Promise<T> {
-  const r = await fetch(url, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    cache: "no-store",
-  })
+  let r: Response
+  try {
+    r = await fetch(url, {
+      ...init,
+      headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+      cache: "no-store",
+    })
+  } catch {
+    // falha de rede (offline, DNS, timeout) não devolve JSON
+    throw new Error("Não foi possível falar com o servidor. Verifique sua conexão.")
+  }
   if (!r.ok) {
-    const corpo = await r.json().catch(() => ({ erro: r.statusText }))
-    throw new Error(corpo.erro ?? `Erro ${r.status}`)
+    const corpo = await r.json().catch(() => null)
+    throw new Error(corpo?.erro ?? `Erro ${r.status}`)
   }
   return r.json() as Promise<T>
 }
@@ -202,6 +208,7 @@ export interface DadosSalvarNota {
   status?: "rascunho" | "publicada"
   blocos?: Bloco[]
   turmasIds?: string[]
+  aparencia?: AparenciaNota
 }
 
 export function useSalvarNota(id: string | undefined) {
@@ -283,7 +290,9 @@ export interface LinkInfo {
 }
 
 export function urlDoLink(token: string): string {
-  return typeof window !== "undefined" ? `${window.location.origin}/#/l/${token}` : `/#/l/${token}`
+  // caminho real (sem #): crawlers leem as meta tags do OpenGraph em
+  // /l/<token>; a página redireciona para a vista hash existente
+  return typeof window !== "undefined" ? `${window.location.origin}/l/${token}` : `/l/${token}`
 }
 
 export function useLinks() {

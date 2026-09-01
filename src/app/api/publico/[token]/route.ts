@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server"
 import { clienteAnon } from "@/lib/supabase/servidor"
 import { json, erroApi } from "@/lib/api/sessao"
-import type { Bloco } from "@/lib/notas/tipos"
-import { normalizarBlocos } from "@/lib/notas/tipos"
+import type { AparenciaNota, Bloco } from "@/lib/notas/tipos"
+import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
 import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo"
 
 export const dynamic = "force-dynamic"
@@ -11,7 +11,7 @@ type Ctx = { params: Promise<{ token: string }> }
 
 /** Colunas mínimas que a vista pública precisa (RLS anon decide as linhas). */
 const COLUNAS =
-  "id, titulo, disciplina_nome, disciplina_cor, turmas_nomes, ano_letivo, mes, sobre, habilidades, blocos, atualizado_em"
+  "id, titulo, disciplina_nome, disciplina_cor, turmas_nomes, ano_letivo, mes, sobre, habilidades, blocos, aparencia, atualizado_em"
 
 export interface NotaPublica {
   id: string
@@ -24,6 +24,8 @@ export interface NotaPublica {
   sobre: string
   habilidades: string
   blocos: Bloco[]
+  /** Aparência definida pelo professor: o aluno vê a mesma escolha. */
+  aparencia: AparenciaNota
   atualizadoEm: string
 }
 
@@ -49,6 +51,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
         sobre: nota.sobre,
         habilidades: nota.habilidades,
         blocos: nota.blocos,
+        aparencia: normalizarAparencia(nota.aparencia),
         atualizadoEm: nota.atualizadoEm,
       },
     ]
@@ -112,6 +115,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     sobre: linha.sobre,
     habilidades: linha.habilidades,
     blocos: reescreverImagens(normalizarBlocos(linha.blocos) as Bloco[], token),
+    aparencia: normalizarAparencia(linha.aparencia),
     atualizadoEm: linha.atualizado_em,
   }))
 

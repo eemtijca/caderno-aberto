@@ -6,6 +6,7 @@ import { useMemo, useState } from "react"
 import { FilterX, Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client"
 import { CartaoNota } from "@/components/notas/cartao-nota"
 import { MESES_CAP } from "@/lib/notas/texto"
@@ -24,9 +25,12 @@ export function VistaNotas({
   const [mes, setMes] = useState<number | undefined>(undefined)
   const [turma, setTurma] = useState<string>("")
 
-  const { data: notas } = useNotas()
-  const { data: disciplinas } = useDisciplinas()
-  const { data: turmas } = useTurmas()
+  const notasQ = useNotas()
+  const disciplinasQ = useDisciplinas()
+  const turmasQ = useTurmas()
+  const { data: notas, isLoading: carregandoNotas } = notasQ
+  const { data: disciplinas, isLoading: carregandoDisciplinas } = disciplinasQ
+  const { data: turmas } = turmasQ
 
   const anos = useMemo(
     () => [...new Set((notas ?? []).map((n) => n.anoLetivo))].sort((a, b) => b - a),
@@ -82,33 +86,58 @@ export function VistaNotas({
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <ChipFiltro
-            ativo={!disciplina}
-            rotulo="Todas as disciplinas"
-            onClick={() => setDisciplina("")}
-          />
-          {(disciplinas ?? []).map((d) => (
-            <ChipFiltro
-              key={d.id}
-              ativo={disciplina === d.id}
-              rotulo={d.nome}
-              cor={d.cor}
-              onClick={() => setDisciplina(disciplina === d.id ? "" : d.id)}
-            />
-          ))}
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          aria-busy={carregandoDisciplinas || undefined}
+        >
+          {carregandoDisciplinas ? (
+            <>
+              <Skeleton className="h-7 w-28 rounded-lg" />
+              <Skeleton className="h-7 w-20 rounded-lg" />
+              <Skeleton className="h-7 w-24 rounded-lg" />
+            </>
+          ) : (
+            <>
+              <ChipFiltro
+                ativo={!disciplina}
+                rotulo="Todas as disciplinas"
+                onClick={() => setDisciplina("")}
+              />
+              {(disciplinas ?? []).map((d) => (
+                <ChipFiltro
+                  key={d.id}
+                  ativo={disciplina === d.id}
+                  rotulo={d.nome}
+                  cor={d.cor}
+                  onClick={() => setDisciplina(disciplina === d.id ? "" : d.id)}
+                />
+              ))}
+            </>
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <ChipFiltro ativo={!ano} rotulo="Todos os anos" onClick={() => setAno(undefined)} />
-          {anos.map((a) => (
-            <ChipFiltro
-              key={a}
-              ativo={ano === a}
-              rotulo={String(a)}
-              onClick={() => setAno(ano === a ? undefined : a)}
-            />
-          ))}
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          aria-busy={carregandoNotas || undefined}
+        >
+          {carregandoNotas ? (
+            <>
+              <Skeleton className="h-7 w-20 rounded-lg" />
+              <Skeleton className="h-7 w-14 rounded-lg" />
+            </>
+          ) : (
+            <>
+              <ChipFiltro ativo={!ano} rotulo="Todos os anos" onClick={() => setAno(undefined)} />
+              {anos.map((a) => (
+                <ChipFiltro
+                  key={a}
+                  ativo={ano === a}
+                  rotulo={String(a)}
+                  onClick={() => setAno(ano === a ? undefined : a)}
+                />
+              ))}
+            </>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
@@ -156,12 +185,20 @@ export function VistaNotas({
       </div>
 
       {/* lista */}
-      {filtradas.length > 0 ? (
+      {carregandoNotas ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          {filtradas.map((n) => (
+          <Skeleton className="h-40 rounded-2xl" />
+          <Skeleton className="h-40 rounded-2xl" />
+          <Skeleton className="h-40 rounded-2xl" />
+          <Skeleton className="h-40 rounded-2xl" />
+        </div>
+      ) : filtradas.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {filtradas.map((n, i) => (
             <CartaoNota
               key={n.id}
               nota={n}
+              indice={i}
               onAbrir={() => navegar(`/nota/${n.id}`)}
               onEditar={() => navegar(`/editor/${n.id}`)}
             />

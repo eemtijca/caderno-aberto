@@ -322,7 +322,7 @@ function ExerciciosView({
               <p
                 className={`inline-block rounded-lg border px-2.5 py-1 text-[0.82rem] font-bold tracking-wide uppercase ${CORES_NIVEL[nivel.numero] ?? CORES_NIVEL[1]}`}
               >
-                Nível {nivel.numero} . {nivel.titulo}
+                Nível {nivel.numero} · {nivel.titulo}
               </p>
               <ol className="space-y-3">
                 {nivel.questoes.map((q) => {
