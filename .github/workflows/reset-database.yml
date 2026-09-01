@@ -3,6 +3,9 @@ name: Reset Database
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   reset:
     runs-on: ubuntu-latest
