@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "declaration": false,
+    "rootDir": "../../src",
+    "outDir": "build",
+    "esModuleInterop": true,
+    "types": []
+  },
+  "include": ["../../src/lib/notas/lexical-bridge.ts"]
+}

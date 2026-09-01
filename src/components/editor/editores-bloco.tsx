@@ -3,7 +3,7 @@
 // Editores de blocos. Uma UI por tipo (parágrafo, fórmula, caixas, exercícios...). Usados no nível superior e dentro das caixas (copiar/exemplo/dica).
 
 import { useRef, useState } from "react"
-import { ArrowDown, ArrowUp, CircleAlert, Eye, ImagePlus, Plus, Trash2, X } from "lucide-react"
+import { ArrowDown, ArrowUp, CircleAlert, ImagePlus, Plus, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { TextareaAuto, BarraInline } from "./pecas"
-import { Matematica } from "@/components/notas/matematica"
+import { TextareaAuto } from "./pecas"
+import { EditorLexical, EditorFormulaLexical } from "./editor-lexical"
 import { Tikz } from "@/components/notas/tikz"
 import { comprimirImagem, enviarImagem } from "@/lib/notas/api-client"
 import type {
@@ -62,9 +62,16 @@ export function EditorSecao({
   )
 }
 
-export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onPatch: Patch }) {
-  const ref = useRef<HTMLTextAreaElement>(null)
-
+export function EditorParagrafo({
+  bloco,
+  onPatch,
+  aoEnter,
+}: {
+  bloco: BlocoParagrafo
+  onPatch: Patch
+  /** Enter divide o bloco em dois parágrafos (modelo Notion) */
+  aoEnter?: (antes: string, depois: string) => void
+}) {
   const rotuloAtual: string = bloco.rotulo
     ? bloco.rotulo.tipo === "livre"
       ? `livre:${bloco.rotulo.texto ?? ""}`
@@ -115,15 +122,13 @@ export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onP
             aria-label="Texto do rótulo"
           />
         ) : null}
-        <div className="ml-auto">
-          <BarraInline alvo={ref} onAplicar={(valor) => onPatch({ texto: valor })} />
-        </div>
       </div>
-      <TextareaAuto
+      <EditorLexical
         valor={bloco.texto}
         onChange={(texto) => onPatch({ texto })}
         placeholder="Texto do parágrafo. Use **negrito**, $fórmulas$ e \resultado{…}"
         ariaLabel="Texto do parágrafo"
+        aoEnter={aoEnter}
       />
     </div>
   )
@@ -132,22 +137,11 @@ export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onP
 export function EditorFormula({ bloco, onPatch }: { bloco: { latex: string }; onPatch: Patch }) {
   return (
     <div className="space-y-2">
-      <TextareaAuto
+      <EditorFormulaLexical
         valor={bloco.latex}
         onChange={(latex) => onPatch({ latex })}
-        placeholder="LaTeX da fórmula. Ex.: P = U i ou \dec{5,5}\un{kW}"
-        mono
-        rowsMin={2}
-        ariaLabel="Equação em destaque"
+        placeholder="Equação em destaque"
       />
-      {bloco.latex.trim() ? (
-        <div className="border-border/60 flex items-center gap-2 rounded-lg border bg-stone-50 px-3 py-2.5 text-center dark:bg-stone-900/60">
-          <Eye className="text-muted-foreground h-3.5 w-3.5 shrink-0" aria-hidden />
-          <div className="w-full overflow-x-auto text-center">
-            <Matematica latex={bloco.latex} bloco />
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }
@@ -166,7 +160,7 @@ export function EditorLista({ bloco, onPatch }: { bloco: BlocoLista; onPatch: Pa
             className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-stone-400 dark:bg-stone-500"
             aria-hidden
           />
-          <TextareaAuto
+          <EditorLexical
             valor={item}
             onChange={(v) => mudarItem(i, v)}
             placeholder={`Item ${i + 1}`}
@@ -307,7 +301,7 @@ export function EditorChamada({ bloco, onPatch }: { bloco: BlocoChamada; onPatch
           </SelectContent>
         </Select>
       </div>
-      <TextareaAuto
+      <EditorLexical
         valor={bloco.texto}
         onChange={(texto) => onPatch({ texto })}
         placeholder={
@@ -435,6 +429,8 @@ export interface AcoesFilhos {
   onRemoverFilho: (filhoId: string) => void
   onMoverFilho: (filhoId: string, delta: number) => void
   onInserirFilho: (tipo: BlocoFilho["tipo"]) => void
+  /** Enter num parágrafo filho: divide em dois parágrafos na caixa */
+  onDividirFilho: (filhoId: string, antes: string, depois: string) => void
 }
 
 const TIPOS_FILHO: { tipo: BlocoFilho["tipo"]; rotulo: string }[] = [
@@ -521,7 +517,11 @@ export function EditorCaixa({
                 <Trash2 className="h-3 w-3" aria-hidden />
               </BotaoMini>
             </div>
-            <EditorFilho filho={filho} onPatch={(patch) => acoes.onPatchFilho(filho.id, patch)} />
+            <EditorFilho
+              filho={filho}
+              onPatch={(patch) => acoes.onPatchFilho(filho.id, patch)}
+              aoEnter={(antes, depois) => acoes.onDividirFilho(filho.id, antes, depois)}
+            />
           </div>
         ))}
       </div>
@@ -574,10 +574,18 @@ function BotaoMini({
 }
 
 /** Editor de um filho (dentro de caixa). */
-export function EditorFilho({ filho, onPatch }: { filho: BlocoFilho; onPatch: Patch }) {
+export function EditorFilho({
+  filho,
+  onPatch,
+  aoEnter,
+}: {
+  filho: BlocoFilho
+  onPatch: Patch
+  aoEnter?: (antes: string, depois: string) => void
+}) {
   switch (filho.tipo) {
     case "paragrafo":
-      return <EditorParagrafo bloco={filho} onPatch={onPatch} />
+      return <EditorParagrafo bloco={filho} onPatch={onPatch} aoEnter={aoEnter} />
     case "formula":
       return <EditorFormula bloco={filho} onPatch={onPatch} />
     case "lista":

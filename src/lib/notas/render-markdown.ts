@@ -17,15 +17,18 @@ import {
 } from "./tipos"
 import { MESES_CAP } from "./texto"
 
-//  Exportação: AST → Markdown
+// Exportação: AST para Markdown
 
-/** inline: mantém $math$ e **negrito**; \resultado{X} → ==X==; \dest{X} → **X** */
+/** inline: mantém $math$ e **negrito**; \resultado{X} vira ==X== e \dest{X} vira **X** */
 function inlineParaMd(texto: string): string {
-  return texto.replace(/\\resultado\{([^}]*)\}/g, "==$1==").replace(/\\dest\{([^}]*)\}/g, "**$1**")
+  return texto
+    .replace(/\\resultado\{([^}]*)\}/g, "==$1==")
+    .replace(/\\dest\{([^}]*)\}/g, "**$1**")
+    .replace(/~~([^~]+)~~/g, "~~$1~~")
 }
 
 function mdParaInline(texto: string): string {
-  // inverso: ==X== → \resultado{X}
+  // inverso: ==X== vira \resultado{X}
   return texto.replace(/==([^=]+)==/g, "\\resultado{$1}")
 }
 
@@ -183,7 +186,7 @@ export function gerarMarkdown(nota: NotaDados): string {
     .replace(/\n{3,}/g, "\n\n")
 }
 
-//  Importação: Markdown → AST
+// Importação: Markdown para AST
 
 const ROTULO_MD: Record<string, RotuloTipo> = {
   "definição.": "definicao",

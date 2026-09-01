@@ -66,13 +66,7 @@ function decParaKatex(conteudo: string): string {
   return `${conteudo.slice(0, i)}{,}${conteudo.slice(i + 1)}`
 }
 
-/**
- * Prepara um trecho LaTeX matemático para o KaTeX:
- *  - `\dec{4,0}`      → `4{,}0`
- *  - `\un{m/s^2}`     → `\,\mathrm{m/s^2}`
- *  - `\resultado{X}`  → `\htmlClass{na-resultado}{X}` (coral, via CSS)
- *  - `\dest{X}`       → `\textbf{X}`
- */
+/** Prepara um trecho LaTeX matemático para o KaTeX: \dec{4,0} vira 4{,}0, \un{m/s^2} vira \,\mathrm{m/s^2}, \resultado{X} vira \htmlClass{na-resultado}{X} (coral) e \dest{X} vira \textbf{X}. */
 export function preprocessarLatex(latex: string): string {
   let r = latex
   r = substituirComando(r, "dec", decParaKatex)
@@ -182,6 +176,34 @@ export function inlineParaLatex(texto: string): string {
         continue
       }
     }
+    // ~~riscado~~
+    if (texto.startsWith("~~", i)) {
+      const fim = texto.indexOf("~~", i + 2)
+      if (fim !== -1) {
+        saida += `\\sout{${inlineParaLatex(texto.slice(i + 2, fim))}}`
+        i = fim + 2
+        continue
+      }
+    }
+    // [texto](url) . Link (hyperref)
+    if (texto[i] === "[") {
+      const fimColchete = texto.indexOf("]", i + 1)
+      if (fimColchete !== -1 && texto[fimColchete + 1] === "(") {
+        const fimParen = texto.indexOf(")", fimColchete + 2)
+        if (fimParen !== -1) {
+          const url = texto.slice(fimColchete + 2, fimParen)
+          saida += `\\href{${escaparUrl(url)}}{${inlineParaLatex(texto.slice(i + 1, fimColchete))}}`
+          i = fimParen + 1
+          continue
+        }
+      }
+    }
+    // \n — quebra de linha dentro do bloco (Shift+Enter no editor)
+    if (texto[i] === "\n") {
+      saida += "\\\\\n"
+      i++
+      continue
+    }
     // `código`
     if (texto[i] === "`") {
       const fim = texto.indexOf("`", i + 1)
@@ -193,7 +215,16 @@ export function inlineParaLatex(texto: string): string {
     }
     // texto comum: acumula até o próximo caractere especial
     let j = i
-    while (j < n && texto[j] !== "$" && texto[j] !== "*" && texto[j] !== "`" && texto[j] !== "\\") {
+    while (
+      j < n &&
+      texto[j] !== "$" &&
+      texto[j] !== "*" &&
+      texto[j] !== "`" &&
+      texto[j] !== "\\" &&
+      texto[j] !== "[" &&
+      texto[j] !== "\n" &&
+      texto[j] !== "~"
+    ) {
       j++
     }
     if (j === i) j++ // garante progresso
@@ -221,4 +252,9 @@ function acharFimMatematica(texto: string, ini: number): number {
 /** Escapa texto para uso dentro de \url / caminho de arquivo. */
 export function escaparCaminhoLatex(texto: string): string {
   return texto.replace(/[\\{}$&#^_~%]/g, "")
+}
+
+/** Escapa URL para uso em \href{...} (sem caracteres que quebram LaTeX). */
+function escaparUrl(texto: string): string {
+  return texto.replace(/#/g, "\\#").replace(/%/g, "\\%").replace(/_/g, "\\_")
 }

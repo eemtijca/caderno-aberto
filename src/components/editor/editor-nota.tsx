@@ -99,6 +99,8 @@ import { BlocosView } from "@/components/notas/blocos-view"
 import {
   atualizarBloco,
   atualizarFilho,
+  dividirFilho,
+  dividirParagrafo,
   duplicarBloco,
   inserirBloco,
   inserirFilho,
@@ -750,7 +752,12 @@ function FormularioNota({
       </div>
 
       {compartilharAberto ? (
-        <DialogoCompartilhar aberto aoFechar={() => setCompartilharAberto(false)} notaId={id} />
+        <DialogoCompartilhar
+          aberto
+          aoFechar={() => setCompartilharAberto(false)}
+          notaId={id}
+          aoPublicar={() => setStatus("publicada")}
+        />
       ) : null}
     </div>
   )
@@ -995,7 +1002,13 @@ function CartaoBloco({
       {bloco.tipo === "secao" ? (
         <EditorSecao bloco={bloco} numero={numeroSecao} onPatch={patch} />
       ) : bloco.tipo === "paragrafo" ? (
-        <EditorParagrafo bloco={bloco} onPatch={patch} />
+        <EditorParagrafo
+          bloco={bloco}
+          onPatch={patch}
+          aoEnter={(antes, depois) =>
+            mudarBlocos((bs) => dividirParagrafo(bs, bloco.id, antes, depois))
+          }
+        />
       ) : bloco.tipo === "formula" ? (
         <EditorFormula bloco={bloco} onPatch={patch} />
       ) : bloco.tipo === "lista" ? (
@@ -1030,6 +1043,8 @@ function CartaoBloco({
                     : 0
                 return inserirFilho(bs, bloco.id, fim, novoFilho(tipo))
               }),
+            onDividirFilho: (filhoId, antes, depois) =>
+              mudarBlocos((bs) => dividirFilho(bs, bloco.id, filhoId, antes, depois)),
           }}
         />
       )}

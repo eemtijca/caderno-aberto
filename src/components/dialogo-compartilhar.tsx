@@ -3,7 +3,7 @@
 // Diálogo Compartilhar. Links da nota aberta: cria, copia, pausa, regenera ou exclui sem sair da leitura/edição.
 
 import { useState } from "react"
-import { Check, Copy, Link2, Loader2, Power, RefreshCw, Trash2 } from "lucide-react"
+import { Check, Copy, Link2, Loader2, Power, RefreshCw, Rocket, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -21,25 +21,44 @@ import {
   useEditarLink,
   useExcluirLink,
   useLinks,
+  useNota,
+  useSalvarNota,
 } from "@/lib/notas/api-client"
 
 export function DialogoCompartilhar({
   aberto,
   aoFechar,
   notaId,
+  aoPublicar,
 }: {
   aberto: boolean
   aoFechar: () => void
   notaId: string
+  /** Chamado quando a nota foi publicada automaticamente (para o editor sincronizar) */
+  aoPublicar?: () => void
 }) {
   const { data: links, isLoading } = useLinks()
+  const { data: nota } = useNota(notaId)
   const criar = useCriarLink()
+  const salvar = useSalvarNota(notaId)
   const editar = useEditarLink()
   const excluir = useExcluirLink()
   const [nome, setNome] = useState("")
   const [copiado, setCopiado] = useState<string | null>(null)
+  // compartilhar publica a nota automaticamente (marcado por padrão)
+  const [publicar, setPublicar] = useState(true)
 
+  const rascunho = nota?.status === "rascunho"
   const meusLinks = (links ?? []).filter((l) => l.tipo === "nota" && l.notaId === notaId)
+
+  const criarLink = async () => {
+    // se a nota é rascunho e o professor autorizou, publica antes do link
+    if (rascunho && publicar) {
+      await salvar.mutateAsync({ status: "publicada" })
+      aoPublicar?.()
+    }
+    return criar.mutateAsync({ tipo: "nota", notaId, nome: nome.trim() })
+  }
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
@@ -56,6 +75,25 @@ export function DialogoCompartilhar({
 
         {/* criar novo */}
         <div className="grid gap-2">
+          {rascunho ? (
+            <label className="border-primary/30 bg-primary/5 text-foreground flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={publicar}
+                onChange={(e) => setPublicar(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-stone-800"
+              />
+              <span className="text-[0.82rem] leading-snug">
+                <span className="flex items-center gap-1.5 font-semibold">
+                  <Rocket className="text-primary h-3.5 w-3.5" aria-hidden />
+                  Publicar esta nota ao criar o link
+                </span>
+                <span className="text-muted-foreground block">
+                  Os alunos poderão abrir o link imediatamente. Desmarque para manter como rascunho.
+                </span>
+              </span>
+            </label>
+          ) : null}
           <div className="flex gap-2">
             <Input
               value={nome}
@@ -65,14 +103,20 @@ export function DialogoCompartilhar({
             />
             <Button
               className="shrink-0 gap-2 rounded-lg"
-              disabled={criar.isPending}
+              disabled={criar.isPending || (rascunho && publicar && salvar.isPending)}
               onClick={async () => {
                 try {
-                  const r = await criar.mutateAsync({ tipo: "nota", notaId, nome: nome.trim() })
+                  const r = await criarLink()
                   setNome("")
-                  toast.success("Link criado", {
-                    description: "O endereço já foi copiado. Envie para os alunos.",
-                  })
+                  if (rascunho && publicar) {
+                    toast.success("Nota publicada e link criado", {
+                      description: "O endereço já foi copiado. Envie para os alunos.",
+                    })
+                  } else {
+                    toast.success("Link criado", {
+                      description: "O endereço já foi copiado. Envie para os alunos.",
+                    })
+                  }
                   void navigator.clipboard
                     ?.writeText(urlDoLink(r.link.token))
                     .catch(() => undefined)
@@ -83,7 +127,9 @@ export function DialogoCompartilhar({
                 }
               }}
             >
-              {criar.isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+              {criar.isPending || (rascunho && publicar && salvar.isPending) ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : null}
               Criar
             </Button>
           </div>

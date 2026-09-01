@@ -76,6 +76,7 @@ export function moverBloco(blocos: Bloco[], id: string, delta: number): Bloco[] 
   return copia
 }
 
+/** Move um filho dentro de uma caixa. */
 export function moverFilho(
   blocos: Bloco[],
   caixaId: string,
@@ -89,6 +90,35 @@ export function moverFilho(
     if (i === -1 || j < 0 || j >= b.filhos.length) return b
     const filhos = [...b.filhos]
     ;[filhos[i], filhos[j]] = [filhos[j], filhos[i]]
+    return { ...b, filhos }
+  })
+}
+
+/** Divide um parágrafo filho no cursor (Enter): o texto antes permanece
+ * no filho atual e o depois abre um novo parágrafo logo abaixo. */
+export function dividirFilho(
+  blocos: Bloco[],
+  caixaId: string,
+  filhoId: string,
+  antes: string,
+  depois: string,
+): Bloco[] {
+  return blocos.map((b) => {
+    if (b.id !== caixaId || !ehCaixa(b)) return b
+    const i = b.filhos.findIndex((f) => f.id === filhoId)
+    if (i === -1) return b
+    const atual = b.filhos[i]
+    if (atual.tipo !== "paragrafo") return b
+    const atualizado: BlocoFilho = { ...atual, texto: antes }
+    const novo: BlocoFilho = {
+      id: novoIdBloco(),
+      tipo: "paragrafo",
+      texto: depois,
+      rotulo: null,
+    }
+    const filhos = [...b.filhos]
+    filhos[i] = atualizado
+    filhos.splice(i + 1, 0, novo)
     return { ...b, filhos }
   })
 }
@@ -124,4 +154,32 @@ export function reordenar(blocos: Bloco[], de: number, para: number): Bloco[] {
 
 export function novoIdBloco(): string {
   return `b-${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-3)}`
+}
+
+/**
+ * Divide um parágrafo no cursor (Enter). O texto `antes` permanece no
+ * bloco atual e o `depois` abre um novo parágrafo logo abaixo, como no
+ * Notion/Obsidian.
+ */
+export function dividirParagrafo(
+  blocos: Bloco[],
+  id: string,
+  antes: string,
+  depois: string,
+): Bloco[] {
+  const i = blocos.findIndex((b) => b.id === id)
+  if (i === -1) return blocos
+  const atual = blocos[i]
+  if (atual.tipo !== "paragrafo") return blocos
+  const atualizado: Bloco = { ...atual, texto: antes }
+  const novo: Bloco = {
+    id: novoIdBloco(),
+    tipo: "paragrafo",
+    texto: depois,
+    rotulo: null,
+  }
+  const copia = [...blocos]
+  copia[i] = atualizado
+  copia.splice(i + 1, 0, novo)
+  return copia
 }

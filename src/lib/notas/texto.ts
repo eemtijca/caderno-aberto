@@ -28,6 +28,8 @@ export function textoPuro(texto: string): string {
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*\n]+)\*/g, "$1")
     .replace(/`([^`]+)`/g, "$1")
+    .replace(/~~([^~\n]+)~~/g, "$1")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 $2")
     .replace(/\\(?:resultado|dest|textbf|textit)\{([^}]*)\}/g, "$1")
     .replace(/\\[a-zA-Z]+/g, " ")
     .replace(/\s+/g, " ")

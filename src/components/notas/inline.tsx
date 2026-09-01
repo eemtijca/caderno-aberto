@@ -1,6 +1,10 @@
 "use client"
 
-// Renderizador de texto inline: $matemática$, **negrito**, *itálico*, `código`, \resultado{...} (coral) e \dest{...}.
+// Renderizador de texto inline: $matemática$, **negrito**, *itálico*,
+// `código`, ~~riscado~~, [link](url), \resultado{...} (coral),
+// \dest{...} e quebras de linha (\n vira <br>). Deve corresponder ao
+// que o editor WYSIWYG produz (lexical-bridge) para não haver
+// discrepância entre escrita e leitura.
 
 import { Fragment, type ReactNode } from "react"
 import { Matematica } from "./matematica"
@@ -111,6 +115,28 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
         continue
       }
     }
+    // [texto](url) . Link
+    if (valor[i] === "[") {
+      const fimColchete = valor.indexOf("]", i + 1)
+      if (fimColchete !== -1 && valor[fimColchete + 1] === "(") {
+        const fimParen = valor.indexOf(")", fimColchete + 2)
+        if (fimParen !== -1) {
+          const url = valor.slice(fimColchete + 2, fimParen)
+          push(
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-700 decoration-brand-700/40 hover:decoration-brand-700 dark:text-brand-300 dark:decoration-brand-300/40 dark:hover:decoration-brand-300 underline"
+            >
+              {renderizarInline(valor.slice(i + 1, fimColchete), `${chaveBase}-L${contador}`)}
+            </a>,
+          )
+          i = fimParen + 1
+          continue
+        }
+      }
+    }
     // **negrito**
     if (valor.startsWith("**", i)) {
       const fim = valor.indexOf("**", i + 2)
@@ -131,6 +157,15 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
         continue
       }
     }
+    // ~~riscado~~
+    if (valor.startsWith("~~", i)) {
+      const fim = valor.indexOf("~~", i + 2)
+      if (fim !== -1) {
+        push(<del>{renderizarInline(valor.slice(i + 2, fim), `${chaveBase}-S${contador}`)}</del>)
+        i = fim + 2
+        continue
+      }
+    }
     // `código`
     if (valor[i] === "`") {
       const fim = valor.indexOf("`", i + 1)
@@ -143,6 +178,12 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
         i = fim + 1
         continue
       }
+    }
+    // \n — quebra de linha dentro do bloco (Shift+Enter no editor)
+    if (valor[i] === "\n") {
+      push(<br />)
+      i++
+      continue
     }
     buffer += valor[i]
     i++

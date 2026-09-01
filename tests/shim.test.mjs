@@ -145,7 +145,7 @@ await teste("CRUD notas via PostgREST com RLS + embedded", async () => {
   const { data: listaB } = await B.from("notas").select("id")
   ok((listaB ?? []).length === 0, "B não deveria ver notas de A")
 
-  // unique violation → código 23505
+  // unique violation vira código 23505
   const { error: eDup } = await A.from("disciplinas").insert({
     professor_id: UID.A,
     nome: "Matemática",
@@ -245,7 +245,7 @@ await teste("recuperação de senha gera e-mail com link de redefinição", asyn
     ultimo?.link?.includes("/auth/v1/verify?") && ultimo.link.includes("type=recovery"),
     "link de verificação PKCE no e-mail",
   )
-  // segue o link: verify → 302 com ?code= → troca o código por sessão
+  // segue o link: verify responde 302 com ?code= e troca o código por sessão
   const r = await fetch(ultimo.link, { redirect: "manual" })
   const destino = r.headers.get("location") ?? ""
   ok(r.status === 302 && destino.includes("code="), "verify deveria redirecionar com ?code=")

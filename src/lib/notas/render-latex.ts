@@ -224,6 +224,8 @@ __PGFPLOTS__
 \usepackage[most]{tcolorbox}
 \usepackage{titlesec}
 \usepackage{url}
+\usepackage[normalem]{ulem}
+\usepackage[hidelinks]{hyperref}
 
 % ---------- Cores (identidade Caderno Aberto) ----------
 \definecolor{cabrand}{HTML}{008241}

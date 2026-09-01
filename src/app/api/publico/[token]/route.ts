@@ -99,7 +99,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 
   const { data: linhas } = await consulta
 
-  // link de nota apontando p/ rascunho → para o aluno é 404
+  // link de nota apontando para rascunho vira 404 para o aluno
   if (link.tipo === "nota" && (!linhas || linhas.length === 0)) {
     return erroApi("Este link não existe, foi revogado ou expirou.", 404)
   }

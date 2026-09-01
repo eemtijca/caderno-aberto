@@ -61,10 +61,21 @@ create table public.notas (
   status text not null default 'rascunho'
     constraint notas_status_valido check (status in ('rascunho', 'publicada')),
   blocos jsonb not null default '[]'::jsonb,
+  -- Aparência da leitura: {fonte, escala, entrelinha}. Objeto vazio usa o
+  -- padrão do app. Escolhida pelo professor no editor e refletida para
+  -- todos que leem a nota, incluindo os alunos que entram pelo link.
+  aparencia jsonb not null default '{}'::jsonb,
   busca text not null default '',
   criado_em timestamptz not null default now(),
   atualizado_em timestamptz not null default now()
 );
+
+comment on column public.notas.aparencia is
+  'Aparência da leitura: {fonte, escala, entrelinha}. Objeto vazio usa o padrão do app.';
+
+-- RLS e GRANTs já cobrem a nova coluna: as políticas de notas valem por
+-- linha (for all) e os grants da tabela são de coluna inteira, portanto
+-- nenhuma política nova é necessária.
 
 create index notas_professor_atualizado_idx on public.notas (professor_id, atualizado_em desc);
 create index notas_professor_status_idx on public.notas (professor_id, status);

@@ -10,6 +10,7 @@
     "declaration": false,
     "rootDir": "../../src",
     "outDir": "build",
+    "esModuleInterop": true,
     "types": []
   },
   "include": [
@@ -19,6 +20,7 @@
     "../../src/lib/notas/render-latex.ts",
     "../../src/lib/notas/render-markdown.ts",
     "../../src/lib/notas/demo.ts",
-    "../../src/lib/notas/modelo.ts"
+    "../../src/lib/notas/modelo.ts",
+    "../../src/lib/notas/lexical-bridge.ts"
   ]
 }

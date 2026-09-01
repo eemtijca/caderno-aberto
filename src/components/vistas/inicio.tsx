@@ -1,6 +1,7 @@
 "use client"
 
-// Vista Início. Painel com saudação, números, ações rápidas e últimas notas.
+// Vista Início. Cabeçalho minimalista com saudação, números, ações
+// rápidas e últimas notas.
 
 import { ArrowRight, BookOpenText, CalendarRange, Eye, Link2, Plus, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -39,35 +40,22 @@ export function VistaInicio({
 
   return (
     <div className="space-y-8">
-      {/* cabeçalho */}
-      <section className="na-cascata bg-primary text-primary-foreground rounded-3xl p-6 sm:p-8">
-        <p className="text-sm font-medium opacity-80">
-          {MESES_CAP[mesAtual - 1]} de {anoAtual}
-          {perfil?.escola ? ` · ${perfil.escola}` : ""}
-        </p>
-        <h1 className="fonte-display mt-1 text-2xl font-bold sm:text-3xl">
-          {saudacao}
-          {professor ? `, ${professor.replace(/^Prof(?:essor|essora|a|o)?\.?\s*/i, "")}` : ""}!
-        </h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed opacity-85">
-          Escreva a nota de qualquer disciplina. O sistema gera a versão web responsiva, o PDF de
-          impressão e os arquivos de texto automaticamente.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-2.5">
-          <Button variant="secondary" onClick={onNovaNota} className="gap-2 rounded-xl">
-            <Plus className="h-4 w-4" aria-hidden /> Nova nota
-          </Button>
-          {(notas ?? []).length > 0 ? (
-            <Button
-              variant="outline"
-              onClick={() => navegar("/notas")}
-              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground gap-2 rounded-xl bg-transparent"
-            >
-              Ver todas <ArrowRight className="h-4 w-4" aria-hidden />
-            </Button>
-          ) : null}
+      {/* cabeçalho minimalista */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-muted-foreground text-sm">
+            {MESES_CAP[mesAtual - 1]} de {anoAtual}
+            {perfil?.escola ? ` · ${perfil.escola}` : ""}
+          </p>
+          <h1 className="fonte-display mt-0.5 text-2xl font-bold tracking-tight sm:text-3xl">
+            {saudacao}
+            {professor ? `, ${professor.replace(/^Prof(?:essor|essora|a|o)?\.?\s*/i, "")}` : ""}!
+          </h1>
         </div>
-      </section>
+        <Button onClick={onNovaNota} className="gap-2 rounded-xl">
+          <Plus className="h-4 w-4" aria-hidden /> Nova nota
+        </Button>
+      </div>
 
       {/* números */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">

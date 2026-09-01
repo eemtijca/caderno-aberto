@@ -252,7 +252,7 @@
   margin: 0;
 }
 
-/* \resultado{...} → \htmlClass{na-resultado} */
+/* \resultado{...} vira \htmlClass{na-resultado} */
 .katex .na-resultado {
   color: oklch(0.55 0.19 20);
   font-weight: 600;
