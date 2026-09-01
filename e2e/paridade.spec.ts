@@ -53,12 +53,12 @@ test.describe("Paridade editor ↔ leitura", () => {
     await loginNovo(page, baseURL)
     await criarNota(page, "Paridade Teste")
 
-    // edita o primeiro parágrafo visível: linha 1 + Shift+Enter + linha 2
-    const editavel = page
-      .locator('[contenteditable="true"][aria-label="Texto do parágrafo"]:visible')
-      .first()
+    // edita a seção do modelo: linha 1 + Shift+Enter + linha 2
+    const editavel = page.locator('[contenteditable="true"][aria-label="Nota (documento único)"]')
     await expect(editavel).toBeVisible({ timeout: 10000 })
     await editavel.click()
+    await page.keyboard.press("Control+Home")
+    await page.keyboard.press("ArrowDown")
     await page.keyboard.press("Control+A")
     await page.keyboard.type("primeira linha")
     await page.keyboard.press("Shift+Enter")

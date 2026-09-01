@@ -7,12 +7,36 @@
 export interface NoSerializado {
   type: string
   text?: string
-  format?: number
+  format?: number | string
   url?: string
   equation?: string
   inline?: boolean
   children?: NoSerializado[]
   version?: number
+  // campos de bloco (documento inteiro)
+  id?: string
+  rotulo?: unknown
+  titulo?: string
+  estilo?: string
+  comCabecalho?: boolean
+  tipoCaixa?: string
+  codigo?: string
+  legenda?: string
+  niveis?: unknown
+  gabarito?: string
+  chave?: number
+  indent?: number
+  direction?: string | null
+  textFormat?: number
+  textStyle?: string
+  tag?: string
+  listType?: string
+  start?: number
+  value?: number
+  numero?: number
+  questoes?: NoSerializado[]
+  alternativas?: NoSerializado[][]
+  correta?: number | null
 }
 
 /** Estado serializado do Lexical (shape compatível com parseEditorState). */
@@ -38,18 +62,8 @@ export const FORMATO_CODIGO = 16
 // Serialização: estado serializado para texto
 // ============================================================
 
-interface SerializadoTexto {
-  text?: string
-  format?: number
-  type?: string
-  url?: string
-  equation?: string
-  inline?: boolean
-  children?: SerializadoTexto[]
-}
-
 /** Serializa os filhos de um nó para a marcação inline do app. */
-function filhosParaTexto(children: SerializadoTexto[] = []): string {
+function filhosParaTexto(children: NoSerializado[] = []): string {
   return children.map(serializarNo).join("")
 }
 
@@ -63,11 +77,13 @@ function formatarTexto(texto: string, format: number): string {
   return r
 }
 
-function serializarNo(no: SerializadoTexto): string {
+/** Serializa um nó serializado do Lexical para a marcação inline do app. */
+export function serializarNo(no: NoSerializado): string {
   switch (no.type) {
     case "text":
       // junta formatação sobreposta (ex.: negrito+itálico) de forma aninhada
-      if (no.text !== undefined) return formatarTexto(no.text, no.format ?? 0)
+      if (no.text !== undefined)
+        return formatarTexto(no.text, typeof no.format === "number" ? no.format : 0)
       return ""
     case "link":
       // [texto](url) — o texto interno pode ter marcação própria
@@ -95,7 +111,7 @@ function serializarNo(no: SerializadoTexto): string {
  * `texto` da AST. Usado no OnChange do editor para salvar.
  */
 export function estadoParaTexto(estado: EstadoLexical): string {
-  const raiz = estado?.root as unknown as SerializadoTexto | undefined
+  const raiz = estado?.root as unknown as NoSerializado | undefined
   const filhos = raiz?.children ?? []
   // o editor de um bloco tem UM parágrafo (ou fórmula display); remove
   // a borda de cada contêiner e concatena o conteúdo inline
@@ -105,7 +121,7 @@ export function estadoParaTexto(estado: EstadoLexical): string {
 /** Serializa uma lista de nós (shape exportJSON do Lexical) para texto. */
 export function serializarLista(nos: NoSerializado[]): string {
   return nos
-    .map((n) => serializarNo(n as unknown as SerializadoTexto))
+    .map((n) => serializarNo(n as unknown as NoSerializado))
     .join("")
     .trim()
 }
@@ -166,7 +182,7 @@ function aplicarFormato(nos: NoSerializado[], format: number): NoSerializado[] {
     }
   }
   return fundidos.map((n) => {
-    if (n.type === "text" && n.text !== undefined) {
+    if (n.type === "text" && n.text !== undefined && typeof n.format !== "string") {
       return { ...n, format: (n.format ?? 0) | format }
     }
     return n
@@ -370,9 +386,9 @@ function estadoComParagrafo(children: NoSerializado[]): EstadoLexical {
 
 /** Extrai o LaTeX de um estado de fórmula (remove $$...$$). */
 export function estadoParaFormula(estado: EstadoLexical): string {
-  const raiz = estado?.root as unknown as SerializadoTexto | undefined
-  const direto = raiz?.children?.[0] as SerializadoTexto | undefined
-  const conteudo = (direto?.children ?? raiz?.children ?? []) as SerializadoTexto[]
+  const raiz = estado?.root as unknown as NoSerializado | undefined
+  const direto = raiz?.children?.[0] as NoSerializado | undefined
+  const conteudo = (direto?.children ?? raiz?.children ?? []) as NoSerializado[]
   const semLatex = conteudo
     .map((n) => {
       if (n.type === "equation") return n.equation ?? ""

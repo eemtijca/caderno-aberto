@@ -50,12 +50,12 @@ test.describe("Editor WYSIWYG", () => {
     await loginNovo(page, baseURL)
     await criarNota(page, "Editor Teste")
 
-    // pega um editor de parágrafo VISÍVEL (desktop: grid de dois painéis)
-    const editavel = page
-      .locator('[contenteditable="true"][aria-label="Texto do parágrafo"]:visible')
-      .first()
+    // o documento único é um único contenteditable (o editor é o preview)
+    const editavel = page.locator('[contenteditable="true"][aria-label="Nota (documento único)"]')
     await expect(editavel).toBeVisible({ timeout: 10000 })
     await editavel.click()
+    await page.keyboard.press("Control+Home")
+    await page.keyboard.press("ArrowDown")
     await page.keyboard.press("Control+A")
     await page.keyboard.type("Olá mundo em negrito")
     await page.waitForTimeout(1500)
@@ -68,12 +68,7 @@ test.describe("Editor WYSIWYG", () => {
     await loginNovo(page, baseURL)
     await criarNota(page, "Fórmula Teste")
 
-    // o editor de fórmula display existe e mostra o KaTeX renderizado
-    const equacao = page
-      .locator('[contenteditable="true"][aria-label="Equação em destaque"]:visible')
-      .first()
-    await expect(equacao).toBeVisible({ timeout: 10000 })
-    // a prévia ao lado deve conter o KaTeX (classe .katex)
+    // o documento renderiza o KaTeX da fórmula display do modelo (y=ax+b)
     await expect(page.locator(".katex:visible").first()).toBeVisible({ timeout: 10000 })
   })
 
@@ -104,5 +99,30 @@ test.describe("Editor WYSIWYG", () => {
     await expect(page.getByText("Publicada", { exact: true }).first()).toBeVisible({
       timeout: 8000,
     })
+  })
+
+  test("slash command insere bloco de seção", async ({ page, baseURL }) => {
+    await loginNovo(page, baseURL)
+    await criarNota(page, "Slash Teste")
+
+    // limpa um parágrafo e digita "/" para abrir a paleta
+    const editavel = page.locator('[contenteditable="true"][aria-label="Nota (documento único)"]')
+    await expect(editavel).toBeVisible({ timeout: 10000 })
+    await editavel.click()
+    await page.keyboard.press("Control+Home")
+    await page.keyboard.press("ArrowDown")
+    await page.keyboard.press("Control+A")
+    await page.keyboard.type("X")
+    await page.keyboard.press("Backspace")
+    await page.keyboard.type("/")
+    await expect(page.getByText("Inserir bloco")).toBeVisible({ timeout: 5000 })
+
+    // escolhe "Seção" na paleta
+    await page.locator("button", { hasText: "Seção" }).first().click()
+    await page.waitForTimeout(1200)
+
+    // a seção nova foi criada (a paleta fechou e o "/" sumiu)
+    const texto = await editavel.innerText()
+    expect(texto.includes("/")).toBe(false)
   })
 })

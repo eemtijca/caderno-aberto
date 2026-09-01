@@ -1,45 +1,24 @@
 "use client"
 
-// Editor de nota. Orquestra metadados, lista de blocos com arrastar-e-soltar, paleta de inserção, salvamento automático e exportações.
+// Editor de nota. Orquestra metadados, o documento único WYSIWYG (editor
+// de blocos com Lexical), salvamento automático e exportações.
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core"
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
 import {
   ArrowLeft,
   BookOpenText,
   Check,
   ChevronDown,
-  ChevronUp,
   CloudUpload,
-  Copy,
   CopyPlus,
   Download,
-  Eye,
   FileCode2,
   FileJson,
   FileText,
-  GripVertical,
   Link2,
   Loader2,
   Plus,
-  Printer,
   Trash2,
-  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -72,7 +51,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 
 import {
@@ -92,104 +70,9 @@ import {
   ENTRELINHAS_NOTA,
   ESCALAS_NOTA,
   FONTES_NOTA,
-  idBloco,
   variaveisAparencia,
 } from "@/lib/notas/tipos"
-import { BlocosView } from "@/components/notas/blocos-view"
-import {
-  atualizarBloco,
-  atualizarFilho,
-  dividirFilho,
-  dividirParagrafo,
-  duplicarBloco,
-  inserirBloco,
-  inserirFilho,
-  moverBloco,
-  moverFilho,
-  removerBloco,
-  removerFilho,
-  reordenar,
-} from "./ops"
-import {
-  EditorCaixa,
-  EditorChamada,
-  EditorExercicios,
-  EditorFigura,
-  EditorFormula,
-  EditorLista,
-  EditorParagrafo,
-  EditorSecao,
-  EditorTabela,
-  EditorTikz,
-  novoFilho,
-} from "./editores-bloco"
-
-const PALETA: { tipo: Bloco["tipo"]; rotulo: string; descricao: string }[] = [
-  { tipo: "secao", rotulo: "Seção", descricao: "Título numerado de tópico" },
-  { tipo: "paragrafo", rotulo: "Parágrafo", descricao: "Texto corrido com rótulo opcional" },
-  { tipo: "formula", rotulo: "Fórmula", descricao: "Equação em destaque" },
-  { tipo: "lista", rotulo: "Lista", descricao: "Itens com marcadores" },
-  { tipo: "tabela", rotulo: "Tabela", descricao: "Linhas e colunas" },
-  { tipo: "chamada", rotulo: "Atenção / Símbolos", descricao: "Alerta, dia a dia ou símbolos" },
-  { tipo: "figura", rotulo: "Figura", descricao: "Imagem com legenda" },
-  {
-    tipo: "tikz",
-    rotulo: "Diagrama",
-    descricao: "Ilustração geométrica — criada com TikZ por baixo dos panos",
-  },
-  { tipo: "copiar", rotulo: "COPIAR", descricao: "O que o aluno leva para o caderno" },
-  { tipo: "exemplo", rotulo: "Exemplo", descricao: "Exemplo resolvido passo a passo" },
-  { tipo: "dica", rotulo: "Dica", descricao: "Dica / erro comum" },
-  { tipo: "exercicios", rotulo: "Exercícios", descricao: "Lista com níveis e gabarito" },
-]
-
-export function novoBloco(tipo: Bloco["tipo"]): Bloco {
-  const id = idBloco()
-  switch (tipo) {
-    case "secao":
-      return { id, tipo: "secao", titulo: "" }
-    case "paragrafo":
-      return { id, tipo: "paragrafo", texto: "", rotulo: null }
-    case "formula":
-      return { id, tipo: "formula", latex: "" }
-    case "lista":
-      return { id, tipo: "lista", itens: [""] }
-    case "tabela":
-      return {
-        id,
-        tipo: "tabela",
-        comCabecalho: true,
-        linhas: [
-          ["", ""],
-          ["", ""],
-        ],
-      }
-    case "chamada":
-      return { id, tipo: "chamada", estilo: "atencao", texto: "" }
-    case "figura":
-      return { id, tipo: "figura", url: "", legenda: "" }
-    case "tikz":
-      return { id, tipo: "tikz", codigo: "\\draw (0,0) -- (2,0) -- (1,1) -- cycle;", legenda: "" }
-    case "copiar":
-      return { id, tipo: "copiar", rotulo: "", filhos: [novoFilho("paragrafo")] }
-    case "exemplo":
-      return { id, tipo: "exemplo", rotulo: "Exemplo resolvido", filhos: [novoFilho("paragrafo")] }
-    case "dica":
-      return { id, tipo: "dica", rotulo: "Dica / erro comum", filhos: [novoFilho("paragrafo")] }
-    case "exercicios":
-      return {
-        id,
-        tipo: "exercicios",
-        rotulo: "Exercícios propostos",
-        niveis: [
-          { numero: 1, titulo: "Conceitos", questoes: [] },
-          { numero: 2, titulo: "Aplicação", questoes: [] },
-          { numero: 3, titulo: "Síntese", questoes: [] },
-        ],
-        gabarito: "",
-      }
-  }
-}
+import { EditorNotaWysiwyg } from "./editor-nota-wysiwyg"
 
 export function VistaEditor({ id, navegar }: { id: string; navegar: (para: string) => void }) {
   const { data: nota, isLoading, isError } = useNota(id)
@@ -254,7 +137,6 @@ function FormularioNota({
 
   const [sujo, setSujo] = useState(false)
   const [estadoSalvamento, setEstadoSalvamento] = useState<"salvo" | "salvando" | "erro">("salvo")
-  const [paletaEm, setPaletaEm] = useState<number | null>(null)
   const timerAutoSave = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // autosave com debounce
@@ -315,20 +197,6 @@ function FormularioNota({
     () => (turmas ?? []).filter((t) => t.anoLetivo === anoLetivo),
     [turmas, anoLetivo],
   )
-
-  const sensores = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-
-  const aoArrastarFim = (e: DragEndEvent) => {
-    const { active, over } = e
-    if (active.id !== over?.id && over) {
-      const de = blocos.findIndex((b) => b.id === String(active.id))
-      const para = blocos.findIndex((b) => b.id === String(over.id))
-      if (de !== -1 && para !== -1) mudarBlocos(() => reordenar(blocos, de, para))
-    }
-  }
 
   const linkLeitura = `#/nota/${notaInicial.id}`
 
@@ -705,50 +573,9 @@ function FormularioNota({
         </div>
       </details>
 
-      {/* editar / pré-visualizar */}
-      <div className="lg:hidden">
-        <Tabs defaultValue="editar">
-          <TabsList className="w-full rounded-xl">
-            <TabsTrigger value="editar" className="flex-1 rounded-lg">
-              Editar
-            </TabsTrigger>
-            <TabsTrigger value="previa" className="flex-1 rounded-lg">
-              <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden /> Prévia
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="editar" className="mt-4">
-            <ListaBlocos
-              blocos={blocos}
-              mudarBlocos={mudarBlocos}
-              paletaEm={paletaEm}
-              setPaletaEm={setPaletaEm}
-              sensores={sensores}
-              aoArrastarFim={aoArrastarFim}
-            />
-          </TabsContent>
-          <TabsContent value="previa" className="mt-4">
-            <Previa blocos={blocos} titulo={titulo} aparencia={aparencia} />
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      <div className="hidden gap-6 lg:grid lg:grid-cols-[1fr_0.9fr]">
-        <div>
-          <ListaBlocos
-            blocos={blocos}
-            mudarBlocos={mudarBlocos}
-            paletaEm={paletaEm}
-            setPaletaEm={setPaletaEm}
-            sensores={sensores}
-            aoArrastarFim={aoArrastarFim}
-          />
-        </div>
-        <div className="border-border bg-card sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl border p-5 shadow-sm">
-          <p className="text-muted-foreground mb-4 flex items-center gap-1.5 text-[0.7rem] font-bold tracking-wider uppercase">
-            <Eye className="h-3.5 w-3.5" aria-hidden /> Prévia ao vivo
-          </p>
-          <Previa blocos={blocos} titulo={titulo} aparencia={aparencia} />
-        </div>
+      {/* edição: documento único (o editor é o preview) */}
+      <div className="na-nota" style={variaveisAparencia(aparencia) as React.CSSProperties}>
+        <EditorNotaWysiwyg blocos={blocos} onChange={(novos) => mudarBlocos(() => novos)} />
       </div>
 
       {compartilharAberto ? (
@@ -759,374 +586,6 @@ function FormularioNota({
           aoPublicar={() => setStatus("publicada")}
         />
       ) : null}
-    </div>
-  )
-}
-
-// Lista de blocos com dnd-kit
-
-function ListaBlocos({
-  blocos,
-  mudarBlocos,
-  paletaEm,
-  setPaletaEm,
-  sensores,
-  aoArrastarFim,
-}: {
-  blocos: Bloco[]
-  mudarBlocos: (fn: (b: Bloco[]) => Bloco[]) => void
-  paletaEm: number | null
-  setPaletaEm: (i: number | null) => void
-  sensores: ReturnType<typeof useSensors>
-  aoArrastarFim: (e: DragEndEvent) => void
-}) {
-  let numeroSecao = 0
-
-  return (
-    <DndContext sensors={sensores} collisionDetection={closestCenter} onDragEnd={aoArrastarFim}>
-      <SortableContext items={blocos.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-2.5">
-          {blocos.map((b, i) => {
-            if (b.tipo === "secao") numeroSecao++
-            return (
-              <div key={b.id}>
-                <CartaoBloco
-                  bloco={b}
-                  indice={i}
-                  numeroSecao={numeroSecao}
-                  total={blocos.length}
-                  mudarBlocos={mudarBlocos}
-                  onInserirAqui={() => setPaletaEm(i + 1)}
-                />
-                {paletaEm === i + 1 ? (
-                  <PaletaInsercao
-                    onEscolher={(tipo) => {
-                      mudarBlocos((bs) => inserirBloco(bs, i + 1, novoBloco(tipo)))
-                      setPaletaEm(null)
-                    }}
-                    onFechar={() => setPaletaEm(null)}
-                  />
-                ) : null}
-              </div>
-            )
-          })}
-        </div>
-      </SortableContext>
-
-      <div className="mt-3">
-        {paletaEm === blocos.length || blocos.length === 0 ? (
-          <PaletaInsercao
-            onEscolher={(tipo) => {
-              mudarBlocos((bs) => inserirBloco(bs, bs.length, novoBloco(tipo)))
-              setPaletaEm(null)
-            }}
-            onFechar={() => setPaletaEm(null)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setPaletaEm(blocos.length)}
-            className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed py-3.5 text-sm font-semibold transition-colors hover:border-solid"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            {blocos.length === 0 ? "Adicionar o primeiro bloco" : "Adicionar bloco ao final"}
-          </button>
-        )}
-      </div>
-    </DndContext>
-  )
-}
-
-function CartaoBloco({
-  bloco,
-  indice,
-  numeroSecao,
-  total,
-  mudarBlocos,
-  onInserirAqui,
-}: {
-  bloco: Bloco
-  indice: number
-  numeroSecao: number
-  total: number
-  mudarBlocos: (fn: (b: Bloco[]) => Bloco[]) => void
-  onInserirAqui: () => void
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: bloco.id,
-  })
-
-  const estilo: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.6 : 1,
-  }
-
-  const classesCaixa =
-    bloco.tipo === "copiar"
-      ? "border-2 border-dashed border-stone-400 dark:border-stone-600"
-      : bloco.tipo === "exemplo"
-        ? "border border-emerald-300/70 border-l-4 border-l-emerald-500 dark:border-emerald-800/60"
-        : bloco.tipo === "dica"
-          ? "border border-amber-300/70 border-l-4 border-l-amber-500 dark:border-amber-800/60"
-          : bloco.tipo === "tikz"
-            ? "border border-violet-300/70 border-l-4 border-l-violet-500 bg-violet-50/20 dark:border-violet-800/60 dark:bg-violet-950/10"
-            : bloco.tipo === "exercicios"
-              ? "border border-border bg-stone-50/70 dark:bg-stone-900/40"
-              : "border border-border"
-
-  const patch = (p: Record<string, unknown>) => mudarBlocos((bs) => atualizarBloco(bs, bloco.id, p))
-
-  return (
-    <article
-      ref={setNodeRef}
-      style={estilo}
-      className={`group bg-card relative rounded-2xl border px-3 py-3 transition-shadow hover:shadow-sm sm:px-4 ${classesCaixa}`}
-    >
-      {/* controles laterais (desktop) */}
-      <div className="absolute top-2 -left-11 hidden flex-col items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          className="text-muted-foreground/60 hover:bg-accent hover:text-foreground cursor-grab touch-none rounded-md p-1.5 active:cursor-grabbing"
-          aria-label="Arrastar para reordenar"
-        >
-          <GripVertical className="h-4 w-4" aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={onInserirAqui}
-          className="text-muted-foreground/60 hover:bg-accent hover:text-foreground rounded-md p-1.5"
-          aria-label="Inserir bloco abaixo"
-        >
-          <Plus className="h-4 w-4" aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={() => mudarBlocos((bs) => duplicarBloco(bs, bloco.id))}
-          className="text-muted-foreground/60 hover:bg-accent hover:text-foreground rounded-md p-1.5"
-          aria-label="Duplicar bloco"
-        >
-          <Copy className="h-3.5 w-3.5" aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={() => mudarBlocos((bs) => moverBloco(bs, bloco.id, -1))}
-          disabled={indice === 0}
-          className="text-muted-foreground/60 hover:bg-accent hover:text-foreground rounded-md p-1 disabled:opacity-25"
-          aria-label="Mover para cima"
-        >
-          <ChevronUp className="h-3.5 w-3.5" aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={() => mudarBlocos((bs) => moverBloco(bs, bloco.id, 1))}
-          disabled={indice === total - 1}
-          className="text-muted-foreground/60 hover:bg-accent hover:text-foreground rounded-md p-1 disabled:opacity-25"
-          aria-label="Mover para baixo"
-        >
-          <ChevronDown className="h-3.5 w-3.5" aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={() => mudarBlocos((bs) => removerBloco(bs, bloco.id))}
-          className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive rounded-md p-1"
-          aria-label="Remover bloco"
-        >
-          <Trash2 className="h-3.5 w-3.5" aria-hidden />
-        </button>
-      </div>
-
-      {/* etiqueta do tipo + controles completos (mobile — os mesmos do desktop) */}
-      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 sm:mb-0">
-        <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-[0.6rem] font-bold tracking-widest text-stone-500 uppercase dark:bg-stone-800 dark:text-stone-400">
-          {PALETA.find((p) => p.tipo === bloco.tipo)?.rotulo ?? bloco.tipo}
-        </span>
-        <div className="flex items-center gap-0.5 sm:hidden">
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            className="text-muted-foreground/70 hover:bg-accent hover:text-foreground cursor-grab touch-none rounded-md p-1.5 active:cursor-grabbing"
-            aria-label="Arrastar para reordenar"
-          >
-            <GripVertical className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={onInserirAqui}
-            className="text-muted-foreground/70 hover:bg-accent hover:text-foreground rounded-md p-1.5"
-            aria-label="Inserir bloco abaixo"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => mudarBlocos((bs) => duplicarBloco(bs, bloco.id))}
-            className="text-muted-foreground/70 hover:bg-accent hover:text-foreground rounded-md p-1.5"
-            aria-label="Duplicar bloco"
-          >
-            <Copy className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => mudarBlocos((bs) => moverBloco(bs, bloco.id, -1))}
-            disabled={indice === 0}
-            className="text-muted-foreground rounded-md p-1.5 disabled:opacity-25"
-            aria-label="Mover para cima"
-          >
-            <ChevronUp className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => mudarBlocos((bs) => moverBloco(bs, bloco.id, 1))}
-            disabled={indice === total - 1}
-            className="text-muted-foreground rounded-md p-1.5 disabled:opacity-25"
-            aria-label="Mover para baixo"
-          >
-            <ChevronDown className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => mudarBlocos((bs) => removerBloco(bs, bloco.id))}
-            className="text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive rounded-md p-1.5"
-            aria-label="Remover bloco"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-      </div>
-
-      {/* conteúdo por tipo */}
-      {bloco.tipo === "secao" ? (
-        <EditorSecao bloco={bloco} numero={numeroSecao} onPatch={patch} />
-      ) : bloco.tipo === "paragrafo" ? (
-        <EditorParagrafo
-          bloco={bloco}
-          onPatch={patch}
-          aoEnter={(antes, depois) =>
-            mudarBlocos((bs) => dividirParagrafo(bs, bloco.id, antes, depois))
-          }
-        />
-      ) : bloco.tipo === "formula" ? (
-        <EditorFormula bloco={bloco} onPatch={patch} />
-      ) : bloco.tipo === "lista" ? (
-        <EditorLista bloco={bloco} onPatch={patch} />
-      ) : bloco.tipo === "tabela" ? (
-        <EditorTabela bloco={bloco} onPatch={patch} />
-      ) : bloco.tipo === "chamada" ? (
-        <EditorChamada bloco={bloco} onPatch={patch} />
-      ) : bloco.tipo === "figura" ? (
-        <EditorFigura bloco={bloco} onPatch={patch} />
-      ) : bloco.tipo === "tikz" ? (
-        <EditorTikz bloco={bloco} onPatch={patch} />
-      ) : bloco.tipo === "exercicios" ? (
-        <EditorExercicios bloco={bloco} onPatch={patch} />
-      ) : (
-        <EditorCaixa
-          bloco={bloco}
-          onPatch={patch}
-          acoes={{
-            onPatchFilho: (filhoId, p) =>
-              mudarBlocos((bs) => atualizarFilho(bs, bloco.id, filhoId, p)),
-            onRemoverFilho: (filhoId) => mudarBlocos((bs) => removerFilho(bs, bloco.id, filhoId)),
-            onMoverFilho: (filhoId, delta) =>
-              mudarBlocos((bs) => moverFilho(bs, bloco.id, filhoId, delta)),
-            onInserirFilho: (tipo) =>
-              mudarBlocos((bs) => {
-                const caixa = bs.find((b) => b.id === bloco.id)
-                const fim =
-                  caixa &&
-                  (caixa.tipo === "copiar" || caixa.tipo === "exemplo" || caixa.tipo === "dica")
-                    ? caixa.filhos.length
-                    : 0
-                return inserirFilho(bs, bloco.id, fim, novoFilho(tipo))
-              }),
-            onDividirFilho: (filhoId, antes, depois) =>
-              mudarBlocos((bs) => dividirFilho(bs, bloco.id, filhoId, antes, depois)),
-          }}
-        />
-      )}
-    </article>
-  )
-}
-
-// Paleta de inserção de blocos
-
-function PaletaInsercao({
-  onEscolher,
-  onFechar,
-}: {
-  onEscolher: (tipo: Bloco["tipo"]) => void
-  onFechar: () => void
-}) {
-  return (
-    <div className="border-border bg-popover mt-2 rounded-2xl border p-3 shadow-lg">
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-muted-foreground px-1 text-[0.7rem] font-bold tracking-wider uppercase">
-          Inserir bloco
-        </p>
-        <button
-          type="button"
-          onClick={onFechar}
-          className="text-muted-foreground hover:bg-accent rounded-md p-1"
-          aria-label="Fechar paleta"
-        >
-          <X className="h-3.5 w-3.5" aria-hidden />
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-        {PALETA.map((item) => (
-          <button
-            key={item.tipo}
-            type="button"
-            onClick={() => onEscolher(item.tipo)}
-            className="border-border bg-card hover:border-foreground/30 hover:bg-accent rounded-xl border px-3 py-2.5 text-left transition-colors"
-          >
-            <span className="block text-[0.82rem] font-bold">{item.rotulo}</span>
-            <span className="text-muted-foreground block text-[0.68rem] leading-snug">
-              {item.descricao}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// Prévia
-
-function Previa({
-  blocos,
-  titulo,
-  aparencia,
-}: {
-  blocos: Bloco[]
-  titulo: string
-  aparencia: AparenciaNota
-}) {
-  const [gabarito, setGabarito] = useState(false)
-  return (
-    <div className="na-nota" style={variaveisAparencia(aparencia) as React.CSSProperties}>
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="fonte-display text-xl font-extrabold">{titulo || "Sem título"}</h3>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 gap-1.5 rounded-lg text-[0.7rem]"
-          onClick={() => setGabarito(!gabarito)}
-        >
-          {gabarito ? "Ocultar gabarito" : "Mostrar gabarito"}
-        </Button>
-      </div>
-      <div className="space-y-5">
-        <BlocosView blocos={blocos} mostrarGabarito={gabarito} />
-      </div>
-      <p className="border-border text-muted-foreground mt-8 flex items-center gap-1.5 border-t pt-4 text-[0.7rem]">
-        <Printer className="h-3 w-3" aria-hidden />A versão de impressão (A4, 2 colunas) abre pelo
-        botão de imprimir na leitura.
-      </p>
     </div>
   )
 }

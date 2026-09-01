@@ -13,5 +13,9 @@
     "esModuleInterop": true,
     "types": []
   },
-  "include": ["../../src/lib/notas/lexical-bridge.ts"]
+  "include": [
+    "../../src/lib/notas/lexical-bridge.ts",
+    "../../src/lib/notas/lexical-documento.ts",
+    "../../src/lib/notas/tipos.ts"
+  ]
 }
