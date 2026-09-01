@@ -256,5 +256,5 @@ export function escaparCaminhoLatex(texto: string): string {
 
 /** Escapa URL para uso em \href{...} (sem caracteres que quebram LaTeX). */
 function escaparUrl(texto: string): string {
-  return texto.replace(/#/g, "\\#").replace(/%/g, "\\%").replace(/_/g, "\\_")
+  return escaparLatex(texto)
 }
