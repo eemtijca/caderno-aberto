@@ -451,7 +451,8 @@ export class TabelaNotaNode extends ElementNode {
     const el = document.createElement("div")
     el.setAttribute("role", "table")
     el.setAttribute("aria-label", "Tabela da nota")
-    el.className = "na-imprime-caixa overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-800"
+    el.className =
+      "na-imprime-caixa overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-800"
     return el
   }
 
@@ -621,7 +622,8 @@ export class CelulaTabelaNotaNode extends ElementNode {
   createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("div")
     el.setAttribute("role", "cell")
-    el.className = "na-celula-tabela min-w-[4.5rem] flex-1 border border-stone-200 px-2 py-1.5 dark:border-stone-800"
+    el.className =
+      "na-celula-tabela min-w-[4.5rem] flex-1 border border-stone-200 px-2 py-1.5 dark:border-stone-800"
     if (this.__cabecalho) el.classList.add("font-bold", "bg-stone-100", "dark:bg-stone-800/70")
     return el
   }

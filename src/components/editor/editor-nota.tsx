@@ -151,7 +151,18 @@ function FormularioNota({
       blocos,
       aparencia,
     }),
-    [titulo, disciplinaId, anoLetivo, mes, sobre, habilidades, status, turmasSel, blocos, aparencia],
+    [
+      titulo,
+      disciplinaId,
+      anoLetivo,
+      mes,
+      sobre,
+      habilidades,
+      status,
+      turmasSel,
+      blocos,
+      aparencia,
+    ],
   )
 
   // grava imediatamente o que está pendente (usado ao sair da página)

@@ -179,13 +179,9 @@ const ITENS: ItemSlash[] = [
     icone: List,
     termos: "lista itens marcadores bullet",
     inserir: (editor) =>
-      inserirNoCursor(
-        editor,
-        montarLista,
-        (novo) => {
-          if (novo instanceof ElementNode) novo.getFirstChild()?.selectStart()
-        },
-      ),
+      inserirNoCursor(editor, montarLista, (novo) => {
+        if (novo instanceof ElementNode) novo.getFirstChild()?.selectStart()
+      }),
   },
   {
     rotulo: "Tabela",
@@ -220,7 +216,8 @@ const ITENS: ItemSlash[] = [
     descricao: "O que o aluno leva para o caderno",
     icone: BookOpenText,
     termos: "copiar caderno caixa",
-    inserir: (editor) => inserirNoCursor(editor, () => montarCaixa("copiar", ""), posicionarNaCaixa),
+    inserir: (editor) =>
+      inserirNoCursor(editor, () => montarCaixa("copiar", ""), posicionarNaCaixa),
   },
   {
     rotulo: "Exemplo",

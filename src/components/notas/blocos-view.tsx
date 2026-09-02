@@ -35,7 +35,12 @@ function RotuloPrefixo({ rotulo }: { rotulo: Rotulo | null | undefined }) {
   return <span className={`font-bold ${CORES_ROTULO[rotulo?.tipo ?? "livre"]}`}>{texto} </span>
 }
 
-const CHAMADA_PADRAO: { icone: typeof TriangleAlert; classe: string; titulo: string; tituloClasse: string } = {
+const CHAMADA_PADRAO: {
+  icone: typeof TriangleAlert
+  classe: string
+  titulo: string
+  tituloClasse: string
+} = {
   icone: TriangleAlert,
   classe: "border-amber-300/70 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30",
   titulo: "Atenção:",

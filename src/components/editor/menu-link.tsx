@@ -71,7 +71,7 @@ export function MenuLink({ editor }: { editor: LexicalEditor }) {
         <button
           type="button"
           aria-label="Inserir ou editar link"
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring flex h-11 w-11 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
           onMouseDown={(e) => e.preventDefault()}
         >
           <Link2 className="h-[1.15rem] w-[1.15rem]" aria-hidden />
@@ -103,7 +103,7 @@ export function MenuLink({ editor }: { editor: LexicalEditor }) {
               type="button"
               variant="ghost"
               size="sm"
-              className="h-9 gap-1.5 rounded-lg text-xs text-destructive hover:text-destructive"
+              className="text-destructive hover:text-destructive h-9 gap-1.5 rounded-lg text-xs"
               onClick={remover}
               disabled={urlDoLinkAtual(editor) === null && valor.trim() === ""}
             >

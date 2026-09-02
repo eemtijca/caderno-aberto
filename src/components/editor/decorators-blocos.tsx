@@ -136,7 +136,9 @@ export function FiguraComponent({ nodeKey }: { nodeKey: NodeKey }) {
 function lerFigura(editor: ReturnType<typeof useLexicalComposerContext>[0], nodeKey: NodeKey) {
   return editor.getEditorState().read(() => {
     const n = $getNodeByKey(nodeKey)
-    return $isFiguraNode(n) ? { url: n.getUrl(), legenda: n.getLegenda() } : { url: "", legenda: "" }
+    return $isFiguraNode(n)
+      ? { url: n.getUrl(), legenda: n.getLegenda() }
+      : { url: "", legenda: "" }
   })
 }
 
@@ -261,7 +263,7 @@ export function CaixaCabecalhoComponent({ nodeKey }: { nodeKey: NodeKey }) {
         value={rotulo}
         onChange={(e) => setRotuloNo(e.target.value)}
         placeholder="Rótulo da caixa"
-        className="h-9 flex-1 rounded-lg border border-transparent bg-transparent px-2 text-[0.85rem] font-bold tracking-wide uppercase transition-colors outline-none hover:border-border/70 focus:border-border focus:bg-card"
+        className="hover:border-border/70 focus:border-border focus:bg-card h-9 flex-1 rounded-lg border border-transparent bg-transparent px-2 text-[0.85rem] font-bold tracking-wide uppercase transition-colors outline-none"
         aria-label="Rótulo da caixa"
       />
     </div>
@@ -429,7 +431,7 @@ export function ExerciciosComponent({ nodeKey }: { nodeKey: NodeKey }) {
           onChange={(e) => patch({ rotulo: e.target.value })}
           placeholder="Exercícios propostos"
           aria-label="Rótulo dos exercícios"
-          className="h-9 w-full rounded-lg border border-transparent bg-transparent px-2 text-[0.92rem] font-bold tracking-wide uppercase transition-colors outline-none hover:border-border/70 focus:border-border focus:bg-card"
+          className="hover:border-border/70 focus:border-border focus:bg-card h-9 w-full rounded-lg border border-transparent bg-transparent px-2 text-[0.92rem] font-bold tracking-wide uppercase transition-colors outline-none"
         />
       </div>
 
@@ -447,7 +449,7 @@ export function ExerciciosComponent({ nodeKey }: { nodeKey: NodeKey }) {
               onChange={(e) => mudarNivel(i, { titulo: e.target.value })}
               placeholder="Conceitos / Aplicação / Síntese"
               aria-label={`Título do nível ${nivel.numero}`}
-              className="h-9 w-full rounded-md border border-transparent bg-transparent px-1.5 text-sm font-bold transition-colors outline-none hover:border-border/70 focus:border-border focus:bg-card"
+              className="hover:border-border/70 focus:border-border focus:bg-card h-9 w-full rounded-md border border-transparent bg-transparent px-1.5 text-sm font-bold transition-colors outline-none"
             />
           </div>
 

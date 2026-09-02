@@ -32,7 +32,11 @@ import {
   type LexicalEditor,
 } from "lexical"
 import { $isLinkNode } from "@lexical/link"
-import { $createEquationNode, $createResultadoNode, $createDestNode } from "@/lib/notas/lexical-nodes"
+import {
+  $createEquationNode,
+  $createResultadoNode,
+  $createDestNode,
+} from "@/lib/notas/lexical-nodes"
 import { MenuLink } from "./menu-link"
 import { useAlturaTeclado } from "@/lib/editor/posicao"
 import { useEditorAtivo } from "@/lib/editor/registro-ativo"
@@ -77,7 +81,7 @@ function BotaoBarra({
       title={rotulo}
       onClick={onClick}
       onMouseDown={(e) => e.preventDefault()}
-      className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 pointer-coarse:h-11 pointer-coarse:w-11 ${
+      className={`focus-visible:ring-ring flex h-9 w-9 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none pointer-coarse:h-11 pointer-coarse:w-11 ${
         ativo
           ? "bg-primary/15 text-primary"
           : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -199,7 +203,7 @@ export function ConteudoBarra({ editor }: { editor: LexicalEditor }) {
     <div
       role="toolbar"
       aria-label="Formatação do texto"
-      className="bg-popover text-popover-foreground flex max-w-full items-center gap-0.5 overflow-x-auto rounded-xl border p-1 shadow-lg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="bg-popover text-popover-foreground flex max-w-full [scrollbar-width:none] items-center gap-0.5 overflow-x-auto rounded-xl border p-1 shadow-lg [&::-webkit-scrollbar]:hidden"
     >
       <div className="flex shrink-0 items-center gap-0.5">
         <BotaoBarra
@@ -245,11 +249,7 @@ export function ConteudoBarra({ editor }: { editor: LexicalEditor }) {
       </div>
       <span aria-hidden className="bg-border mx-0.5 h-6 w-px shrink-0" />
       <div className="flex shrink-0 items-center gap-0.5">
-        <BotaoBarra
-          rotulo="Fórmula no texto"
-          icone={Sigma}
-          onClick={() => inserirFormula(false)}
-        />
+        <BotaoBarra rotulo="Fórmula no texto" icone={Sigma} onClick={() => inserirFormula(false)} />
         <BotaoBarra rotulo="Fórmula química" icone={Percent} onClick={() => inserirFormula(true)} />
         <BotaoBarra
           rotulo="Resposta em destaque"

@@ -515,7 +515,11 @@ export function analisarMarkdown(md: string): MarkdownNota {
         i++
         let legenda = ""
         if (i < linhas.length && /^\*.*\*$/.test(linhaEm(i).trim())) {
-          legenda = mdParaInline(linhaEm(i).trim().replace(/^\*|\*$/g, ""))
+          legenda = mdParaInline(
+            linhaEm(i)
+              .trim()
+              .replace(/^\*|\*$/g, ""),
+          )
           i++
         }
         ;(pilha[0]!.destino as Bloco[]).push({
@@ -534,7 +538,13 @@ export function analisarMarkdown(md: string): MarkdownNota {
       flushTabela()
       const itens: string[] = []
       while (i < linhas.length && /^[-*]\s+/.test(linhaEm(i).trim())) {
-        itens.push(mdParaInline(linhaEm(i).trim().replace(/^[-*]\s+/, "")))
+        itens.push(
+          mdParaInline(
+            linhaEm(i)
+              .trim()
+              .replace(/^[-*]\s+/, ""),
+          ),
+        )
         i++
       }
       ;(destinoAtual() as BlocoFilho[]).push({ id: idBloco(), tipo: "lista", itens })

@@ -23,8 +23,8 @@ export interface BlocoSecao extends BlocoBase {
 
 export interface BlocoParagrafo extends BlocoBase {
   tipo: "paragrafo"
-// Texto com marcação inline: $matemática$, **negrito**, *itálico*,
-// `código`, \resultado{...} (destaque coral) e \dest{...} (palavra-chave).
+  // Texto com marcação inline: $matemática$, **negrito**, *itálico*,
+  // `código`, \resultado{...} (destaque coral) e \dest{...} (palavra-chave).
   texto: string
   rotulo?: Rotulo | null
 }

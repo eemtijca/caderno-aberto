@@ -20,15 +20,7 @@ import {
 } from "lexical"
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import {
-  ArrowDown,
-  ArrowUp,
-  CopyPlus,
-  GripVertical,
-  Minus,
-  Plus,
-  Trash2,
-} from "lucide-react"
+import { ArrowDown, ArrowUp, CopyPlus, GripVertical, Minus, Plus, Trash2 } from "lucide-react"
 import { $isLinhaTabelaNotaNode, $isTabelaNotaNode } from "@/lib/notas/lexical-blocos"
 
 // ação do menu de bloco com rótulo, ícone e execução
@@ -97,11 +89,10 @@ export function HandleBlocoPlugin({ ancoraRef }: { ancoraRef: RefObject<HTMLDivE
       e.dataTransfer.dropEffect = "move"
       const alvo = blocoPeloPonto(editor, e.clientY)
       if (alvo === null) return
-      const antes = e.clientY < alvo.element.getBoundingClientRect().top + alvo.element.offsetHeight / 2
+      const antes =
+        e.clientY < alvo.element.getBoundingClientRect().top + alvo.element.offsetHeight / 2
       setLinhaDestino(
-        antes
-          ? alvo.element.offsetTop - 2
-          : alvo.element.offsetTop + alvo.element.offsetHeight + 2,
+        antes ? alvo.element.offsetTop - 2 : alvo.element.offsetTop + alvo.element.offsetHeight + 2,
       )
     }
     const aoSoltar = (e: DragEvent): void => {
@@ -110,7 +101,8 @@ export function HandleBlocoPlugin({ ancoraRef }: { ancoraRef: RefObject<HTMLDivE
       const origem = arrastandoRef.current
       const alvo = blocoPeloPonto(editor, e.clientY)
       if (alvo !== null && alvo.chave !== origem) {
-        const antes = e.clientY < alvo.element.getBoundingClientRect().top + alvo.element.offsetHeight / 2
+        const antes =
+          e.clientY < alvo.element.getBoundingClientRect().top + alvo.element.offsetHeight / 2
         editor.update(() => {
           const movido = $getNodeByKey(origem)
           const referencia = $getNodeByKey(alvo.chave)
@@ -310,7 +302,7 @@ export function HandleBlocoPlugin({ ancoraRef }: { ancoraRef: RefObject<HTMLDivE
               type="button"
               aria-label="Ações do bloco (arraste para mover)"
               title="Ações do bloco · arraste para reordenar"
-              className="text-muted-foreground/60 hover:bg-accent hover:text-foreground flex h-10 w-10 cursor-grab items-center justify-center rounded-lg transition-colors focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2 active:cursor-grabbing"
+              className="text-muted-foreground/60 hover:bg-accent hover:text-foreground focus-visible:ring-ring flex h-10 w-10 cursor-grab items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing"
               onMouseDown={(e) => e.preventDefault()}
               onClick={(e) => e.stopPropagation()}
             >
@@ -328,7 +320,7 @@ export function HandleBlocoPlugin({ ancoraRef }: { ancoraRef: RefObject<HTMLDivE
                     acao.executar()
                     setMenuAberto(false)
                   }}
-                  className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors hover:bg-accent ${
+                  className={`hover:bg-accent flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                     acao.perigo === true ? "text-destructive hover:bg-destructive/10" : ""
                   }`}
                 >

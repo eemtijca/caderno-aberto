@@ -170,7 +170,10 @@ function GuardaRaizPlugin() {
 }
 
 // verifica se a chave pertence ao nó ou a algum descendente dele
-function contemChave(no: { getKey: () => string; getChildren?: () => { getKey: () => string }[] }, chave: string): boolean {
+function contemChave(
+  no: { getKey: () => string; getChildren?: () => { getKey: () => string }[] },
+  chave: string,
+): boolean {
   if (no.getKey() === chave) return true
   const filhos = no.getChildren?.() ?? []
   for (const filho of filhos) {

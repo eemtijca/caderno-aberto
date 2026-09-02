@@ -69,7 +69,7 @@ export function EditorLexical({
   return (
     <LexicalComposer initialConfig={configInicial}>
       <div
-        className={`editor-lexical relative w-full rounded-lg border border-transparent px-2 py-1.5 leading-relaxed transition-colors hover:border-border/70 focus-within:border-border focus-within:bg-card ${
+        className={`editor-lexical hover:border-border/70 focus-within:border-border focus-within:bg-card relative w-full rounded-lg border border-transparent px-2 py-1.5 leading-relaxed transition-colors ${
           mono ? "font-mono text-[0.88rem]" : ""
         }`}
       >
