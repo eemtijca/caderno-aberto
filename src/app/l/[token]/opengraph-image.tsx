@@ -41,10 +41,8 @@ function limitar(texto: string, max: number): string {
   return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t
 }
 
-/**
- * Imagem de preview (OpenGraph/Twitter) gerada por link: título da nota,
- * disciplina com a cor escolhida, turmas e nome do professor.
- */
+// Imagem de preview (OpenGraph/Twitter) gerada por link: título da nota,
+// disciplina com a cor escolhida, turmas e nome do professor.
 export default async function ImagemOg({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const dados = await buscarDadosOg(token).catch(() => null)

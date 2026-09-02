@@ -58,9 +58,7 @@ export const FORMATO_UNDERLINE = 4
 export const FORMATO_RISCADO = 8
 export const FORMATO_CODIGO = 16
 
-// ============================================================
 // Serialização: estado serializado para texto
-// ============================================================
 
 /** Serializa os filhos de um nó para a marcação inline do app. */
 function filhosParaTexto(children: NoSerializado[] = []): string {
@@ -106,10 +104,8 @@ export function serializarNo(no: NoSerializado): string {
   }
 }
 
-/**
- * Converte um estado serializado do Lexical de volta para a string
- * `texto` da AST. Usado no OnChange do editor para salvar.
- */
+// Converte um estado serializado do Lexical de volta para a string
+// `texto` da AST. Usado no OnChange do editor para salvar.
 export function estadoParaTexto(estado: EstadoLexical): string {
   const raiz = estado?.root as unknown as NoSerializado | undefined
   const filhos = raiz?.children ?? []
@@ -126,9 +122,7 @@ export function serializarLista(nos: NoSerializado[]): string {
     .trim()
 }
 
-// ============================================================
 // Parsing: texto para estado serializado
-// ============================================================
 
 function noTexto(texto: string, format = 0): NoSerializado {
   return { type: "text", text: texto, format, version: 1 }
@@ -189,12 +183,10 @@ function aplicarFormato(nos: NoSerializado[], format: number): NoSerializado[] {
   })
 }
 
-/**
- * Analisa a string inline do app e devolve os nós Lexical serializados
- * de um parágrafo. Reconhece $math$, **negrito**, *itálico*,
- * `código`, ~~riscado~~, [link](url), \resultado{}, \dest{},
- * \textbf{}, \textit{} e quebras de linha (\n).
- */
+// Analisa a string inline do app e devolve os nós Lexical serializados
+// de um parágrafo. Reconhece $math$, **negrito**, *itálico*,
+// `código`, ~~riscado~~, [link](url), \resultado{}, \dest{},
+// \textbf{}, \textit{} e quebras de linha (\n).
 export function textoParaNos(texto: string): NoSerializado[] {
   const nos: NoSerializado[] = []
   let i = 0
@@ -344,11 +336,9 @@ export function textoParaNos(texto: string): NoSerializado[] {
   return nos
 }
 
-/**
- * Converte a string `texto` de um bloco de parágrafo num estado
- * serializado do Lexical (um parágrafo). Usado como `editorState`
- * inicial do editor WYSIWYG.
- */
+// Converte a string `texto` de um bloco de parágrafo num estado
+// serializado do Lexical (um parágrafo). Usado como `editorState`
+// inicial do editor WYSIWYG.
 export function textoParaEstado(texto: string): EstadoLexical {
   const children = textoParaNos(texto)
   return estadoComParagrafo(children)

@@ -1,25 +1,30 @@
 "use client"
 
 // Nós de bloco do Lexical para o editor de documento único. Cada bloco da
-// AST vira um nó do documento: seção, parágrafo, fórmula (equation),
-// lista, tabela, chamada, figura, tikz, caixas (copiar/exemplo/dica) e
-// exercícios. Mantêm o round-trip com a ponte lexical-documento e a leitura.
+// AST vira um nó do documento: seção, parágrafo, fórmula (equation), lista,
+// tabela, chamada, figura, tikz, caixas (copiar/exemplo/dica) e exercícios.
 
 import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
   NodeKey,
+  RangeSelection,
   SerializedElementNode,
   SerializedLexicalNode,
+  SerializedParagraphNode,
   Spread,
+  TextNode,
 } from "lexical"
 import {
   $applyNodeReplacement,
-  ElementNode,
+  $createNodeSelection,
+  $isTextNode,
+  $parseSerializedNode,
+  $setSelection,
   DecoratorNode,
+  ElementNode,
   ParagraphNode,
-  type SerializedParagraphNode,
 } from "lexical"
 import {
   ListNode,
@@ -35,10 +40,9 @@ import {
   ExerciciosComponent,
 } from "@/components/editor/decorators-blocos"
 
-// ============================================================
-// Seção (título numerado). O número é calculado pela ordem dos irmãos
-// anteriores do tipo secao e aplicado como atributo para o CSS.
-// ============================================================
+// Seção (título numerado). O número vem do contador CSS do
+// contêiner do editor, igual à vista de leitura; Backspace no
+// início converte a seção em parágrafo comum (modelo Notion).
 
 export type SerializedSecaoNode = Spread<{ id?: string; tag: string }, SerializedElementNode>
 
@@ -50,9 +54,9 @@ export class SecaoNode extends ElementNode {
   }
 
   static clone(node: SecaoNode): SecaoNode {
-    const n = new SecaoNode(node.__key)
-    n.__id = node.__id
-    return n
+    const clone = new SecaoNode(node.__key)
+    clone.__id = node.__id
+    return clone
   }
 
   constructor(key?: NodeKey) {
@@ -60,31 +64,25 @@ export class SecaoNode extends ElementNode {
   }
 
   static importJSON(serialized: SerializedSecaoNode): SecaoNode {
-    const n = $createSecaoNode()
-    n.__id = serialized.id
-    return n
+    const no = $createSecaoNode()
+    no.__id = serialized.id
+    return no
   }
 
   exportJSON(): SerializedSecaoNode {
     return { ...super.exportJSON(), id: this.__id, tag: "h2" }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("h2")
-    el.className = "na-secao font-bold tracking-tight"
+    // classes idênticas às da leitura para o editor ser o próprio preview
+    el.className =
+      "na-secao flex items-baseline gap-3 border-t border-stone-200 pt-6 text-xl font-bold tracking-tight first:border-t-0 first:pt-0 sm:text-2xl dark:border-stone-800"
     return el
   }
 
-  updateDOM(prevNode: this, dom: HTMLElement): boolean {
-    // número da seção (1-based) entre os irmãos anteriores do mesmo tipo
-    let numero = 1
-    let irmao = this.getPreviousSibling()
-    while (irmao) {
-      if (irmao.getType() === "secao") numero++
-      irmao = irmao.getPreviousSibling()
-    }
-    dom.setAttribute("data-numero", String(numero))
-    return prevNode.__id !== this.__id
+  updateDOM(): boolean {
+    return false
   }
 
   isInline(): boolean {
@@ -92,6 +90,24 @@ export class SecaoNode extends ElementNode {
   }
 
   canBeEmpty(): boolean {
+    return true
+  }
+
+  // Enter dentro do título insere um parágrafo logo abaixo e move o cursor
+  insertNewAfter(_selection: RangeSelection, _restoreSelection = true): ParagrafoNotaNode {
+    const paragrafo = $createParagrafoNotaNode()
+    this.insertAfter(paragrafo)
+    paragrafo.selectStart()
+    return paragrafo
+  }
+
+  // Backspace no início converte a seção em parágrafo, preservando o texto
+  collapseAtStart(_selection: RangeSelection): boolean {
+    const paragrafo = $createParagrafoNotaNode()
+    const filhos = this.getChildren()
+    paragrafo.append(...filhos)
+    this.replace(paragrafo)
+    paragrafo.selectStart()
     return true
   }
 }
@@ -104,10 +120,10 @@ export function $isSecaoNode(node: LexicalNode | null | undefined): node is Seca
   return node instanceof SecaoNode
 }
 
-// ============================================================
 // Parágrafo com rótulo (Definição., Fórmulas., ...). Subclasse do
-// ParagraphNode que guarda o rotulo e o id da AST.
-// ============================================================
+// ParagraphNode que guarda o rotulo e o id da AST; Enter divide em
+// dois parágrafos do mesmo tipo e Backspace no início escapa de
+// contêineres (caixas) em vez de travar o cursor.
 
 export type SerializedParagrafoNotaNode = Spread<
   { id?: string; rotulo?: unknown },
@@ -123,10 +139,10 @@ export class ParagrafoNotaNode extends ParagraphNode {
   }
 
   static clone(node: ParagrafoNotaNode): ParagrafoNotaNode {
-    const n = new ParagrafoNotaNode(node.__key)
-    n.__id = node.__id
-    n.__rotulo = node.__rotulo
-    return n
+    const clone = new ParagrafoNotaNode(node.__key)
+    clone.__id = node.__id
+    clone.__rotulo = node.__rotulo
+    return clone
   }
 
   constructor(key?: NodeKey) {
@@ -134,14 +150,53 @@ export class ParagrafoNotaNode extends ParagraphNode {
   }
 
   static importJSON(serialized: SerializedParagrafoNotaNode): ParagrafoNotaNode {
-    const n = $createParagrafoNotaNode()
-    n.__id = serialized.id
-    n.__rotulo = serialized.rotulo
-    return n
+    const no = $createParagrafoNotaNode()
+    no.__id = serialized.id
+    no.__rotulo = serialized.rotulo
+    return no
   }
 
   exportJSON(): SerializedParagrafoNotaNode {
     return { ...super.exportJSON(), id: this.__id, rotulo: this.__rotulo }
+  }
+
+  // Enter divide o bloco em um novo parágrafo do mesmo tipo (nunca um p puro)
+  insertNewAfter(rangeSelection: RangeSelection, restoreSelection: boolean): ParagrafoNotaNode {
+    const paragrafo = $createParagrafoNotaNode()
+    this.insertAfter(paragrafo)
+    if (restoreSelection) paragrafo.selectStart()
+    void rangeSelection
+    return paragrafo
+  }
+
+  // Backspace no início: dentro de caixa move o parágrafo para fora; no
+  // nível raiz com irmão não-paragraph à frente, apenas escapa para o fim dele
+  collapseAtStart(): boolean {
+    const pai = this.getParent()
+    if ($isCaixaNode(pai) && pai.getFirstChild() === this) {
+      this.insertBefore($createParagrafoNotaNode())
+      return true
+    }
+    const anterior = this.getPreviousSibling()
+    if (anterior === null) return false
+    // bloco especial (figura, tikz, exercícios): Backspace o seleciona inteiro
+    if (anterior instanceof DecoratorNode) {
+      selecionarNo(anterior)
+      return true
+    }
+    if (!this.isEmpty()) {
+      const fim = fimDoBloco(anterior)
+      if (fim !== null) {
+        fim.select(fim.getTextContent().length, fim.getTextContent().length)
+        return true
+      }
+    }
+    return false
+  }
+
+  // mescla apenas com irmãos que também são parágrafos de nota
+  canInsertSiblingsAfterMerge(): boolean {
+    return true
   }
 }
 
@@ -155,9 +210,47 @@ export function $isParagrafoNotaNode(
   return node instanceof ParagrafoNotaNode
 }
 
-// ============================================================
-// Chamada (atenção, dia a dia, símbolos). Caixa colorida com texto.
-// ============================================================
+// Devolve o último nó de texto de um bloco, para posicionar o cursor no fim dele.
+function fimDoBloco(no: LexicalNode): TextNode | null {
+  if ($isCaixaNode(no)) {
+    const filhos = no.getChildren()
+    for (let i = filhos.length - 1; i >= 0; i--) {
+      const achado = fimDoBloco(filhos[i]!)
+      if (achado !== null) return achado
+    }
+  }
+  if ($isSecaoNode(no) || $isParagrafoNotaNode(no) || $isChamadaNode(no)) {
+    const ultimo = getLastDescendantText(no)
+    if (ultimo !== null) return ultimo
+  }
+  const anterior = no.getPreviousSibling()
+  if (anterior !== null) return fimDoBloco(anterior)
+  return null
+}
+
+// Percorre a árvore até o último nó de texto do elemento dado.
+function getLastDescendantText(no: LexicalNode): TextNode | null {
+  if (no instanceof ElementNode) {
+    const filhos = no.getChildren()
+    for (let i = filhos.length - 1; i >= 0; i--) {
+      const achado = getLastDescendantText(filhos[i]!)
+      if (achado !== null) return achado
+    }
+    return null
+  }
+  if (!$isTextNode(no)) return null
+  return no
+}
+
+// cria uma seleção de nó sobre o bloco dado (segundo Backspace exclui)
+function selecionarNo(no: LexicalNode): void {
+  const sel = $createNodeSelection()
+  sel.add(no.getKey())
+  $setSelection(sel)
+}
+
+// Chamada (atenção, dia a dia, símbolos). O prefixo "Atenção:"
+// vem do CSS via data-estilo, igual ao título da vista de leitura.
 
 export type SerializedChamadaNode = Spread<{ id?: string; estilo: string }, SerializedElementNode>
 
@@ -170,9 +263,9 @@ export class ChamadaNode extends ElementNode {
   }
 
   static clone(node: ChamadaNode): ChamadaNode {
-    const n = new ChamadaNode(node.__estilo, node.__key)
-    n.__id = node.__id
-    return n
+    const clone = new ChamadaNode(node.__estilo, node.__key)
+    clone.__id = node.__id
+    return clone
   }
 
   constructor(estilo = "atencao", key?: NodeKey) {
@@ -181,28 +274,28 @@ export class ChamadaNode extends ElementNode {
   }
 
   static importJSON(serialized: SerializedChamadaNode): ChamadaNode {
-    const n = $createChamadaNode(serialized.estilo)
-    n.__id = serialized.id
-    return n
+    const no = $createChamadaNode(serialized.estilo)
+    no.__id = serialized.id
+    return no
   }
 
   exportJSON(): SerializedChamadaNode {
     return { ...super.exportJSON(), id: this.__id, estilo: this.__estilo }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("div")
-    const classes: Record<string, string> = {
-      atencao: "border-amber-300/70 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30",
-      diaadia:
-        "border-emerald-300/70 bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/30",
-      simbolos: "border-violet-300/70 bg-violet-50 dark:border-violet-800/60 dark:bg-violet-950/30",
-    }
-    el.className = `na-imprime-caixa flex gap-2.5 rounded-xl border px-3.5 py-3 ${classes[this.__estilo] ?? classes.atencao}`
+    el.setAttribute("data-estilo", this.__estilo)
+    // classes espelham a leitura; o prefixo e o fundo vêm do CSS por estilo
+    el.className = "na-chamada na-imprime-caixa rounded-xl border px-3.5 py-3"
     return el
   }
 
-  updateDOM(): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
+    if (prevNode.__estilo !== this.__estilo) {
+      dom.setAttribute("data-estilo", this.__estilo)
+      return false
+    }
     return false
   }
 
@@ -211,6 +304,29 @@ export class ChamadaNode extends ElementNode {
   }
 
   canBeEmpty(): boolean {
+    return true
+  }
+
+  // Enter insere um parágrafo depois da chamada (sai do bloco)
+  insertNewAfter(_selection: RangeSelection, _restoreSelection = true): ParagrafoNotaNode {
+    const paragrafo = $createParagrafoNotaNode()
+    this.insertAfter(paragrafo)
+    paragrafo.selectStart()
+    return paragrafo
+  }
+
+  // Backspace no início converte a chamada em parágrafo, preservando o texto
+  collapseAtStart(_selection: RangeSelection): boolean {
+    if (this.isEmpty()) {
+      this.selectPrevious()
+      this.remove()
+      return true
+    }
+    const paragrafo = $createParagrafoNotaNode()
+    const filhos = this.getChildren()
+    paragrafo.append(...filhos)
+    this.replace(paragrafo)
+    paragrafo.selectStart()
     return true
   }
 }
@@ -223,9 +339,9 @@ export function $isChamadaNode(node: LexicalNode | null | undefined): node is Ch
   return node instanceof ChamadaNode
 }
 
-// ============================================================
 // Lista (itens). Subclasses do ListNode/ListItemNode com id da AST.
-// ============================================================
+// A ponte também aceita os tipos puros (list/listitem) que o
+// pacote @lexical/list cria ao dividir itens com Enter.
 
 export class ListaNotaNode extends ListNode {
   __id?: string
@@ -235,15 +351,15 @@ export class ListaNotaNode extends ListNode {
   }
 
   static clone(node: ListaNotaNode): ListaNotaNode {
-    const n = new ListaNotaNode(node.getListType(), node.getStart(), node.__key)
-    n.__id = node.__id
-    return n
+    const clone = new ListaNotaNode(node.getListType(), node.getStart(), node.__key)
+    clone.__id = node.__id
+    return clone
   }
 
   static importJSON(serialized: SerializedListNode): ListaNotaNode {
-    const n = new ListaNotaNode(serialized.listType, serialized.start ?? 1)
-    n.__id = (serialized as unknown as { id?: string }).id
-    return n
+    const no = new ListaNotaNode(serialized.listType, serialized.start ?? 1)
+    no.__id = (serialized as unknown as { id?: string }).id
+    return no
   }
 
   exportJSON(): SerializedListNode {
@@ -267,15 +383,15 @@ export class ItemListaNotaNode extends ListItemNode {
   }
 
   static clone(node: ItemListaNotaNode): ItemListaNotaNode {
-    const n = new ItemListaNotaNode(node.getValue(), node.getChecked(), node.__key)
-    n.__id = node.__id
-    return n
+    const clone = new ItemListaNotaNode(node.getValue(), node.getChecked(), node.__key)
+    clone.__id = node.__id
+    return clone
   }
 
   static importJSON(serialized: SerializedListItemNode): ItemListaNotaNode {
-    const n = new ItemListaNotaNode(serialized.value ?? 1)
-    n.__id = (serialized as unknown as { id?: string }).id
-    return n
+    const no = new ItemListaNotaNode(serialized.value ?? 1)
+    no.__id = (serialized as unknown as { id?: string }).id
+    return no
   }
 
   exportJSON(): SerializedListItemNode {
@@ -293,10 +409,9 @@ export function $isItemListaNotaNode(
   return node instanceof ItemListaNotaNode
 }
 
-// ============================================================
-// Tabela (grade). Células contêm parágrafos. Estrutura:
-// TabelaNotaNode > LinhaTabelaNotaNode > CelulaTabelaNotaNode > paragraph
-// ============================================================
+// Tabela (grade). Células contêm os nós inline da célula e o
+// comportamento de Enter fica suspenso dentro da grade; as
+// operações de linha/coluna ficam no menu de ações do bloco.
 
 export type SerializedTabelaNode = Spread<
   { id?: string; comCabecalho: boolean },
@@ -312,9 +427,9 @@ export class TabelaNotaNode extends ElementNode {
   }
 
   static clone(node: TabelaNotaNode): TabelaNotaNode {
-    const n = new TabelaNotaNode(node.__comCabecalho, node.__key)
-    n.__id = node.__id
-    return n
+    const clone = new TabelaNotaNode(node.__comCabecalho, node.__key)
+    clone.__id = node.__id
+    return clone
   }
 
   constructor(comCabecalho = true, key?: NodeKey) {
@@ -323,18 +438,20 @@ export class TabelaNotaNode extends ElementNode {
   }
 
   static importJSON(serialized: SerializedTabelaNode): TabelaNotaNode {
-    const n = $createTabelaNotaNode(serialized.comCabecalho)
-    n.__id = serialized.id
-    return n
+    const no = $createTabelaNotaNode(serialized.comCabecalho)
+    no.__id = serialized.id
+    return no
   }
 
   exportJSON(): SerializedTabelaNode {
     return { ...super.exportJSON(), id: this.__id, comCabecalho: this.__comCabecalho }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("div")
-    el.className = "overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-800"
+    el.setAttribute("role", "table")
+    el.setAttribute("aria-label", "Tabela da nota")
+    el.className = "na-imprime-caixa overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-800"
     return el
   }
 
@@ -348,6 +465,47 @@ export class TabelaNotaNode extends ElementNode {
 
   canBeEmpty(): boolean {
     return true
+  }
+
+  // Enter dentro da grade não cria bloco novo (a saída é por setas ou toque fora)
+  insertNewAfter(_selection: RangeSelection, _restoreSelection = true): null {
+    return null
+  }
+
+  getLinhas(): LinhaTabelaNotaNode[] {
+    return this.getChildren().filter($isLinhaTabelaNotaNode)
+  }
+
+  getNumColunas(): number {
+    const primeira = this.getLinhas()[0]
+    return primeira ? primeira.getNumCelulas() : 0
+  }
+
+  // duplica a linha dada logo abaixo com o mesmo conteúdo serializado
+  adicionarLinhaApos(referencia: LinhaTabelaNotaNode): void {
+    const nova = $parseSerializedNode(referencia.exportJSON()) as LinhaTabelaNotaNode
+    referencia.insertAfter(nova)
+  }
+
+  // remove a linha dita; mantém sempre ao menos uma linha
+  removerLinha(referencia: LinhaTabelaNotaNode): void {
+    if (this.getLinhas().length <= 1) return
+    referencia.remove()
+  }
+
+  // adiciona uma célula em branco ao fim de cada linha
+  adicionarColuna(): void {
+    for (const linha of this.getLinhas()) {
+      linha.append($createCelulaTabelaNotaNode())
+    }
+  }
+
+  // remove a última coluna; mantém ao menos uma coluna
+  removerColuna(): void {
+    for (const linha of this.getLinhas()) {
+      const celulas = linha.getCelulas()
+      if (celulas.length > 1) celulas[celulas.length - 1]?.remove()
+    }
   }
 }
 
@@ -369,24 +527,29 @@ export class LinhaTabelaNotaNode extends ElementNode {
   }
 
   static clone(node: LinhaTabelaNotaNode): LinhaTabelaNotaNode {
-    const n = new LinhaTabelaNotaNode(node.__key)
-    n.__id = node.__id
-    return n
+    const clone = new LinhaTabelaNotaNode(node.__key)
+    clone.__id = node.__id
+    return clone
+  }
+
+  constructor(key?: NodeKey) {
+    super(key)
   }
 
   static importJSON(serialized: SerializedLinhaTabelaNode): LinhaTabelaNotaNode {
-    const n = $createLinhaTabelaNotaNode()
-    n.__id = serialized.id
-    return n
+    const no = $createLinhaTabelaNotaNode()
+    no.__id = serialized.id
+    return no
   }
 
   exportJSON(): SerializedLinhaTabelaNode {
     return { ...super.exportJSON(), id: this.__id }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("div")
-    el.className = "flex"
+    el.setAttribute("role", "row")
+    el.className = "na-linha-tabela flex"
     return el
   }
 
@@ -400,6 +563,14 @@ export class LinhaTabelaNotaNode extends ElementNode {
 
   canBeEmpty(): boolean {
     return true
+  }
+
+  getCelulas(): CelulaTabelaNotaNode[] {
+    return this.getChildren().filter($isCelulaTabelaNotaNode)
+  }
+
+  getNumCelulas(): number {
+    return this.getCelulas().length
   }
 }
 
@@ -427,9 +598,9 @@ export class CelulaTabelaNotaNode extends ElementNode {
   }
 
   static clone(node: CelulaTabelaNotaNode): CelulaTabelaNotaNode {
-    const n = new CelulaTabelaNotaNode(node.__cabecalho, node.__key)
-    n.__id = node.__id
-    return n
+    const clone = new CelulaTabelaNotaNode(node.__cabecalho, node.__key)
+    clone.__id = node.__id
+    return clone
   }
 
   constructor(cabecalho = false, key?: NodeKey) {
@@ -438,18 +609,19 @@ export class CelulaTabelaNotaNode extends ElementNode {
   }
 
   static importJSON(serialized: SerializedCelulaTabelaNode): CelulaTabelaNotaNode {
-    const n = $createCelulaTabelaNotaNode(serialized.cabecalho)
-    n.__id = serialized.id
-    return n
+    const no = $createCelulaTabelaNotaNode(serialized.cabecalho)
+    no.__id = serialized.id
+    return no
   }
 
   exportJSON(): SerializedCelulaTabelaNode {
     return { ...super.exportJSON(), id: this.__id, cabecalho: this.__cabecalho }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("div")
-    el.className = "min-w-[4.5rem] flex-1 border border-stone-200 px-2 py-1.5 dark:border-stone-800"
+    el.setAttribute("role", "cell")
+    el.className = "na-celula-tabela min-w-[4.5rem] flex-1 border border-stone-200 px-2 py-1.5 dark:border-stone-800"
     if (this.__cabecalho) el.classList.add("font-bold", "bg-stone-100", "dark:bg-stone-800/70")
     return el
   }
@@ -477,10 +649,9 @@ export function $isCelulaTabelaNotaNode(
   return node instanceof CelulaTabelaNotaNode
 }
 
-// ============================================================
-// Caixa (copiar / exemplo / dica). Contêiner com cabeçalho (rótulo) e
-// filhos-bloco. O rótulo é um child especial no início.
-// ============================================================
+// Caixa (copiar / exemplo / dica). Contêiner com cabeçalho (rótulo)
+// e filhos-bloco; Backspace no primeiro filho move o parágrafo
+// para fora da caixa (escape estilo Notion).
 
 export type SerializedCaixaNode = Spread<
   { id?: string; tipoCaixa: string; rotulo?: string },
@@ -497,9 +668,9 @@ export class CaixaNode extends ElementNode {
   }
 
   static clone(node: CaixaNode): CaixaNode {
-    const n = new CaixaNode(node.__tipoCaixa, node.__rotulo, node.__key)
-    n.__id = node.__id
-    return n
+    const clone = new CaixaNode(node.__tipoCaixa, node.__rotulo, node.__key)
+    clone.__id = node.__id
+    return clone
   }
 
   constructor(tipoCaixa = "copiar", rotulo = "", key?: NodeKey) {
@@ -509,9 +680,9 @@ export class CaixaNode extends ElementNode {
   }
 
   static importJSON(serialized: SerializedCaixaNode): CaixaNode {
-    const n = $createCaixaNode(serialized.tipoCaixa, serialized.rotulo)
-    n.__id = serialized.id
-    return n
+    const no = $createCaixaNode(serialized.tipoCaixa, serialized.rotulo)
+    no.__id = serialized.id
+    return no
   }
 
   exportJSON(): SerializedCaixaNode {
@@ -523,19 +694,24 @@ export class CaixaNode extends ElementNode {
     }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("div")
+    el.setAttribute("data-tipo", this.__tipoCaixa)
     const classes: Record<string, string> = {
       copiar: "border-2 border-dashed border-stone-400 dark:border-stone-600",
       exemplo:
         "border border-l-4 border-emerald-300/70 border-l-emerald-500 bg-emerald-50/70 dark:border-emerald-800/60 dark:bg-emerald-950/25",
       dica: "border border-l-4 border-amber-300/70 border-l-amber-500 bg-amber-50/70 dark:border-amber-800/60 dark:bg-amber-950/25",
     }
-    el.className = `na-imprime-caixa rounded-2xl px-4 py-3 ${classes[this.__tipoCaixa] ?? classes.copiar}`
+    el.className = `na-caixa na-imprime-caixa rounded-2xl px-4 py-3 ${classes[this.__tipoCaixa] ?? classes.copiar}`
     return el
   }
 
-  updateDOM(): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
+    if (prevNode.__tipoCaixa !== this.__tipoCaixa) {
+      dom.setAttribute("data-tipo", this.__tipoCaixa)
+      return false
+    }
     return false
   }
 
@@ -545,6 +721,14 @@ export class CaixaNode extends ElementNode {
 
   canBeEmpty(): boolean {
     return true
+  }
+
+  // Enter no fim da caixa sai para um parágrafo logo abaixo dela
+  insertNewAfter(_selection: RangeSelection, _restoreSelection = true): ParagrafoNotaNode {
+    const paragrafo = $createParagrafoNotaNode()
+    this.insertAfter(paragrafo)
+    paragrafo.selectStart()
+    return paragrafo
   }
 }
 
@@ -556,11 +740,9 @@ export function $isCaixaNode(node: LexicalNode | null | undefined): node is Caix
   return node instanceof CaixaNode
 }
 
-// ============================================================
-// Cabeçalho de caixa (rótulo editável + badge). DecoratorNode que fica
-// como primeiro filho da CaixaNode; a ponte o reconhece e o exclui da
-// lista de filhos.
-// ============================================================
+// Cabeçalho de caixa (rótulo editável + badge). DecoratorNode que
+// fica como primeiro filho da CaixaNode; a ponte o reconhece e o
+// exclui da lista de filhos.
 
 export type SerializedCaixaCabecalhoNode = Spread<{ rotulo?: string }, SerializedLexicalNode>
 
@@ -588,7 +770,7 @@ export class CaixaCabecalhoNode extends DecoratorNode<ReactNode> {
     return { ...super.exportJSON(), rotulo: this.__rotulo }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("div")
     el.className = "mb-2"
     return el
@@ -602,13 +784,17 @@ export class CaixaCabecalhoNode extends DecoratorNode<ReactNode> {
     return false
   }
 
+  isSelectable(): boolean {
+    return false
+  }
+
   getRotulo(): string {
     return this.__rotulo
   }
 
   setRotulo(rotulo: string): void {
-    const w = this.getWritable()
-    w.__rotulo = rotulo
+    const writable = this.getWritable()
+    writable.__rotulo = rotulo
   }
 
   decorate(): ReactNode {
@@ -626,9 +812,8 @@ export function $isCaixaCabecalhoNode(
   return node instanceof CaixaCabecalhoNode
 }
 
-// ============================================================
-// Figura. DecoratorNode: guarda url/legenda e renderiza a UI de imagem.
-// ============================================================
+// Figura. DecoratorNode: guarda url/legenda e renderiza a UI de
+// imagem; selecionável para excluir via teclado.
 
 export type SerializedFiguraNode = Spread<
   { id?: string; url: string; legenda: string },
@@ -663,7 +848,7 @@ export class FiguraNode extends DecoratorNode<ReactNode> {
     return { ...super.exportJSON(), id: this.__id, url: this.__url, legenda: this.__legenda }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("figure")
     el.className = "na-imprime-caixa my-1"
     return el
@@ -675,6 +860,10 @@ export class FiguraNode extends DecoratorNode<ReactNode> {
 
   isInline(): boolean {
     return false
+  }
+
+  isSelectable(): boolean {
+    return true
   }
 
   getUrl(): string {
@@ -698,9 +887,8 @@ export function $isFiguraNode(node: LexicalNode | null | undefined): node is Fig
   return node instanceof FiguraNode
 }
 
-// ============================================================
-// TikZ. DecoratorNode: guarda codigo/legenda e renderiza a UI do diagrama.
-// ============================================================
+// TikZ. DecoratorNode: guarda codigo/legenda e renderiza a UI do
+// diagrama; selecionável para excluir via teclado.
 
 export type SerializedTikzNode = Spread<
   { id?: string; codigo: string; legenda: string },
@@ -735,7 +923,7 @@ export class TikzNode extends DecoratorNode<ReactNode> {
     return { ...super.exportJSON(), id: this.__id, codigo: this.__codigo, legenda: this.__legenda }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("figure")
     el.className = "na-imprime-caixa my-1"
     return el
@@ -747,6 +935,10 @@ export class TikzNode extends DecoratorNode<ReactNode> {
 
   isInline(): boolean {
     return false
+  }
+
+  isSelectable(): boolean {
+    return true
   }
 
   getCodigo(): string {
@@ -770,9 +962,8 @@ export function $isTikzNode(node: LexicalNode | null | undefined): node is TikzN
   return node instanceof TikzNode
 }
 
-// ============================================================
-// Exercícios. DecoratorNode: guarda rotulo/niveis/gabarito.
-// ============================================================
+// Exercícios. DecoratorNode: guarda rotulo/niveis/gabarito;
+// selecionável para excluir via teclado.
 
 export type SerializedExerciciosNode = Spread<
   { id?: string; rotulo: string; niveis: unknown; gabarito: string },
@@ -826,7 +1017,7 @@ export class ExerciciosNode extends DecoratorNode<ReactNode> {
     }
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement("section")
     el.className =
       "na-imprime-caixa rounded-2xl border border-stone-200 bg-stone-50/80 dark:border-stone-800 dark:bg-stone-900/50"
@@ -839,6 +1030,10 @@ export class ExerciciosNode extends DecoratorNode<ReactNode> {
 
   isInline(): boolean {
     return false
+  }
+
+  isSelectable(): boolean {
+    return true
   }
 
   getRotulo(): string {
@@ -863,18 +1058,23 @@ export function $isExerciciosNode(node: LexicalNode | null | undefined): node is
   return node instanceof ExerciciosNode
 }
 
-// ============================================================
-// Tema do Lexical para os blocos (herda o inline de lexical-nodes).
-// ============================================================
+// Tema do Lexical para os blocos (listas herdando o inline de
+// lexical-nodes) e registro dos nós do documento único.
 
-export const TEMA_BLOCOS: EditorThemeClasses = {}
+export const TEMA_BLOCOS: EditorThemeClasses = {
+  list: {
+    ul: "na-lista-ul space-y-1.5",
+    listitem: "na-item-lista",
+  },
+}
 
-// Todos os nós de bloco para registrar no editor de documento único.
 export const NOS_BLOCOS = [
   SecaoNode,
   ParagrafoNotaNode,
   ListaNotaNode,
   ItemListaNotaNode,
+  ListNode,
+  ListItemNode,
   TabelaNotaNode,
   LinhaTabelaNotaNode,
   CelulaTabelaNotaNode,

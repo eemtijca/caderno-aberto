@@ -3,7 +3,7 @@
 // Editor de nota. Orquestra metadados, o documento único WYSIWYG (editor
 // de blocos com Lexical), salvamento automático e exportações.
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowLeft,
   BookOpenText,
@@ -17,7 +17,6 @@ import {
   FileText,
   Link2,
   Loader2,
-  Plus,
   Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -61,7 +60,6 @@ import {
   useSalvarNota,
   useTurmas,
 } from "@/lib/notas/api-client"
-import { useSessao } from "@/hooks/use-sessao"
 import { DialogoCompartilhar } from "@/components/dialogo-compartilhar"
 import { MESES_CAP } from "@/lib/notas/texto"
 import type { AparenciaNota, Bloco, NotaDados } from "@/lib/notas/tipos"
@@ -73,6 +71,7 @@ import {
   variaveisAparencia,
 } from "@/lib/notas/tipos"
 import { EditorNotaWysiwyg } from "./editor-nota-wysiwyg"
+import { BarraAtivaMobile } from "./barra-formatar"
 
 export function VistaEditor({ id, navegar }: { id: string; navegar: (para: string) => void }) {
   const { data: nota, isLoading, isError } = useNota(id)
@@ -115,7 +114,6 @@ function FormularioNota({
   const id = notaInicial.id
   const { data: disciplinas } = useDisciplinas()
   const { data: turmas } = useTurmas()
-  const { perfil } = useSessao()
   const salvar = useSalvarNota(id)
   const excluir = useExcluirNota()
   const duplicar = useDuplicarNota()
@@ -138,6 +136,53 @@ function FormularioNota({
   const [sujo, setSujo] = useState(false)
   const [estadoSalvamento, setEstadoSalvamento] = useState<"salvo" | "salvando" | "erro">("salvo")
   const timerAutoSave = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // payload atual do formulário para o autosave e o flush
+  const dadosAtuais = useCallback(
+    () => ({
+      titulo,
+      disciplinaId,
+      anoLetivo,
+      mes,
+      sobre,
+      habilidades,
+      status,
+      turmasIds: turmasSel,
+      blocos,
+      aparencia,
+    }),
+    [titulo, disciplinaId, anoLetivo, mes, sobre, habilidades, status, turmasSel, blocos, aparencia],
+  )
+
+  // grava imediatamente o que está pendente (usado ao sair da página)
+  const salvarAgora = useCallback(() => {
+    if (!sujo) return
+    if (timerAutoSave.current) clearTimeout(timerAutoSave.current)
+    setEstadoSalvamento("salvando")
+    salvar.mutate(dadosAtuais(), {
+      onSuccess: () => {
+        setSujo(false)
+        setEstadoSalvamento("salvo")
+      },
+      onError: () => setEstadoSalvamento("erro"),
+    })
+  }, [sujo, salvar, dadosAtuais])
+
+  // referência sempre atual do flush (o efeito de saída usa deps vazias)
+  const salvarAgoraRef = useRef(salvarAgora)
+  useEffect(() => {
+    salvarAgoraRef.current = salvarAgora
+  })
+
+  // flush ao sair da rota ou fechar a aba (não perde os últimos toques)
+  useEffect(() => {
+    const aoDescarregar = (): void => salvarAgoraRef.current()
+    window.addEventListener("beforeunload", aoDescarregar)
+    return () => {
+      window.removeEventListener("beforeunload", aoDescarregar)
+      aoDescarregar()
+    }
+  }, [])
 
   // autosave com debounce
   useEffect(() => {
@@ -179,6 +224,7 @@ function FormularioNota({
     blocos,
     aparencia,
     sujo,
+    salvar,
   ])
 
   const marcar =
@@ -577,6 +623,9 @@ function FormularioNota({
       <div className="na-nota" style={variaveisAparencia(aparencia) as React.CSSProperties}>
         <EditorNotaWysiwyg blocos={blocos} onChange={(novos) => mudarBlocos(() => novos)} />
       </div>
+
+      {/* barra de formatação fixa do mobile (desktop usa o bubble da seleção) */}
+      <BarraAtivaMobile />
 
       {compartilharAberto ? (
         <DialogoCompartilhar

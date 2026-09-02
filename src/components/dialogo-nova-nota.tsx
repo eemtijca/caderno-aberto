@@ -28,7 +28,7 @@ import {
   CORES,
   corDisciplina,
   ICONES_DISCIPLINA,
-  MAPA_ICONES,
+  obterIconeDisciplina,
   nomeIconeValido,
 } from "@/lib/notas/cores"
 import { MESES_CAP } from "@/lib/notas/texto"
@@ -150,7 +150,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                     <SelectTrigger className="h-9 rounded-lg">
                       <SelectValue>
                         {(() => {
-                          const Icon = MAPA_ICONES[novaDisciplinaIcone] ?? MAPA_ICONES.BookOpen
+                          const Icon = obterIconeDisciplina(novaDisciplinaIcone)
                           return (
                             <span className="flex items-center gap-2">
                               <Icon className="h-4 w-4" aria-hidden />
@@ -162,7 +162,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                     </SelectTrigger>
                     <SelectContent>
                       {ICONES_DISCIPLINA.map((i) => {
-                        const Icon = MAPA_ICONES[i] ?? MAPA_ICONES.BookOpen
+                        const Icon = obterIconeDisciplina(i)
                         return (
                           <SelectItem key={i} value={i}>
                             <span className="flex items-center gap-2">

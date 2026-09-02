@@ -35,6 +35,13 @@ function RotuloPrefixo({ rotulo }: { rotulo: Rotulo | null | undefined }) {
   return <span className={`font-bold ${CORES_ROTULO[rotulo?.tipo ?? "livre"]}`}>{texto} </span>
 }
 
+const CHAMADA_PADRAO: { icone: typeof TriangleAlert; classe: string; titulo: string; tituloClasse: string } = {
+  icone: TriangleAlert,
+  classe: "border-amber-300/70 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30",
+  titulo: "Atenção:",
+  tituloClasse: "text-amber-800 dark:text-amber-300",
+}
+
 const CHAMADAS: Record<
   string,
   { icone: typeof TriangleAlert; classe: string; titulo: string; tituloClasse: string }
@@ -60,7 +67,7 @@ const CHAMADAS: Record<
 }
 
 function ChamadaView({ estilo, texto }: { estilo: string; texto: string }) {
-  const conf = CHAMADAS[estilo] ?? CHAMADAS.atencao
+  const conf = CHAMADAS[estilo] ?? CHAMADA_PADRAO
   const Icone = conf.icone
   return (
     <div
@@ -127,7 +134,7 @@ function TabelaView({ comCabecalho, linhas }: { comCabecalho: boolean; linhas: s
                   key={j}
                   className="border-b border-stone-200 px-3 py-2 text-left font-bold dark:border-stone-700"
                 >
-                  <Inline texto={linhas[0][j] ?? ""} />
+                  <Inline texto={linhas[0]?.[j] ?? ""} />
                 </th>
               ))}
             </tr>

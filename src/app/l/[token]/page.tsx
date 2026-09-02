@@ -27,11 +27,9 @@ function resumir(texto: string, max = 150): string {
   return limpo.length > max ? `${limpo.slice(0, max - 1).trimEnd()}…` : limpo
 }
 
-/**
- * Página de entrada pública /l/<token>. Serve os metadados OpenGraph
- * (título, descrição e imagem dinâmica por nota) para WhatsApp, Telegram
- * e redes, e redireciona o visitante para a vista de leitura do SPA.
- */
+// Página de entrada pública /l/<token>. Serve os metadados OpenGraph
+// (título, descrição e imagem dinâmica por nota) para WhatsApp, Telegram
+// e redes, e redireciona o visitante para a vista de leitura do SPA.
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params
   const dados = await buscarDadosOg(token).catch(() => null)

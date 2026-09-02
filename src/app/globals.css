@@ -56,11 +56,9 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ============================================================
-   Identidade "Caderno Aberto" — verde institucional #008241
-   sobre neutros quentes (stone). Acentos semânticos vindos dos
-   blocos pedagógicos (âmbar, coral, azul, lilás).
-   ============================================================ */
+/* Identidade "Caderno Aberto" — verde institucional #008241 */
+/* sobre neutros quentes (stone). Acentos semânticos vindos dos */
+/* blocos pedagógicos (âmbar, coral, azul, lilás). */
 
 :root {
   --radius: 0.75rem;
@@ -167,10 +165,8 @@
   font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* ============================================================
-   Aparência da leitura, por nota (--na-fonte/--na-escala/
-   --na-entrelinha definidas pelo editor via style inline).
-   ============================================================ */
+/* Aparência da leitura, por nota (--na-fonte/--na-escala/ */
+/* --na-entrelinha definidas pelo editor via style inline). */
 
 .na-nota {
   font-family: var(--na-fonte, var(--font-corpo)), ui-sans-serif, system-ui, sans-serif;
@@ -183,9 +179,198 @@
   font-size: 1.06em;
 }
 
-/* ============================================================
-   Animações sutis de interface (respeitam prefers-reduced-motion)
-   ============================================================ */
+/* Editor WYSIWYG (documento único). Espelha a tipografia da */
+/* leitura para o editor ser o próprio preview: contadores de */
+/* seção via CSS, espaçamento de parágrafos/listas, chamadas */
+/* com prefixo por estilo e placeholders de bloco vazio. */
+
+/* área do documento: contador de seções, cursor visível e sem rolagem horizontal */
+.editor-lexical {
+  counter-reset: na-secao;
+  min-height: 10rem;
+  overflow-x: clip;
+  caret-color: var(--foreground);
+}
+
+/* número da seção como pílula (igual à vista de leitura) */
+.editor-lexical .na-secao::before {
+  counter-increment: na-secao;
+  content: counter(na-secao);
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  background: #1c1c1a;
+  color: #fafaf8;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .editor-lexical .na-secao::before {
+  background: #f5f5f4;
+  color: #1c1c1a;
+}
+
+/* parágrafos com o respiro da leitura */
+.editor-lexical p {
+  margin: 0 0 0.35rem;
+  min-height: 1.4rem;
+}
+
+/* parágrafo vazio mantém altura clicável */
+.editor-lexical p:empty::after {
+  content: " ";
+  white-space: pre;
+}
+
+/* placeholder do documento vazio (controlado por data-vazio) */
+.editor-lexical[data-vazio="true"] p:first-of-type::before {
+  content: "Escreva a aula ou digite / para inserir blocos…";
+  color: var(--muted-foreground);
+  opacity: 0.7;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* listas com marcadores redondos como na leitura */
+.editor-lexical .na-lista-ul {
+  list-style: none;
+  padding-left: 0.25rem;
+  margin: 0.35rem 0;
+}
+
+.editor-lexical .na-item-lista {
+  position: relative;
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.15rem 0;
+  line-height: 1.65;
+}
+
+.editor-lexical .na-item-lista::before {
+  content: "";
+  flex-shrink: 0;
+  margin-top: 0.55rem;
+  height: 0.375rem;
+  width: 0.375rem;
+  border-radius: 9999px;
+  background: #a8a29e;
+}
+
+.dark .editor-lexical .na-item-lista::before {
+  background: #78716c;
+}
+
+/* chamadas: cores por estilo + prefixo do título (como a leitura) */
+.editor-lexical .na-chamada {
+  display: flex;
+  gap: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  margin: 0.5rem 0;
+  line-height: 1.65;
+}
+
+.editor-lexical .na-chamada[data-estilo="atencao"] {
+  border-color: color-mix(in oklab, oklch(0.83 0.16 80) 70%, transparent);
+  background: oklch(0.97 0.03 85);
+}
+
+.editor-lexical .na-chamada[data-estilo="atencao"]::before {
+  content: "Atenção:";
+  font-weight: 700;
+  font-style: italic;
+  color: oklch(0.5 0.11 60);
+}
+
+.editor-lexical .na-chamada[data-estilo="diaadia"] {
+  border-color: color-mix(in oklab, oklch(0.83 0.14 160) 70%, transparent);
+  background: oklch(0.97 0.03 160);
+}
+
+.editor-lexical .na-chamada[data-estilo="diaadia"]::before {
+  content: "No dia a dia:";
+  font-weight: 700;
+  font-style: italic;
+  color: oklch(0.52 0.1 160);
+}
+
+.editor-lexical .na-chamada[data-estilo="simbolos"] {
+  border-color: color-mix(in oklab, oklch(0.8 0.13 300) 70%, transparent);
+  background: oklch(0.97 0.03 300);
+}
+
+.editor-lexical .na-chamada[data-estilo="simbolos"]::before {
+  content: "Símbolos:";
+  font-weight: 700;
+  font-style: italic;
+  color: oklch(0.5 0.12 300);
+}
+
+.dark .editor-lexical .na-chamada[data-estilo="atencao"] {
+  border-color: oklch(0.45 0.08 70 / 0.6);
+  background: oklch(0.24 0.03 80 / 0.3);
+}
+
+.dark .editor-lexical .na-chamada[data-estilo="diaadia"] {
+  border-color: oklch(0.45 0.1 160 / 0.6);
+  background: oklch(0.24 0.04 160 / 0.3);
+}
+
+.dark .editor-lexical .na-chamada[data-estilo="simbolos"] {
+  border-color: oklch(0.45 0.1 300 / 0.6);
+  background: oklch(0.24 0.04 300 / 0.3);
+}
+
+.dark .editor-lexical .na-chamada[data-estilo="atencao"]::before {
+  color: oklch(0.8 0.12 75);
+}
+
+.dark .editor-lexical .na-chamada[data-estilo="diaadia"]::before {
+  color: oklch(0.8 0.12 160);
+}
+
+.dark .editor-lexical .na-chamada[data-estilo="simbolos"]::before {
+  color: oklch(0.8 0.12 300);
+}
+
+/* equação inline: levemente destacada para o professor achá-la */
+.lex-equation-inline {
+  border-radius: 0.375rem;
+  padding: 0 0.2rem;
+  transition: background-color 0.15s ease;
+}
+
+.lex-equation-inline:hover,
+.lex-equation-inline:focus-visible {
+  background: var(--accent);
+  outline: none;
+}
+
+/* fórmulas em destaque rolam horizontalmente em telas estreitas */
+.editor-lexical .lex-equation-display {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* tabela da nota no editor: células alinhadas ao topo */
+.editor-lexical .na-linha-tabela .na-celula-tabela {
+  display: flex;
+  flex-direction: column;
+}
+
+/* foco visível na área de edição (acessibilidade de teclado) */
+.editor-lexical [contenteditable="true"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+  border-radius: 0.5rem;
+}
+
+/* texto selecionado dentro do editor segue a cor da marca */
+.editor-lexical ::selection {
+  background: color-mix(in oklab, var(--primary) 25%, transparent);
+}
+
+/* Animações sutis de interface (respeitam prefers-reduced-motion) */
 
 /* entrada de vista (fade + 6px para cima) */
 @keyframes na-entra {
@@ -240,9 +425,7 @@
   }
 }
 
-/* ============================================================
-   KaTeX — ajustes finos
-   ============================================================ */
+/* KaTeX — ajustes finos */
 
 .katex {
   font-size: 1.06em;
@@ -268,9 +451,7 @@
   scrollbar-width: thin;
 }
 
-/* ============================================================
-   Impressão — A4 claro, duas colunas, caixas sem quebrar
-   ============================================================ */
+/* Impressão — A4 claro, duas colunas, caixas sem quebrar */
 
 @media print {
   @page {

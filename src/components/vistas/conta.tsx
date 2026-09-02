@@ -60,7 +60,6 @@ import {
   CORES,
   corDisciplina,
   ICONES_DISCIPLINA,
-  MAPA_ICONES,
   nomeIconeValido,
   obterIconeDisciplina,
 } from "@/lib/notas/cores"
@@ -269,6 +268,18 @@ function SecaoSeguranca() {
 
 // Disciplinas
 
+// rótulo do valor do select de ícones: ícone da disciplina ao lado do nome
+function ValorIcone({ nome }: { nome: string }) {
+  // despacho dinâmico de ícone: referência estável vinda do mapa do módulo
+  const Icon = obterIconeDisciplina(nome)
+  return (
+    <span className="flex items-center gap-2">
+      {/* eslint-disable-next-line react-hooks/static-components -- ícone estável do mapa do módulo */}
+      <Icon className="h-4 w-4" aria-hidden /> {nome}
+    </span>
+  )
+}
+
 function SecaoDisciplinas() {
   const disciplinasQ = useDisciplinas()
   const { data: disciplinas, isLoading: carregando } = disciplinasQ
@@ -460,19 +471,12 @@ function SecaoDisciplinas() {
         <Select value={icone} onValueChange={setIcone}>
           <SelectTrigger size="sm" className="h-9 w-40 rounded-lg">
             <SelectValue>
-              {(() => {
-                const Icon = MAPA_ICONES[icone] ?? MAPA_ICONES.BookOpen
-                return (
-                  <span className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" aria-hidden /> {icone}
-                  </span>
-                )
-              })()}
+              <ValorIcone nome={icone} />
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {ICONES_DISCIPLINA.map((i) => {
-              const Icon = MAPA_ICONES[i] ?? MAPA_ICONES.BookOpen
+              const Icon = obterIconeDisciplina(i)
               return (
                 <SelectItem key={i} value={i}>
                   <span className="flex items-center gap-2">
@@ -802,7 +806,7 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
           <p className="text-sm font-bold">Importar</p>
           <p className="text-muted-foreground text-[0.8rem] leading-snug">
             Restaure um backup (substitui tudo) ou importe uma nota única (.md ou .json gerados pelo
-            app, incluindo o formato antigo "Notas de Aula").
+            app, incluindo o formato antigo &ldquo;Notas de Aula&rdquo;).
           </p>
           <input
             ref={inputBackup}

@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   BookOpenText,
   CalendarDays,
-  Check,
   Eye,
   EyeOff,
   Hourglass,
@@ -54,6 +53,34 @@ interface DadosPublicos {
   notas: NotaPublica[]
 }
 
+// monta os dados públicos da nota de demonstração (função pura)
+function montarDemo(): DadosPublicos {
+  return {
+    link: {
+      tipo: "nota",
+      nome: DEMO_NOTA.titulo,
+      professorNome: "Equipe Caderno Aberto",
+      expiraEm: null,
+    },
+    notas: [
+      {
+        id: DEMO_NOTA.id,
+        titulo: DEMO_NOTA.titulo,
+        disciplinaNome: DEMO_NOTA.disciplina?.nome ?? "",
+        disciplinaCor: DEMO_NOTA.disciplina?.cor ?? "ciano",
+        turmasNomes: DEMO_NOTA.turmas.map((t) => t.nome),
+        anoLetivo: DEMO_NOTA.anoLetivo,
+        mes: DEMO_NOTA.mes,
+        sobre: DEMO_NOTA.sobre,
+        habilidades: DEMO_NOTA.habilidades,
+        blocos: DEMO_NOTA.blocos,
+        aparencia: {},
+        atualizadoEm: DEMO_NOTA.atualizadoEm,
+      },
+    ],
+  }
+}
+
 export function VistaPublica({
   token,
   navegar,
@@ -62,48 +89,31 @@ export function VistaPublica({
   navegar?: (para: string) => void
 }) {
   const { setTheme } = useTheme()
-  const [dados, setDados] = useState<DadosPublicos | null>(null)
+  const ehDemo = token === DEMO_TOKEN
+  const [dados, setDados] = useState<DadosPublicos | null>(() => (ehDemo ? montarDemo() : null))
   const [erro, setErro] = useState("")
-  const [carregando, setCarregando] = useState(true)
-  const [selecionada, setSelecionada] = useState<string | null>(null)
+  const [carregando, setCarregando] = useState(!ehDemo)
+  const [selecionada, setSelecionada] = useState<string | null>(() =>
+    ehDemo ? DEMO_NOTA.id : null,
+  )
   const [mostrarGabarito, setMostrarGabarito] = useState(false)
   const [busca, setBusca] = useState("")
+  // instante do montar: fixa o "agora" sem quebrar a pureza do render
+  const [montadoEm] = useState(() => Date.now())
 
-  useEffect(() => {
-    if (token === DEMO_TOKEN) {
-      const demo: DadosPublicos = {
-        link: {
-          tipo: "nota",
-          nome: DEMO_NOTA.titulo,
-          professorNome: "Equipe Caderno Aberto",
-          expiraEm: null,
-        },
-        notas: [
-          {
-            id: DEMO_NOTA.id,
-            titulo: DEMO_NOTA.titulo,
-            disciplinaNome: DEMO_NOTA.disciplina?.nome ?? "",
-            disciplinaCor: DEMO_NOTA.disciplina?.cor ?? "ciano",
-            turmasNomes: DEMO_NOTA.turmas.map((t) => t.nome),
-            anoLetivo: DEMO_NOTA.anoLetivo,
-            mes: DEMO_NOTA.mes,
-            sobre: DEMO_NOTA.sobre,
-            habilidades: DEMO_NOTA.habilidades,
-            blocos: DEMO_NOTA.blocos,
-            aparencia: {},
-            atualizadoEm: DEMO_NOTA.atualizadoEm,
-          },
-        ],
-      }
-      setDados(demo)
-      setSelecionada(DEMO_NOTA.id)
-      setCarregando(false)
-      setErro("")
-      return
-    }
-    let vivo = true
+  // reset do estado de carga na troca de token (ajuste no render, sem efeito)
+  const [tokenAnterior, setTokenAnterior] = useState(token)
+  if (tokenAnterior !== token) {
+    setTokenAnterior(token)
     setCarregando(true)
     setErro("")
+    setDados(null)
+  }
+
+  useEffect(() => {
+    // a demo já vem no estado inicial; o efeito só busca o token real
+    if (ehDemo) return
+    let vivo = true
     fetch(`/api/publico/${encodeURIComponent(token)}`, { cache: "no-store" })
       .then(async (r) => {
         if (!r.ok) {
@@ -126,7 +136,7 @@ export function VistaPublica({
     return () => {
       vivo = false
     }
-  }, [token])
+  }, [token, ehDemo])
 
   const varias = Boolean(dados && dados.link.tipo !== "nota" && dados.notas.length > 1)
   const nota = dados?.notas.find((n) => n.id === selecionada) ?? dados?.notas[0] ?? null
@@ -422,7 +432,7 @@ export function VistaPublica({
       )}
 
       {/* aviso de expiração */}
-      {expira && expira.getTime() - Date.now() < 3 * 24 * 3600 * 1000 ? (
+      {expira && expira.getTime() - montadoEm < 3 * 24 * 3600 * 1000 ? (
         <p className="na-imprime-esconder fixed inset-x-0 bottom-0 z-30 mx-auto mb-0 flex w-fit items-center gap-1.5 rounded-t-xl border border-b-0 border-amber-300 bg-amber-50 px-3.5 py-1.5 text-[0.72rem] font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
           <Hourglass className="h-3 w-3" aria-hidden />
           Este link expira em {expira.toLocaleDateString("pt-BR")}

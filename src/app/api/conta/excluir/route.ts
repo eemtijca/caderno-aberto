@@ -5,10 +5,8 @@ import { SUPABASE_URL, SUPABASE_CHAVE_ANON } from "@/lib/supabase/ambiente"
 
 export const dynamic = "force-dynamic"
 
-/**
- * POST /api/conta/excluir. Solicita exclusão com carência de 24 horas.
- * Exige senha atual e confirmação com texto EXCLUIR.
- */
+// POST /api/conta/excluir. Solicita exclusão com carência de 24 horas.
+// Exige senha atual e confirmação com texto EXCLUIR.
 export async function POST(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

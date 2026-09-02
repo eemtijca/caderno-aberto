@@ -1,10 +1,8 @@
 // Utilitários LaTeX. Compatibilidade com o pipeline original (notaaula.cls) e preparação para KaTeX.
 
-/**
- * Encontra o argumento `{...}` balanceado que começa em `abre`
- * (índice do `{`). Retorna { fim, conteudo }. Considera `\{`, `\}`
- * e comandos (`\alpha`) ao contar chaves.
- */
+// Encontra o argumento `{...}` balanceado que começa em `abre`
+// (índice do `{`). Retorna { fim, conteudo }. Considera `\{`, `\}`
+// e comandos (`\alpha`) ao contar chaves.
 export function varrerChaves(s: string, abre: number): { fim: number; conteudo: string } | null {
   if (s[abre] !== "{") return null
   let profundidade = 0
@@ -76,11 +74,9 @@ export function preprocessarLatex(latex: string): string {
   return r
 }
 
-/**
- * Expande os comandos pt-BR para LaTeX puro no .tex gerado
- * (pdfLaTeX não conhece \dec/\un/\resultado, então traduzimos
- * para construções de amsmath/xcolor definidas no preâmbulo).
- */
+// Expande os comandos pt-BR para LaTeX puro no .tex gerado
+// (pdfLaTeX não conhece \dec/\un/\resultado, então traduzimos
+// para construções de amsmath/xcolor definidas no preâmbulo).
 export function prepararMatematicaTex(latex: string): string {
   let r = latex
   r = substituirComando(r, "dec", (c) => c.replace(/,/g, "{,}"))
@@ -113,11 +109,9 @@ export function escaparLatex(texto: string): string {
     .replace(/\^/g, "\\textasciicircum{}")
 }
 
-/**
- * Converte texto-inline (com $matemática$, **negrito**, *itálico*,
- * `código`, \resultado{...}, \dest{...}) para LaTeX corrido.
- * Comandos e matemática passam direto (notaaula.cls os entende).
- */
+// Converte texto-inline (com $matemática$, **negrito**, *itálico*,
+// `código`, \resultado{...}, \dest{...}) para LaTeX corrido.
+// Comandos e matemática passam direto (notaaula.cls os entende).
 export function inlineParaLatex(texto: string): string {
   if (!texto) return ""
   let saida = ""

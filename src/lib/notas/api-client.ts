@@ -219,7 +219,7 @@ export function useSalvarNota(id: string | undefined) {
         method: "PUT",
         body: JSON.stringify(dados),
       }),
-    onSuccess: (r) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["nota", id] })
       qc.invalidateQueries({ queryKey: ["notas"] })
       qc.invalidateQueries({ queryKey: ["disciplinas"] })

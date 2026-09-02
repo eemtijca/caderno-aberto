@@ -13,10 +13,8 @@ export interface SessaoProfessor {
   perfil: PerfilLinha | null
 }
 
-/**
- * Sessão do professor logado (validada contra o servidor de
- * auth . Nunca confiamos apenas no JWT). Null se não houver.
- */
+// Sessão do professor logado (validada contra o servidor de
+// auth . Nunca confiamos apenas no JWT). Null se não houver.
 export async function sessaoProfessor(): Promise<SessaoProfessor | null> {
   const cliente = await clienteServidor()
   const { data, error } = await cliente.auth.getUser()

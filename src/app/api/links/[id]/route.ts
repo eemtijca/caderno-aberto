@@ -6,10 +6,8 @@ export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ id: string }> }
 
-/**
- * PUT /api/links/[id] . Gerencia o link:
- *   { nome?, ativo?, expiraEm? (ISO | null), regenerar? }
- */
+// PUT /api/links/[id] . Gerencia o link:
+// { nome?, ativo?, expiraEm? (ISO | null), regenerar? }
 export async function PUT(req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

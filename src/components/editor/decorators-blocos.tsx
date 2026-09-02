@@ -2,15 +2,15 @@
 
 // Componentes renderizados pelos DecoratorNodes de bloco (figura, tikz,
 // exercícios e cabeçalho de caixa). Cada um lê e atualiza o nó via o
-// contexto do Lexical, mantendo o documento como fonte de verdade.
+// contexto do Lexical, mantendo o documento como fonte de verdade. Os
+// controles usam alvos de toque generosos (≥40px) para funcionar no mobile.
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { CircleAlert, Eye, ImagePlus, PencilLine, Plus, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
-import { $getNodeByKey } from "lexical"
-import type { NodeKey } from "lexical"
+import { $getNodeByKey, type NodeKey } from "lexical"
 import { comprimirImagem, enviarImagem } from "@/lib/notas/api-client"
 import { Tikz } from "@/components/notas/tikz"
 import { EditorLexical } from "./editor-lexical"
@@ -24,23 +24,23 @@ import {
 } from "@/lib/notas/lexical-blocos"
 import type { Questao } from "@/lib/notas/tipos"
 
-// ============================================================
 // Figura
-// ============================================================
 
 export function FiguraComponent({ nodeKey }: { nodeKey: NodeKey }) {
   const [editor] = useLexicalComposerContext()
   const inputArquivo = useRef<HTMLInputElement>(null)
   const [enviando, setEnviando] = useState(false)
+  const [dados, setDados] = useState(() => lerFigura(editor, nodeKey))
 
-  const url = editor.getEditorState().read(() => {
-    const n = $getNodeByKey(nodeKey)
-    return $isFiguraNode(n) ? n.getUrl() : ""
-  })
-  const legenda = editor.getEditorState().read(() => {
-    const n = $getNodeByKey(nodeKey)
-    return $isFiguraNode(n) ? n.getLegenda() : ""
-  })
+  // mantém o componente sincronizado quando o nó muda (vindo do undo etc.)
+  useEffect(() => {
+    return editor.registerUpdateListener(() => {
+      setDados(lerFigura(editor, nodeKey))
+    })
+  }, [editor, nodeKey])
+
+  const url = dados.url
+  const legenda = dados.legenda
 
   const patch = useCallback(
     (p: { url?: string; legenda?: string }) => {
@@ -75,7 +75,7 @@ export function FiguraComponent({ nodeKey }: { nodeKey: NodeKey }) {
   return (
     <div className="space-y-2">
       {url ? (
-        <div className="flex items-start gap-3">
+        <div className="flex flex-wrap items-start gap-3">
           <img
             src={url}
             alt="Pré-visualização da figura"
@@ -84,7 +84,7 @@ export function FiguraComponent({ nodeKey }: { nodeKey: NodeKey }) {
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 rounded-lg text-xs"
+            className="h-9 gap-1.5 rounded-lg text-xs"
             onClick={() => patch({ url: "" })}
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remover
@@ -105,7 +105,7 @@ export function FiguraComponent({ nodeKey }: { nodeKey: NodeKey }) {
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 rounded-lg text-xs"
+            className="h-9 gap-1.5 rounded-lg text-xs"
             onClick={() => inputArquivo.current?.click()}
             disabled={enviando}
           >
@@ -116,8 +116,9 @@ export function FiguraComponent({ nodeKey }: { nodeKey: NodeKey }) {
             value={url}
             onChange={(e) => patch({ url: e.target.value })}
             placeholder="…ou cole uma URL (https://…)"
-            className="h-8 flex-1 rounded-lg text-xs"
+            className="h-9 min-w-40 flex-1 rounded-lg text-xs"
             aria-label="URL da imagem"
+            inputMode="url"
           />
         </div>
       )}
@@ -131,21 +132,29 @@ export function FiguraComponent({ nodeKey }: { nodeKey: NodeKey }) {
   )
 }
 
-// ============================================================
+// lê url/legenda da figura no estado atual do editor
+function lerFigura(editor: ReturnType<typeof useLexicalComposerContext>[0], nodeKey: NodeKey) {
+  return editor.getEditorState().read(() => {
+    const n = $getNodeByKey(nodeKey)
+    return $isFiguraNode(n) ? { url: n.getUrl(), legenda: n.getLegenda() } : { url: "", legenda: "" }
+  })
+}
+
 // TikZ
-// ============================================================
 
 export function TikzComponent({ nodeKey }: { nodeKey: NodeKey }) {
   const [editor] = useLexicalComposerContext()
+  const [dados, setDados] = useState(() => lerTikz(editor, nodeKey))
 
-  const codigo = editor.getEditorState().read(() => {
-    const n = $getNodeByKey(nodeKey)
-    return $isTikzNode(n) ? n.getCodigo() : ""
-  })
-  const legenda = editor.getEditorState().read(() => {
-    const n = $getNodeByKey(nodeKey)
-    return $isTikzNode(n) ? n.getLegenda() : ""
-  })
+  // mantém o componente sincronizado quando o nó muda (vindo do undo etc.)
+  useEffect(() => {
+    return editor.registerUpdateListener(() => {
+      setDados(lerTikz(editor, nodeKey))
+    })
+  }, [editor, nodeKey])
+
+  const codigo = dados.codigo
+  const legenda = dados.legenda
 
   const patch = useCallback(
     (p: { codigo?: string; legenda?: string }) => {
@@ -186,24 +195,38 @@ export function TikzComponent({ nodeKey }: { nodeKey: NodeKey }) {
   )
 }
 
-// ============================================================
+// lê codigo/legenda do tikz no estado atual do editor
+function lerTikz(editor: ReturnType<typeof useLexicalComposerContext>[0], nodeKey: NodeKey) {
+  return editor.getEditorState().read(() => {
+    const n = $getNodeByKey(nodeKey)
+    return $isTikzNode(n)
+      ? { codigo: n.getCodigo(), legenda: n.getLegenda() }
+      : { codigo: "", legenda: "" }
+  })
+}
+
 // Cabeçalho de caixa (rótulo + badge)
-// ============================================================
 
 export function CaixaCabecalhoComponent({ nodeKey }: { nodeKey: NodeKey }) {
   const [editor] = useLexicalComposerContext()
+  const [rotulo, setRotulo] = useState("")
+  const [tipoCaixa, setTipoCaixa] = useState("copiar")
 
-  const rotulo = editor.getEditorState().read(() => {
-    const n = $getNodeByKey(nodeKey)
-    return $isCaixaCabecalhoNode(n) ? n.getRotulo() : ""
-  })
-  const pai = editor.getEditorState().read(() => {
-    const n = $getNodeByKey(nodeKey)
-    return n?.getParent()
-  })
-  const tipoCaixa = (pai as unknown as { __tipoCaixa?: string } | null)?.__tipoCaixa ?? "copiar"
+  // mantém rótulo e tipo sincronizados com o nó (undo, duplicar etc.)
+  useEffect(() => {
+    return editor.registerUpdateListener(() => {
+      const leitura = editor.getEditorState().read(() => {
+        const n = $getNodeByKey(nodeKey)
+        const rotuloAtual = $isCaixaCabecalhoNode(n) ? n.getRotulo() : ""
+        const pai = n?.getParent() as { __tipoCaixa?: string } | null | undefined
+        return { rotulo: rotuloAtual, tipo: pai?.__tipoCaixa ?? "copiar" }
+      })
+      setRotulo(leitura.rotulo)
+      setTipoCaixa(leitura.tipo)
+    })
+  }, [editor, nodeKey])
 
-  const setRotulo = (valor: string) => {
+  const setRotuloNo = (valor: string) => {
     editor.update(() => {
       const n = $getNodeByKey(nodeKey)
       if ($isCaixaCabecalhoNode(n)) n.setRotulo(valor)
@@ -227,7 +250,8 @@ export function CaixaCabecalhoComponent({ nodeKey }: { nodeKey: NodeKey }) {
         "rounded-md bg-amber-500 px-1.5 py-0.5 text-[0.62rem] tracking-[0.18em] text-white dark:bg-amber-400 dark:text-stone-900",
     },
   }
-  const badge = badges[tipoCaixa] ?? badges.copiar
+  const badge = badges[tipoCaixa] ?? badges["copiar"]
+  if (badge === undefined) return null
 
   return (
     <div className="flex items-center gap-2">
@@ -235,18 +259,16 @@ export function CaixaCabecalhoComponent({ nodeKey }: { nodeKey: NodeKey }) {
       <span className={badge.classe}>{badge.rotulo}</span>
       <Input
         value={rotulo}
-        onChange={(e) => setRotulo(e.target.value)}
+        onChange={(e) => setRotuloNo(e.target.value)}
         placeholder="Rótulo da caixa"
-        className="hover:border-border/70 focus:border-border focus:bg-card h-7 flex-1 rounded-lg border border-transparent bg-transparent px-2 text-[0.85rem] font-bold tracking-wide uppercase transition-colors outline-none"
+        className="h-9 flex-1 rounded-lg border border-transparent bg-transparent px-2 text-[0.85rem] font-bold tracking-wide uppercase transition-colors outline-none hover:border-border/70 focus:border-border focus:bg-card"
         aria-label="Rótulo da caixa"
       />
     </div>
   )
 }
 
-// ============================================================
 // Exercícios
-// ============================================================
 
 interface NivelLocal {
   numero: number
@@ -275,10 +297,10 @@ function QuestaoEditor({
         <button
           type="button"
           onClick={() => onChange({ ...questao, alternativas: questao.alternativas.slice(0, -1) })}
-          className="text-muted-foreground/60 hover:bg-accent hover:text-destructive rounded-md p-1 transition-colors"
+          className="text-muted-foreground/60 hover:bg-accent hover:text-destructive flex h-8 w-8 items-center justify-center rounded-md transition-colors"
           aria-label={`Remover alternativa da questão ${numero}`}
         >
-          <X className="h-3 w-3" aria-hidden />
+          <X className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
       <EditorLexical
@@ -303,7 +325,7 @@ function QuestaoEditor({
                 <button
                   type="button"
                   onClick={() => onChange({ ...questao, correta: correta ? null : k })}
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[0.62rem] font-bold transition-colors ${
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[0.65rem] font-bold transition-colors ${
                     correta
                       ? "border-emerald-500 bg-emerald-500 text-white"
                       : "border-muted-foreground/40 text-muted-foreground hover:border-foreground"
@@ -329,18 +351,18 @@ function QuestaoEditor({
           <button
             type="button"
             onClick={() => onChange({ ...questao, alternativas: [...questao.alternativas, ""] })}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-0.5 text-[0.72rem] font-semibold transition-colors"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex min-h-9 items-center gap-1 rounded-lg px-2.5 text-[0.72rem] font-semibold transition-colors"
           >
-            <Plus className="h-3 w-3" aria-hidden /> alternativa
+            <Plus className="h-3.5 w-3.5" aria-hidden /> alternativa
           </button>
         ) : null}
         {questao.alternativas.length > 0 ? (
           <button
             type="button"
             onClick={() => onChange({ ...questao, alternativas: [], correta: null })}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-0.5 text-[0.72rem] font-semibold transition-colors"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex min-h-9 items-center gap-1 rounded-lg px-2.5 text-[0.72rem] font-semibold transition-colors"
           >
-            <CircleAlert className="h-3 w-3" aria-hidden /> virar questão aberta
+            <CircleAlert className="h-3.5 w-3.5" aria-hidden /> virar questão aberta
           </button>
         ) : null}
       </div>
@@ -350,19 +372,18 @@ function QuestaoEditor({
 
 export function ExerciciosComponent({ nodeKey }: { nodeKey: NodeKey }) {
   const [editor] = useLexicalComposerContext()
+  const [dados, setDados] = useState(() => lerExercicios(editor, nodeKey))
 
-  const rotulo = editor.getEditorState().read(() => {
-    const n = $getNodeByKey(nodeKey)
-    return $isExerciciosNode(n) ? n.__rotulo : ""
-  })
-  const niveis = editor.getEditorState().read(() => {
-    const n = $getNodeByKey(nodeKey)
-    return ($isExerciciosNode(n) ? (n.__niveis as NivelLocal[]) : []) ?? []
-  })
-  const gabarito = editor.getEditorState().read(() => {
-    const n = $getNodeByKey(nodeKey)
-    return $isExerciciosNode(n) ? n.__gabarito : ""
-  })
+  // mantém o componente sincronizado quando o nó muda (vindo do undo etc.)
+  useEffect(() => {
+    return editor.registerUpdateListener(() => {
+      setDados(lerExercicios(editor, nodeKey))
+    })
+  }, [editor, nodeKey])
+
+  const rotulo = dados.rotulo
+  const niveis = dados.niveis
+  const gabarito = dados.gabarito
 
   const patch = useCallback(
     (p: { rotulo?: string; niveis?: NivelLocal[]; gabarito?: string }) => {
@@ -408,7 +429,7 @@ export function ExerciciosComponent({ nodeKey }: { nodeKey: NodeKey }) {
           onChange={(e) => patch({ rotulo: e.target.value })}
           placeholder="Exercícios propostos"
           aria-label="Rótulo dos exercícios"
-          className="hover:border-border/70 focus:border-border focus:bg-card w-full rounded-lg border border-transparent bg-transparent px-2 py-1 text-[0.92rem] font-bold tracking-wide uppercase transition-colors outline-none"
+          className="h-9 w-full rounded-lg border border-transparent bg-transparent px-2 text-[0.92rem] font-bold tracking-wide uppercase transition-colors outline-none hover:border-border/70 focus:border-border focus:bg-card"
         />
       </div>
 
@@ -426,7 +447,7 @@ export function ExerciciosComponent({ nodeKey }: { nodeKey: NodeKey }) {
               onChange={(e) => mudarNivel(i, { titulo: e.target.value })}
               placeholder="Conceitos / Aplicação / Síntese"
               aria-label={`Título do nível ${nivel.numero}`}
-              className="hover:border-border/70 focus:border-border focus:bg-card w-full rounded-md border border-transparent bg-transparent px-1.5 py-1 text-sm font-bold transition-colors outline-none"
+              className="h-9 w-full rounded-md border border-transparent bg-transparent px-1.5 text-sm font-bold transition-colors outline-none hover:border-border/70 focus:border-border focus:bg-card"
             />
           </div>
 
@@ -444,7 +465,7 @@ export function ExerciciosComponent({ nodeKey }: { nodeKey: NodeKey }) {
           <button
             type="button"
             onClick={() => mudarNivel(i, { questoes: [...nivel.questoes, novaQuestao()] })}
-            className="border-border text-muted-foreground hover:bg-accent hover:text-foreground mt-2 flex items-center gap-1.5 rounded-lg border border-dashed px-2.5 py-1.5 text-[0.78rem] font-semibold transition-colors hover:border-solid"
+            className="border-border text-muted-foreground hover:bg-accent hover:text-foreground mt-2 flex min-h-10 items-center gap-1.5 rounded-lg border border-dashed px-2.5 text-[0.78rem] font-semibold transition-colors hover:border-solid"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden /> questão
           </button>
@@ -464,4 +485,20 @@ export function ExerciciosComponent({ nodeKey }: { nodeKey: NodeKey }) {
       </div>
     </div>
   )
+}
+
+// lê rotulo/niveis/gabarito dos exercícios no estado atual do editor
+function lerExercicios(
+  editor: ReturnType<typeof useLexicalComposerContext>[0],
+  nodeKey: NodeKey,
+): { rotulo: string; niveis: NivelLocal[]; gabarito: string } {
+  return editor.getEditorState().read(() => {
+    const n = $getNodeByKey(nodeKey)
+    if (!$isExerciciosNode(n)) return { rotulo: "", niveis: [], gabarito: "" }
+    return {
+      rotulo: n.__rotulo,
+      niveis: (n.__niveis as NivelLocal[]) ?? [],
+      gabarito: n.__gabarito,
+    }
+  })
 }

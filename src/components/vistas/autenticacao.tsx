@@ -2,7 +2,7 @@
 
 // Autenticação. Landing pública e formulários de entrada, cadastro e redefinição de senha.
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
   ArrowRight,
   BookOpenCheck,
@@ -417,7 +417,7 @@ function forcaSenha(senha: string): { nivel: 0 | 1 | 2 | 3; rotulo: string; cor:
     { nivel: 2 as const, rotulo: "média", cor: "bg-amber-400" },
     { nivel: 3 as const, rotulo: "boa", cor: "bg-emerald-500" },
   ]
-  return niveis[Math.max(0, pontos - 1)] ?? niveis[0]
+  return niveis[Math.max(0, pontos - 1)] ?? { nivel: 0, rotulo: "—", cor: "bg-stone-400" }
 }
 
 function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => void }) {
@@ -430,11 +430,13 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
   const [erro, setErro] = useState("")
   const [sucesso, setSucesso] = useState("")
 
-  // limpa mensagens ao trocar de modo
-  useEffect(() => {
+  // limpa mensagens ao trocar de modo (ajuste durante o render, sem efeito)
+  const [modoAnterior, setModoAnterior] = useState(modo)
+  if (modoAnterior !== modo) {
+    setModoAnterior(modo)
     setErro("")
     setSucesso("")
-  }, [modo])
+  }
 
   const [reenvioOk, setReenvioOk] = useState(false)
   const submeter = async (e: React.FormEvent) => {

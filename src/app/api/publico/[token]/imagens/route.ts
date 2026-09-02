@@ -16,14 +16,11 @@ const MIMES: Record<string, string> = {
   svg: "image/svg+xml",
 }
 
-/**
- * GET /api/publico/[token]/imagens?caminho=<uid>/<arquivo>
- *
- * Serve figuras das notas públicas SEM expor o bucket: valida o
- * link (ativo/não expirado via RLS), confere que a imagem
- * pertence ao professor do link E que o caminho está referenciado
- * nos blocos de uma nota alcançável por esse link.
- */
+// GET /api/publico/[token]/imagens?caminho=<uid>/<arquivo>
+// Serve figuras das notas públicas SEM expor o bucket: valida o
+// link (ativo/não expirado via RLS), confere que a imagem
+// pertence ao professor do link E que o caminho está referenciado
+// nos blocos de uma nota alcançável por esse link.
 export async function GET(req: NextRequest, ctx: Ctx) {
   const { token } = await ctx.params
   const caminho = req.nextUrl.searchParams.get("caminho") ?? ""

@@ -2,7 +2,7 @@
 
 import { Bloco, idBloco } from "./tipos"
 
-export function notaModelo(titulo: string): Bloco[] {
+export function notaModelo(_titulo: string): Bloco[] {
   return [
     { id: idBloco(), tipo: "secao", titulo: "Primeiro tópico" },
     {
@@ -83,7 +83,7 @@ export function notaModelo(titulo: string): Bloco[] {
 }
 
 /** Nota vazia . Só a estrutura mínima. */
-export function notaVazia(titulo: string): Bloco[] {
+export function notaVazia(_titulo: string): Bloco[] {
   return [
     { id: idBloco(), tipo: "secao", titulo: "Primeiro tópico" },
     { id: idBloco(), tipo: "paragrafo", texto: "", rotulo: null },

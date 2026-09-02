@@ -7,10 +7,8 @@ import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 
 export const dynamic = "force-dynamic"
 
-/**
- * GET /api/backup . Exporta TUDO do professor:
- * perfil, disciplinas, turmas, notas, links e imagens (base64).
- */
+// GET /api/backup . Exporta TUDO do professor:
+// perfil, disciplinas, turmas, notas, links e imagens (base64).
 export async function GET() {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -98,10 +96,8 @@ export async function GET() {
   })
 }
 
-/**
- * POST /api/backup . Restaura um backup (v2 do app atual ou v1
- * do app antigo de arquivo único), SUBSTITUINDO os dados atuais.
- */
+// POST /api/backup . Restaura um backup (v2 do app atual ou v1
+// do app antigo de arquivo único), SUBSTITUINDO os dados atuais.
 export async function POST(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

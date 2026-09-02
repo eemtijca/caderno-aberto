@@ -23,10 +23,8 @@ export interface BlocoSecao extends BlocoBase {
 
 export interface BlocoParagrafo extends BlocoBase {
   tipo: "paragrafo"
-  /**
-   * Texto com marcação inline: $matemática$, **negrito**, *itálico*,
-   * `código`, \resultado{...} (destaque coral) e \dest{...} (palavra-chave).
-   */
+// Texto com marcação inline: $matemática$, **negrito**, *itálico*,
+// `código`, \resultado{...} (destaque coral) e \dest{...} (palavra-chave).
   texto: string
   rotulo?: Rotulo | null
 }
@@ -237,10 +235,8 @@ export function normalizarAparencia(entrada: unknown): AparenciaNota {
   return saida
 }
 
-/**
- * Variáveis CSS do contêiner de leitura, prontas para spread em `style`.
- * Aparencia ausente devolve o objeto vazio (o CSS aplica os padrões).
- */
+// Variáveis CSS do contêiner de leitura, prontas para spread em `style`.
+// Aparencia ausente devolve o objeto vazio (o CSS aplica os padrões).
 export function variaveisAparencia(ap: AparenciaNota | null | undefined): Record<string, string> {
   const fonte = ap?.fonte ?? APARENCIA_PADRAO.fonte
   const escala = ap?.escala ?? APARENCIA_PADRAO.escala

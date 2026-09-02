@@ -18,7 +18,7 @@ export type Rota =
   | { vista: "redefinir" }
 
 export function analisarHash(hash: string): Rota {
-  const limpo = hash.replace(/^#\/?/, "").split("?")[0]
+  const limpo = hash.replace(/^#\/?/, "").split("?")[0] ?? ""
   const partes = limpo.split("/").filter(Boolean)
   if (partes.length === 0) return { vista: "inicio" }
   switch (partes[0]) {

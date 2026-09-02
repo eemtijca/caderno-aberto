@@ -8,10 +8,8 @@ export const dynamic = "force-dynamic"
 const MIMES = ["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"]
 const MAX_BYTES = 6 * 1024 * 1024 // 6 MB (igual ao bucket)
 
-/**
- * POST /api/imagens . Upload de figura (multipart/form-data).
- * Salva em `imagens/<uid>/<token>.<ext>` (bucket privado, RLS por pasta).
- */
+// POST /api/imagens . Upload de figura (multipart/form-data).
+// Salva em `imagens/<uid>/<token>.<ext>` (bucket privado, RLS por pasta).
 export async function POST(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -26,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (bytes.length === 0) return erroApi("Imagem vazia.")
   if (bytes.length > MAX_BYTES) return erroApi("Imagem muito grande (máx. 6 MB).")
 
-  const ext = mime.split("/")[1].replace("jpeg", "jpg").replace("svg+xml", "svg")
+  const ext = (mime.split("/")[1] ?? "png").replace("jpeg", "jpg").replace("svg+xml", "svg")
   const caminho = `${usuario.id}/${gerarToken(14)}.${ext}`
 
   const { error } = await cliente.storage
@@ -37,11 +35,9 @@ export async function POST(req: NextRequest) {
   return json({ caminho, url: `/api/imagens?path=${encodeURIComponent(caminho)}` }, 201)
 }
 
-/**
- * GET /api/imagens?path=<uid>/<arquivo>&png=1 . Serve a figura (RLS do storage).
- * `png=1` converte webp/svg para PNG — pdfLaTeX (arquivo .tex exportado)
- * só aceita png/jpg.
- */
+// GET /api/imagens?path=<uid>/<arquivo>&png=1 . Serve a figura (RLS do storage).
+// `png=1` converte webp/svg para PNG — pdfLaTeX (arquivo .tex exportado)
+// só aceita png/jpg.
 export async function GET(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

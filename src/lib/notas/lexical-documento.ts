@@ -11,9 +11,7 @@ import {
   type NoSerializado,
 } from "./lexical-bridge"
 
-// ============================================================
 // Bloco → nó serializado
-// ============================================================
 
 /** Converte um parágrafo (filho ou nível superior) para nó inline. */
 function paragrafoParaNo(
@@ -196,9 +194,7 @@ export function blocosParaEstado(blocos: Bloco[]): EstadoLexical {
   } as unknown as EstadoLexical
 }
 
-// ============================================================
 // Nó serializado → bloco
-// ============================================================
 
 /** Serializa os filhos inline (parágrafo/chamada/seção) de volta para texto. */
 function filhosInlineParaTexto(children: NoSerializado[] = []): string {

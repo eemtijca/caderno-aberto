@@ -132,7 +132,20 @@ export const CORES: CorDisciplina[] = [
 ]
 
 export function corDisciplina(chave: string | undefined | null): CorDisciplina {
-  return CORES.find((c) => c.chave === chave) ?? CORES[0]
+  return CORES.find((c) => c.chave === chave) ?? CORES[0] ?? CORS_PADRAO
+}
+
+// fallback estático quando a lista de cores estiver vazia (tipagem estrita)
+const CORS_PADRAO: CorDisciplina = {
+  chave: "pedra",
+  nome: "Neutro",
+  chip: "bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-200",
+  chipContorno: "border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300",
+  ponto: "bg-stone-500",
+  texto: "text-stone-700 dark:text-stone-300",
+  borda: "border-stone-200 dark:border-stone-700",
+  fundoSuave: "bg-stone-100 dark:bg-stone-800/40",
+  barra: "bg-stone-500",
 }
 
 export const ICONES_DISCIPLINA = [

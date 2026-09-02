@@ -7,7 +7,6 @@ import {
   Bloco,
   BlocoFilho,
   ENTRELINHAS_NOTA,
-  ESCALAS_NOTA,
   NotaDados,
   ROTULOS_FIXOS,
   textoRotulo,
@@ -170,7 +169,7 @@ function montarGabarito(b: Extract<Bloco, { tipo: "exercicios" }>): string {
 /** Linha de créditos igual à do sistema original. */
 export function montarCreditos(nota: NotaDados, professor: string): string {
   const partes: string[] = []
-  if (nota.turmas.length === 1) partes.push(`Turma ${nota.turmas[0].nome}`)
+  if (nota.turmas.length === 1) partes.push(`Turma ${nota.turmas[0]?.nome ?? ""}`)
   else if (nota.turmas.length > 1)
     partes.push(`Turmas ${nota.turmas.map((t) => t.nome).join(" e ")}`)
   partes.push(nota.disciplina?.nome ?? "")

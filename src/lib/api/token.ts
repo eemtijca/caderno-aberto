@@ -9,7 +9,7 @@ export function gerarToken(tamanho = 22): string {
   const bytes = randomBytes(tamanho)
   let saida = ""
   for (let i = 0; i < tamanho; i++) {
-    saida += ALFABETO[bytes[i] % ALFABETO.length]
+    saida += ALFABETO[(bytes[i] ?? 0) % ALFABETO.length] ?? ""
   }
   return saida
 }

@@ -1,70 +1,125 @@
 "use client"
 
-// Bubble menu: barra de formatação flutuante que aparece sobre a seleção
-// de texto (negrito, itálico, riscado, link, código, fórmula, resultado).
-// No mobile fica fixo acima do teclado; no desktop segue a seleção.
+// Bubble menu (desktop): barra de formatação flutuante que segue a seleção
+// de texto. Encaixada na viewport (nunca fica fora da tela), reposiciona ao
+// rolar e fecha quando a seleção colapsa ou sai do editor. No mobile a
+// formatação fica na barra única fixa acima do teclado (BarraAtivaMobile).
 
-import { useEffect, useRef, useState } from "react"
-import { $getSelection, $isRangeSelection, createCommand, type LexicalCommand } from "lexical"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
+import { $getSelection, $isRangeSelection } from "lexical"
+import type { RefObject } from "react"
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
-import { BarraLexical } from "./barra-lexical"
+import { ConteudoBarra } from "./barra-formatar"
+import { limitarCentroHorizontal, useMediaQuery } from "@/lib/editor/posicao"
 
-export const MOSTRAR_BUBBLE_COMMAND: LexicalCommand<undefined> =
-  createCommand("MOSTRAR_BUBBLE_COMMAND")
+// verifica se a seleção do DOM está dentro do editor dado
+function selecaoDentroDoEditor(editor: ReturnType<typeof useLexicalComposerContext>[0]): boolean {
+  const raiz = editor.getRootElement()
+  const sel = window.getSelection()
+  return raiz !== null && sel !== null && sel.anchorNode !== null && raiz.contains(sel.anchorNode)
+}
 
-export function BubbleMenu() {
+const ALTURA_BUBBLE = 52
+
+export function BubbleMenu({ ancoraRef }: { ancoraRef: RefObject<HTMLDivElement | null> }) {
   const [editor] = useLexicalComposerContext()
+  const desktop = useMediaQuery("(pointer: fine)")
   const [visivel, setVisivel] = useState(false)
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
-  const ref = useRef<HTMLDivElement>(null)
+  const posRef = useRef<{ x: number; y: number } | null>(null)
+  const animandoRef = useRef(false)
 
-  // mostra/esconde conforme a seleção muda (seleção rica não-colapsada)
+  // mede a seleção atual do DOM e posiciona o bubble encaixado na viewport
+  const recalcular = useCallback(() => {
+    const raiz = editor.getRootElement()
+    if (raiz === null) return
+    const sel = window.getSelection()
+    if (sel === null || sel.rangeCount === 0 || !sel.toString().trim()) {
+      setVisivel(false)
+      setPos(null)
+      posRef.current = null
+      return
+    }
+    const retangulo = sel.getRangeAt(0).getBoundingClientRect()
+    if (retangulo.width === 0 && retangulo.height === 0) return
+    const x = limitarCentroHorizontal(retangulo.left + retangulo.width / 2, 360)
+    const y = Math.max(retangulo.top - ALTURA_BUBBLE - 6, 8)
+    posRef.current = { x, y }
+    setPos({ x, y })
+    setVisivel(true)
+  }, [editor])
+
+  // abre/fecha conforme a seleção muda dentro deste editor
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
       const info = editorState.read(() => {
         const sel = $getSelection()
-        if (!$isRangeSelection(sel) || sel.isCollapsed()) return { visivel: false, rect: null }
-        // só formata se a seleção estiver dentro de texto editável
-        const no = sel.anchor.getNode()
-        const top = no.getTopLevelElement()
-        if (!top) return { visivel: false, rect: null }
-        const tipo = top.getType()
+        if (!$isRangeSelection(sel) || sel.isCollapsed()) return false
+        const tipo = sel.anchor.getNode().getTopLevelElement()?.getType()
         // não mostra dentro de blocos especiais (figura, tikz, exercícios)
-        if (tipo === "figura" || tipo === "tikz" || tipo === "exercicios") {
-          return { visivel: false, rect: null }
-        }
-        return { visivel: true, rect: null }
+        return tipo !== "figura" && tipo !== "tikz" && tipo !== "exercicios"
       })
-      setVisivel(info.visivel)
-      if (!info.visivel) setPos(null)
+      if (info) {
+        // aguarda o DOM refletir o novo estado antes de medir
+        requestAnimationFrame(() => recalcular())
+      } else {
+        setVisivel(false)
+        setPos(null)
+        posRef.current = null
+      }
     })
-  }, [editor])
+  }, [editor, recalcular])
 
-  // posiciona sobre a seleção usando o DOM
+  // reposiciona ao rolar a página (posição fixa seguiria desatualizada)
   useEffect(() => {
     if (!visivel) return
-    const calcular = () => {
-      const sel = window.getSelection()
-      if (!sel || sel.rangeCount === 0) return
-      const rect = sel.getRangeAt(0).getBoundingClientRect()
-      setPos({ x: rect.left + rect.width / 2, y: rect.top })
+    const aoRolar = (): void => {
+      if (animandoRef.current) return
+      animandoRef.current = true
+      requestAnimationFrame(() => {
+        animandoRef.current = false
+        recalcular()
+      })
     }
-    calcular()
-    const t = setTimeout(calcular, 50)
-    return () => clearTimeout(t)
-  }, [visivel])
+    window.addEventListener("scroll", aoRolar, { passive: true, capture: true })
+    window.addEventListener("resize", aoRolar)
+    return () => {
+      window.removeEventListener("scroll", aoRolar, { capture: true } as EventListenerOptions)
+      window.removeEventListener("resize", aoRolar)
+    }
+  }, [visivel, recalcular])
 
-  if (!visivel || !pos) return null
+  // fecha quando o editor perde o foco para fora da área de edição
+  useEffect(() => {
+    if (!visivel) return
+    const aoSair = (): void => {
+      requestAnimationFrame(() => {
+        if (!selecaoDentroDoEditor(editor)) {
+          setVisivel(false)
+          setPos(null)
+          posRef.current = null
+        }
+      })
+    }
+    document.addEventListener("selectionchange", aoSair)
+    return () => document.removeEventListener("selectionchange", aoSair)
+  }, [visivel, editor])
 
-  return (
+  void ancoraRef
+  if (!desktop || !visivel || pos === null) return null
+
+  // portal para o body: a animação de entrada do contêiner retém um
+  // transform que viraria containing block do position: fixed
+  return createPortal(
     <div
-      ref={ref}
-      className="border-border bg-popover fixed z-50 -translate-x-1/2 rounded-xl border px-1.5 py-1 shadow-lg"
-      style={{ top: Math.max(pos.y - 46, 8), left: pos.x }}
+      className="fixed z-50"
+      style={{ top: pos.y, left: pos.x, transform: "translateX(-50%)" }}
       role="toolbar"
       aria-label="Formatação da seleção"
     >
-      <BarraLexical />
-    </div>
+      <ConteudoBarra editor={editor} />
+    </div>,
+    document.body,
   )
 }

@@ -1,5 +1,4 @@
 import { cpSync, rmSync, mkdirSync, existsSync } from "fs"
-import { join } from "path"
 
 const src = "node_modules/@rod2ik/tikzjax/dist"
 const dest = "public/vendor/tikzjax"

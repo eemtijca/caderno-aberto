@@ -72,6 +72,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // redimensiona o layout com o teclado virtual (posiciona a barra de formatação)
+  interactiveWidget: "resizes-content",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fafaf8" },
     { media: "(prefers-color-scheme: dark)", color: "#1c1c1a" },

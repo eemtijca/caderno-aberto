@@ -256,9 +256,14 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
   const [expira, setExpira] = useState(
     link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "",
   )
+  // instante do montar: fixa o "agora" sem quebrar a pureza do render
+  const [montadoEm] = useState(() => Date.now())
 
   const url = useMemo(() => urlDoLink(link.token), [link.token])
-  const expirado = link.expiraEm ? new Date(link.expiraEm).getTime() < Date.now() : false
+  const expirado = useMemo(
+    () => (link.expiraEm ? new Date(link.expiraEm).getTime() < montadoEm : false),
+    [link.expiraEm, montadoEm],
+  )
   const disponivel = link.ativo && !expirado
   const aviso =
     link.tipo === "nota" && link.alvoDetalhe === "rascunho"

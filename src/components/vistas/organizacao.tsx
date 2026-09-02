@@ -15,7 +15,6 @@ import { MESES_CAP } from "@/lib/notas/texto"
 export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void }) {
   const notasQ = useNotas()
   const disciplinasQ = useDisciplinas()
-  const { data: turmas } = useTurmas()
   const notas = notasQ.data
   const disciplinas = disciplinasQ.data
   const carregando = notasQ.isLoading || disciplinasQ.isLoading

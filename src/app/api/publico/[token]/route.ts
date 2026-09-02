@@ -29,12 +29,10 @@ export interface NotaPublica {
   atualizadoEm: string
 }
 
-/**
- * GET /api/publico/[token] . Vista do aluno.
- * Sem login: o RLS só devolve links ativos/não expirados e notas
- * PUBLICADAS alcançáveis pelo link (nota própria, turma ou
- * disciplina).
- */
+// GET /api/publico/[token] . Vista do aluno.
+// Sem login: o RLS só devolve links ativos/não expirados e notas
+// PUBLICADAS alcançáveis pelo link (nota própria, turma ou
+// disciplina).
 export async function GET(_req: NextRequest, ctx: Ctx) {
   const { token } = await ctx.params
   if (token === DEMO_TOKEN) {

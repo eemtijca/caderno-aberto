@@ -20,13 +20,12 @@ import type {
 import { $applyNodeReplacement, $getNodeByKey, DecoratorNode, ElementNode } from "lexical"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext"
+import { Pencil } from "lucide-react"
 import { Matematica } from "@/components/notas/matematica"
 
-// ============================================================
-// Equação ($...$ inline e $$...$$ em destaque). Baseada no
-// EquationNode oficial do playground do Lexical, adaptada para
-// reutilizar o KaTeX pt-BR do app (matematica.tsx).
-// ============================================================
+// Equação ($...$ inline e $$...$$ em destaque). Baseada no EquationNode
+// oficial do playground do Lexical, adaptada para reutilizar o KaTeX pt-BR
+// do app (matematica.tsx).
 
 export type SerializedEquationNode = Spread<
   {
@@ -106,7 +105,7 @@ export class EquationNode extends DecoratorNode<React.ReactNode> {
   }
 
   getTextContent(): string {
-    return this.__inline ? `$${this.__equation}$` : `$${this.__equation}$$`
+    return this.__inline ? `$${this.__equation}$` : `$$${this.__equation}$$`
   }
 
   isInline(): boolean {
@@ -151,17 +150,23 @@ function EquationComponent({
   inline: boolean
 }) {
   const [editor] = useLexicalComposerContext()
-  const [editando, setEditando] = useState(false)
+  const [editando, setEditando] = useState(equation.trim() === "")
   const [valor, setValor] = useState(equation)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const finalizar = useCallback(
     (restaurarSelecao = false) => {
       setEditando(false)
+      const limpo = valor.trim()
       editor.update(() => {
         const node = $getNodeByKey(nodeKey)
-        if (node && $isEquationNode(node)) node.setEquation(valor)
-        if (restaurarSelecao) node?.selectNext(0, 0)
+        if (!node || !$isEquationNode(node)) return
+        if (limpo === "") {
+          node.remove()
+          return
+        }
+        node.setEquation(limpo)
+        if (restaurarSelecao) node.selectNext(0, 0)
       })
     },
     [editor, nodeKey, valor],
@@ -173,6 +178,9 @@ function EquationComponent({
 
   const tecla = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
+      e.preventDefault()
+      finalizar(true)
+    } else if (e.key === "Enter") {
       e.preventDefault()
       finalizar(true)
     } else if (e.key === "Backspace" && valor.length === 0) {
@@ -197,6 +205,7 @@ function EquationComponent({
           onBlur={() => finalizar()}
           onKeyDown={tecla}
           aria-label="LaTeX da fórmula"
+          placeholder="x^2"
           className="font-mono text-[0.8rem] outline-none"
         />
         <span className="text-muted-foreground font-mono text-[0.7rem]">{inline ? "$" : "$$"}</span>
@@ -206,11 +215,14 @@ function EquationComponent({
 
   return (
     <span
-      onDoubleClick={(e) => {
-        e.preventDefault()
-        setValor(equation)
-        setEditando(true)
-      }}
+      tabIndex={0}
+      role="button"
+      aria-label="Fórmula (Enter ou botão para editar)"
+      className={
+        inline
+          ? "lex-equation-inline group"
+          : "lex-equation-display na-formula-display group my-1 block overflow-x-auto py-1 text-center"
+      }
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           e.preventDefault()
@@ -218,25 +230,34 @@ function EquationComponent({
           setEditando(true)
         }
       }}
-      tabIndex={0}
-      role="button"
-      aria-label="Fórmula (clique para editar)"
-      className={
-        inline
-          ? "lex-equation-inline"
-          : "lex-equation-display na-formula-display my-1 block overflow-x-auto text-center"
-      }
+      onDoubleClick={(e) => {
+        e.preventDefault()
+        setValor(equation)
+        setEditando(true)
+      }}
     >
       <Matematica latex={equation} bloco={!inline} />
+      <button
+        type="button"
+        aria-label="Editar fórmula"
+        className="text-muted-foreground border-border bg-background hover:bg-accent ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md border align-middle opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          setValor(equation)
+          setEditando(true)
+        }}
+      >
+        <Pencil className="h-3 w-3" aria-hidden />
+      </button>
     </span>
   )
 }
 
-// ============================================================
 // Resultado (\resultado{...}) e Dest (\dest{...}). Contêineres
 // inline que aceitam filhos (inclusive $matemática$) e preservam
 // o comando LaTeX original na serialização para a AST.
-// ============================================================
 
 type SerializedResultadoNode = Spread<{ resultType: "resultado" | "dest" }, SerializedElementNode>
 
