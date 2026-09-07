@@ -1,7 +1,5 @@
 "use client"
 
-// Conta. Perfil, segurança (senha/e-mail), disciplinas, turmas, backup/importação e exclusão da conta.
-
 import { useRef, useState } from "react"
 import {
   Download,
@@ -87,8 +85,6 @@ export function VistaConta({ navegar }: { navegar: (para: string) => void }) {
   )
 }
 
-// Perfil
-
 function SecaoPerfil() {
   const { usuario, perfil, atualizarPerfil } = useSessao()
   const [nome, setNome] = useState<string | null>(null)
@@ -159,8 +155,6 @@ function SecaoPerfil() {
     </section>
   )
 }
-
-// Segurança. Trocar senha e trocar e-mail
 
 function SecaoSeguranca() {
   const { usuario, trocarSenha, trocarEmail } = useSessao()
@@ -266,8 +260,6 @@ function SecaoSeguranca() {
     </section>
   )
 }
-
-// Disciplinas
 
 function SecaoDisciplinas() {
   const disciplinasQ = useDisciplinas()
@@ -503,8 +495,6 @@ function SecaoDisciplinas() {
   )
 }
 
-// Turmas
-
 function SecaoTurmas() {
   const turmasQ = useTurmas()
   const { data: turmas, isLoading: carregando } = turmasQ
@@ -724,8 +714,6 @@ function SecaoTurmas() {
   )
 }
 
-// Backup e importação
-
 function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
   const qc = useQueryClient()
   const inputBackup = useRef<HTMLInputElement>(null)
@@ -853,7 +841,7 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
   )
 }
 
-// Seção de exclusão com carência de 24 horas. Dupla confirmação.
+// Exclusão com carência de 24 horas
 function SecaoExcluirConta() {
   const { perfil, solicitarExclusao, restaurarConta } = useSessao()
   const [senha, setSenha] = useState("")

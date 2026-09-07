@@ -1,5 +1,3 @@
-// Operações imutáveis sobre a árvore de blocos (editor).
-
 import type { Bloco, BlocoFilho } from "@/lib/notas/tipos"
 
 type Caixa = Extract<Bloco, { tipo: "copiar" | "exemplo" | "dica" }>
@@ -8,7 +6,6 @@ function ehCaixa(b: Bloco): b is Caixa {
   return b.tipo === "copiar" || b.tipo === "exemplo" || b.tipo === "dica"
 }
 
-/** Atualiza um bloco de nível superior (por id) com um patch parcial. */
 export function atualizarBloco<T extends Bloco>(
   blocos: Bloco[],
   id: string,
@@ -17,7 +14,6 @@ export function atualizarBloco<T extends Bloco>(
   return blocos.map((b) => (b.id === id ? ({ ...b, ...patch } as Bloco) : b))
 }
 
-/** Atualiza um filho dentro de uma caixa. */
 export function atualizarFilho<T extends BlocoFilho>(
   blocos: Bloco[],
   caixaId: string,
@@ -33,14 +29,12 @@ export function atualizarFilho<T extends BlocoFilho>(
   })
 }
 
-/** Insere um bloco de nível superior na posição dada. */
 export function inserirBloco(blocos: Bloco[], indice: number, bloco: Bloco): Bloco[] {
   const copia = [...blocos]
   copia.splice(Math.max(0, Math.min(indice, copia.length)), 0, bloco)
   return copia
 }
 
-/** Insere um filho dentro de uma caixa. */
 export function inserirFilho(
   blocos: Bloco[],
   caixaId: string,
@@ -66,7 +60,6 @@ export function removerFilho(blocos: Bloco[], caixaId: string, filhoId: string):
   })
 }
 
-/** Move um bloco de nível superior (troca com o vizinho). */
 export function moverBloco(blocos: Bloco[], id: string, delta: number): Bloco[] {
   const i = blocos.findIndex((b) => b.id === id)
   const j = i + delta
@@ -93,7 +86,6 @@ export function moverFilho(
   })
 }
 
-/** Duplica um bloco (ids novos para o bloco e filhos). */
 export function duplicarBloco(blocos: Bloco[], id: string): Bloco[] {
   const i = blocos.findIndex((b) => b.id === id)
   if (i === -1) return blocos
@@ -114,7 +106,6 @@ export function duplicarBloco(blocos: Bloco[], id: string): Bloco[] {
   return copia
 }
 
-/** Reordena por drop do dnd-kit (top-level). */
 export function reordenar(blocos: Bloco[], de: number, para: number): Bloco[] {
   const copia = [...blocos]
   const [item] = copia.splice(de, 1)

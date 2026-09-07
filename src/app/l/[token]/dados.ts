@@ -1,7 +1,6 @@
 import "server-only"
 
-// Dados mínimos para os metadados OpenGraph de /l/<token>. O mesmo RLS da
-// vista pública decide o que é visível: links ativos + notas publicadas.
+// O mesmo RLS da visão pública define o conteúdo visível
 
 import { cache } from "react"
 import { clienteAnon } from "@/lib/supabase/servidor"

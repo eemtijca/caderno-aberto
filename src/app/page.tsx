@@ -1,7 +1,5 @@
 "use client"
 
-// SPA com roteamento por hash. Professores autenticados acessam notas e links. Alunos acessam via token público.
-
 import { useEffect, useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { DialogoNovaNota } from "@/components/dialogo-nova-nota"
@@ -75,8 +73,6 @@ export default function Home() {
       <VistaEditor id={rota.id} navegar={navegar} />
     ) : null
 
-  // a chave remonta o contêiner a cada troca de vista: dispara a
-  // animação de entrada (fade + deslize sutil)
   const chaveVista = rota.vista === "editor" ? `${rota.vista}:${rota.id}` : rota.vista
 
   return (

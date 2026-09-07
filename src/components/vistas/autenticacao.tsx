@@ -1,7 +1,5 @@
 "use client"
 
-// Autenticação. Landing pública e formulários de entrada, cadastro e redefinição de senha.
-
 import { useEffect, useState } from "react"
 import {
   ArrowRight,
@@ -43,8 +41,6 @@ export function VistaAutenticação({
   if (rota.vista === "redefinir") return <PainelAuth modo="redefinir" navegar={navegar} />
   return <Landing navegar={navegar} />
 }
-
-// Landing. Apresentação do aplicativo para visitantes não autenticados.
 
 function Landing({ navegar }: { navegar: (para: string) => void }) {
   const [showDemo, setShowDemo] = useState(false)
@@ -401,11 +397,8 @@ function Recurso({
   )
 }
 
-// Painel de autenticação. Formulários de entrada, cadastro e redefinição.
-
 type Modo = "entrar" | "cadastro" | "redefinir"
 
-/** Força relativa da senha só pelo comprimento/variedade (dica simples). */
 function forcaSenha(senha: string): { nivel: 0 | 1 | 2 | 3; rotulo: string; cor: string } {
   let pontos = 0
   if (senha.length >= 6) pontos++
@@ -430,7 +423,6 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
   const [erro, setErro] = useState("")
   const [sucesso, setSucesso] = useState("")
 
-  // limpa mensagens ao trocar de modo
   useEffect(() => {
     setErro("")
     setSucesso("")
@@ -720,7 +712,6 @@ function Campo({
   onChange: (v: string) => void
   placeholder?: string
   autoFocus?: boolean
-  /** senha: botão de mostrar/ocultar */
   olho?: boolean
   autoComplete?: string
 }) {

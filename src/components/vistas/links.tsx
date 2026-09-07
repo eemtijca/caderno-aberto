@@ -1,7 +1,5 @@
 "use client"
 
-// Vista Links. Gestão dos links únicos para os alunos. Criar (nota / turma / disciplina), copiar, abrir, pausar, revogar, agendar expiração, regenerar o token, ver quantos acessos cada link recebeu e excluir.
-
 import { useMemo, useState } from "react"
 import {
   BookOpenText,
@@ -118,8 +116,6 @@ export function VistaLinks() {
     </div>
   )
 }
-
-// Criar novo link
 
 function SecaoNovoLink({
   notas,
@@ -244,8 +240,6 @@ function SecaoNovoLink({
     </section>
   )
 }
-
-// Cartão de cada link
 
 function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
   const editar = useEditarLink()

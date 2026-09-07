@@ -1,7 +1,5 @@
 "use client"
 
-// Vista Organização. As visões automáticas geradas pelos metadados: Ano → Turma → Mês (como a pasta 2026/) e Disciplina → Ano.
-
 import { useMemo, useState } from "react"
 import { ChevronDown, ChevronRight, Pencil, Plus, Settings } from "lucide-react"
 import { Badge } from "@/components/ui/badge"

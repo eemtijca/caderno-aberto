@@ -1,7 +1,5 @@
 "use client"
 
-// Vista Início. Painel com saudação, números, ações rápidas e últimas notas.
-
 import { ArrowRight, BookOpenText, CalendarRange, Eye, Link2, Plus, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,8 +15,6 @@ export function VistaInicio({
   navegar: (para: string) => void
   onNovaNota: () => void
 }) {
-  // cada consulta carrega de forma independente: o painel inteiro não
-  // espera o conjunto — cada número/Lista tem seu esqueleto próprio
   const notasQ = useNotas()
   const disciplinasQ = useDisciplinas()
   const linksQ = useLinks()

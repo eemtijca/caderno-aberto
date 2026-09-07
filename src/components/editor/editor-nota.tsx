@@ -1,7 +1,5 @@
 "use client"
 
-// Editor de nota. Orquestra metadados, lista de blocos com arrastar-e-soltar, paleta de inserção, salvamento automático e exportações.
-
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
   DndContext,
@@ -216,7 +214,6 @@ export function VistaEditor({ id, navegar }: { id: string; navegar: (para: strin
     )
   }
 
-  // remonta ao trocar de nota (estado inicializado direto dos dados)
   return <FormularioNota key={nota.id} notaInicial={nota} navegar={navegar} />
 }
 
@@ -245,7 +242,6 @@ function FormularioNota({
   const [status, setStatus] = useState<"rascunho" | "publicada">(notaInicial.status)
   const [turmasSel, setTurmasSel] = useState<string[]>(notaInicial.turmas.map((t) => t.id))
   const [blocos, setBlocos] = useState<Bloco[]>(notaInicial.blocos)
-  // aparência da leitura: vale para o professor, os alunos e a impressão
   const [aparencia, setAparencia] = useState<AparenciaNota>(
     notaInicial.aparencia ?? APARENCIA_PADRAO,
   )
@@ -255,7 +251,6 @@ function FormularioNota({
   const [paletaEm, setPaletaEm] = useState<number | null>(null)
   const timerAutoSave = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // autosave com debounce
   useEffect(() => {
     if (!sujo) return
     if (timerAutoSave.current) clearTimeout(timerAutoSave.current)
@@ -756,8 +751,6 @@ function FormularioNota({
   )
 }
 
-// Lista de blocos com dnd-kit
-
 function ListaBlocos({
   blocos,
   mudarBlocos,
@@ -931,7 +924,7 @@ function CartaoBloco({
         </button>
       </div>
 
-      {/* etiqueta do tipo + controles completos (mobile — os mesmos do desktop) */}
+      {/* Etiqueta do tipo e controles completos */}
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 sm:mb-0">
         <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-[0.6rem] font-bold tracking-widest text-stone-500 uppercase dark:bg-stone-800 dark:text-stone-400">
           {PALETA.find((p) => p.tipo === bloco.tipo)?.rotulo ?? bloco.tipo}
@@ -1037,8 +1030,6 @@ function CartaoBloco({
   )
 }
 
-// Paleta de inserção de blocos
-
 function PaletaInsercao({
   onEscolher,
   onFechar,
@@ -1079,8 +1070,6 @@ function PaletaInsercao({
     </div>
   )
 }
-
-// Prévia
 
 function Previa({
   blocos,

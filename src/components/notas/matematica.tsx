@@ -1,7 +1,5 @@
 "use client"
 
-// Componente de matemática. KaTeX com mhchem (fórmulas químicas \ce{}) e compatibilidade pt-BR (\sen, \tg, \dec, \un, \resultado).
-
 import { useMemo } from "react"
 import katex from "katex"
 import "katex/contrib/mhchem"
@@ -22,7 +20,6 @@ export function Matematica({ latex, bloco = false, className }: PropsMatematica)
         strict: false,
         trust: true,
         macros: MACROS_KATEX,
-        // HTML para a exibição + MathML para leitores de tela e copiar/colar
         output: "htmlAndMathml",
       })
     } catch {
@@ -32,11 +29,5 @@ export function Matematica({ latex, bloco = false, className }: PropsMatematica)
     }
   }, [latex, bloco])
 
-  return (
-    <span
-      className={className}
-      // KaTeX gera HTML seguro a partir do LaTeX do professor
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  )
+  return <span className={className} dangerouslySetInnerHTML={{ __html: html }} />
 }

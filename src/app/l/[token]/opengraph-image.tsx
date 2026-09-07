@@ -7,7 +7,6 @@ export const contentType = "image/png"
 
 export const dynamic = "force-dynamic"
 
-/** Hexes das cores de disciplina (mesmas chaves de lib/notas/cores). */
 const HEX_COR: Record<string, string> = {
   verde: "#008241",
   teal: "#0D9488",
@@ -41,10 +40,6 @@ function limitar(texto: string, max: number): string {
   return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t
 }
 
-/**
- * Imagem de preview (OpenGraph/Twitter) gerada por link: título da nota,
- * disciplina com a cor escolhida, turmas e nome do professor.
- */
 export default async function ImagemOg({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const dados = await buscarDadosOg(token).catch(() => null)
