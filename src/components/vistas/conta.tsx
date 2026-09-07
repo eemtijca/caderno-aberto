@@ -790,7 +790,7 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
           <p className="text-sm font-bold">Importar</p>
           <p className="text-muted-foreground text-[0.8rem] leading-snug">
             Restaure um backup (substitui tudo) ou importe uma nota única (.md ou .json gerados pelo
-            app, incluindo o formato antigo "Notas de Aula").
+            app, incluindo o formato "Notas de Aula").
           </p>
           <input
             ref={inputBackup}

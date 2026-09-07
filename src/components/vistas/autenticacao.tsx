@@ -444,7 +444,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
         await sessao.cadastrar(nome.trim(), email.trim(), senha)
         setSucesso("Conta criada. Confirme o e-mail para ativar o acesso.")
       } else {
-        if (sessao.usuario && sessao.modoRecuperacao) {
+        if (sessao.modoRecuperacao) {
           if (senha.length < 6) throw new Error("A senha deve ter pelo menos 6 caracteres.")
           if (senha !== senha2) throw new Error("As senhas não conferem.")
           await sessao.concluirRedefinicao(senha)
@@ -475,7 +475,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
     }
   }
 
-  const emRecuperacao = Boolean(modo === "redefinir" && sessao.usuario && sessao.modoRecuperacao)
+  const emRecuperacao = Boolean(modo === "redefinir" && sessao.modoRecuperacao)
 
   return (
     <div className="bg-background flex min-h-screen items-center justify-center px-4 py-10">
