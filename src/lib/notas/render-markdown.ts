@@ -1,5 +1,3 @@
-// Formato de intercâmbio em Markdown. Exportação (.md) e importação (parse) com round-trip da AST. Sintaxe dos contêineres (uma por linha):: copiar Rótulo :: exemplo Rótulo :: dica Rótulo :: atencao | :: diaadia | :: simbolos :: exercicios Fórmula display: $$... $$ | Destaque coral: ==texto==
-
 import {
   AparenciaNota,
   APARENCIA_PADRAO,
@@ -17,28 +15,15 @@ import {
 } from "./tipos"
 import { MESES_CAP } from "./texto"
 
-//  Exportação: AST → Markdown
-
-/** inline: mantém $math$ e **negrito**; \resultado{X} → ==X==; \dest{X} → **X** */
 function inlineParaMd(texto: string): string {
   return texto.replace(/\\resultado\{([^}]*)\}/g, "==$1==").replace(/\\dest\{([^}]*)\}/g, "**$1**")
 }
 
-/**
- * Escapa o conteúdo de uma célula de tabela Markdown.
- * A barra invertida é escapada antes do pipe para que `\|`
- * não se torne ambíguo na leitura (round-trip).
- */
 function escaparTabelaMd(texto: string): string {
   return inlineParaMd(texto).replace(/\\/g, "\\\\").replace(/\|/g, "\\|")
 }
 
-/**
- * Divide o interior de uma linha de tabela (`a | b`) em células,
- * respeitando `\|` (pipe escapado) e `\\` (barra escapada).
- * O escape é desfeito em passagem única para não reinterpretar
- * sequências já convertidas.
- */
+// Divide pelos separadores | não escapados
 function dividirCelulasTabela(conteudo: string): string[] {
   const celulas: string[] = []
   let atual = ""
@@ -64,7 +49,6 @@ function dividirCelulasTabela(conteudo: string): string[] {
 }
 
 function mdParaInline(texto: string): string {
-  // inverso: ==X== → \resultado{X}
   return texto.replace(/==([^=]+)==/g, "\\resultado{$1}")
 }
 
@@ -189,7 +173,6 @@ export interface MarkdownNota {
   blocos: Bloco[]
 }
 
-/** Front-matter da aparência: só escreve chaves com valor não padrão. */
 function aparenciaParaMd(ap: AparenciaNota | null | undefined): string[] {
   const linhas: string[] = []
   if (ap?.fonte && ap.fonte !== APARENCIA_PADRAO.fonte) linhas.push(`fonte: ${ap.fonte}`)
@@ -222,8 +205,6 @@ export function gerarMarkdown(nota: NotaDados): string {
     .replace(/\n{3,}/g, "\n\n")
 }
 
-//  Importação: Markdown → AST
-
 const ROTULO_MD: Record<string, RotuloTipo> = {
   "definição.": "definicao",
   "definicao.": "definicao",
@@ -252,19 +233,15 @@ interface PilhaContainer {
   filhos?: BlocoFilho[]
   exercicios?: BlocoExercicios
   nivelAtual?: { numero: 1 | 2 | 3; titulo: string; questoes: Questao[] }
-  /** acumulador de linhas de parágrafo */
   buffer: string[]
-  /** linhas "cruas" (tabela) */
   linhasTabela: string[]
 }
 
-/** Analisa o Markdown de uma nota (formato gerado pelo próprio app). */
 export function analisarMarkdown(md: string): MarkdownNota {
   const linhas = md.replace(/\r\n/g, "\n").split("\n")
   const meta: Record<string, string> = {}
   let i = 0
 
-  // front-matter
   if (linhas[0]?.trim() === "---") {
     i = 1
     while (i < linhas.length && linhas[i].trim() !== "---") {
@@ -275,7 +252,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
     i++
   }
 
-  // título (# ...)
   let titulo = meta["titulo"] ?? ""
   if (!titulo) {
     while (i < linhas.length) {
@@ -293,7 +269,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
   let emCite = false
   while (i < linhas.length) {
     const l = linhas[i]
-    // título principal (# ...): o título já veio no front-matter, pula
     if (!emCite && /^#\s+/.test(l.trim())) {
       i++
       continue
@@ -305,7 +280,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
     } else if (emCite && l.trim() === "") {
       break
     } else if (emCite) {
-      // citação de várias linhas
       sobreLinhas.push(l)
       i++
     } else if (l.trim() === "") {
@@ -316,7 +290,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
   }
   const sobre = sobreLinhas.join(" ").trim()
 
-  // blocos
   const raiz: Bloco[] = []
   const pilha: PilhaContainer[] = [{ tipo: "raiz", destino: raiz, buffer: [], linhasTabela: [] }]
 
@@ -375,7 +348,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
   while (i < linhas.length) {
     const linha = linhas[i]
 
-    // :: fechamento
     if (/^::\s*$/.test(linha.trim())) {
       flushParagrafo()
       flushTabela()
@@ -397,7 +369,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
       continue
     }
 
-    // :: abertura
     const mAbertura =
       /^::\s*(copiar|exemplo|dica|exercicios|atencao|diaadia|simbolos)\s*(.*)$/.exec(linha.trim())
     if (mAbertura) {
@@ -406,14 +377,13 @@ export function analisarMarkdown(md: string): MarkdownNota {
       const tipo = mAbertura[1] as PilhaContainer["tipo"] | EstiloChamada
       const rotulo = mAbertura[2].trim()
       if (tipo === "atencao" || tipo === "diaadia" || tipo === "simbolos") {
-        // contêiner de uma chamada: coletar texto até ::
         let texto = ""
         i++
         while (i < linhas.length && !/^::\s*$/.test(linhas[i].trim())) {
           texto += (texto ? "\n" : "") + linhas[i]
           i++
         }
-        i++ // pula o ::
+        i++
         ;(destinoAtual() as BlocoFilho[]).push({
           id: idBloco(),
           tipo: "chamada",
@@ -450,7 +420,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
       continue
     }
 
-    // dentro de exercícios
     const topo = pilha[pilha.length - 1]
     if (topo.tipo === "exercicios" && topo.exercicios) {
       const mNivel = /^###\s*N[íi]vel\s*([123])\s*[·:\-.]?\s*(.*)$/.exec(linha.trim())
@@ -458,7 +427,7 @@ export function analisarMarkdown(md: string): MarkdownNota {
         flushExercicioAtual()
         topo.nivelAtual = {
           numero: Number(mNivel[1]) as 1 | 2 | 3,
-          // tolera separadores antigos ("Nível 1 . Conceitos")
+          // Tolera separadores antigos ("Nível 1 . Conceitos")
           titulo: mNivel[2].trim().replace(/^[·:\-.]+\s*/, "") || "Conceitos",
           questoes: [],
         }
@@ -495,7 +464,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
       continue
     }
 
-    // seções
     const mSecao = /^##\s+(.*)$/.exec(linha.trim())
     if (mSecao) {
       flushParagrafo()
@@ -506,7 +474,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
       continue
     }
 
-    // fórmula $$
     if (linha.trim().startsWith("$$")) {
       flushParagrafo()
       flushTabela()
@@ -530,7 +497,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
       continue
     }
 
-    // tikz fenced ```tikz
     if (linha.trim().startsWith("```")) {
       const lang = linha.trim().slice(3).trim().toLowerCase()
       if (lang === "tikz" || lang === "tikzjax") {
@@ -558,7 +524,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
       }
     }
 
-    // lista
     if (/^[-*]\s+/.test(linha.trim())) {
       flushParagrafo()
       flushTabela()
@@ -571,7 +536,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
       continue
     }
 
-    // tabela
     if (linha.trim().startsWith("|")) {
       flushParagrafo()
       while (i < linhas.length && linhas[i].trim().startsWith("|")) {
@@ -582,7 +546,6 @@ export function analisarMarkdown(md: string): MarkdownNota {
       continue
     }
 
-    // figura ![legenda](url)
     const mFig = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(linha.trim())
     if (mFig) {
       flushParagrafo()
@@ -597,20 +560,17 @@ export function analisarMarkdown(md: string): MarkdownNota {
       continue
     }
 
-    // linha vazia => fim de parágrafo
     if (linha.trim() === "") {
       flushParagrafo()
       i++
       continue
     }
 
-    // título principal # (ignora, já lido)
     if (/^#\s+/.test(linha.trim())) {
       i++
       continue
     }
 
-    // linha comum => acumula
     pilha[pilha.length - 1].buffer.push(linha)
     i++
   }

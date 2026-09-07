@@ -1,22 +1,5 @@
-// ============================================================
-// Shim local do Supabase para testes de ponta a ponta (sem Docker)
-//
-// Emula a superfície da API que o Caderno Aberto usa:
-//   /auth/v1/*    : GoTrue (cadastro, login, refresh, user,
-//                   logout, recuperação de senha)
-//   /rest/v1/*    : PostgREST (filtros eq/neq/in/ilike/cs,
-//                   order/limit, embedded por FK, rpc) : cada
-//                   consulta roda com `set local role` + JWT em
-//                   request.jwt.claims, então a RLS REAL do
-//                   banco é exercida de verdade
-//   /storage/v1/* : upload/download/list/remove com políticas
-//                   de storage aplicadas via storage.objects
-//
-// Os "e-mails" do GoTrue são gravados em dados/emails.jsonl
-// (o teste lê o link de recuperação de lá).
-//
-// Uso:  node tests/shim/servidor.mjs
-// ============================================================
+// Shim local do Supabase para testes sem Docker.
+// Uso: node tests/shim/servidor.mjs
 
 import http from "node:http"
 import {
@@ -53,9 +36,7 @@ const ORIGEM_APP = process.env.SHIM_ORIGEM_APP ?? "http://localhost:3000"
 const URL_SHIM_PUBLICA = process.env.SHIM_URL_PUBLICA ?? `http://127.0.0.1:${PORTA}`
 
 const ARQ_USUARIOS = path.join(DADOS, "usuarios.json")
-/** recuperação: token -> {userId, code_challenge, redirect_to} */
 const PENDENCIAS = new Map()
-/** pkce: code -> {userId, code_challenge} */
 const CODIGOS_PKCE = new Map()
 const ARQ_EMAILS = path.join(DADOS, "emails.jsonl")
 
@@ -65,10 +46,6 @@ const PG = {
   user: "postgres",
   database: process.env.PGDATABASE ?? "caderno_teste",
 }
-
-// ------------------------------------------------------------
-// helpers: JWT + senha
-// ------------------------------------------------------------
 
 const b64u = (buf) => Buffer.from(buf).toString("base64url")
 
@@ -89,16 +66,11 @@ function chaveSegura(id) {
   )
 }
 
-/**
- * Valida o destino do redirect pós-recovery: aceita apenas caminhos
- * relativos locais ("/...") ou URLs absolutas com a mesma origem do app.
- * Qualquer outro valor cai para `${ORIGEM_APP}/`, evitando open redirect.
- */
+// Aceita caminho local ou mesma origem; o restante retorna ao aplicativo
 function redirectSeguro(destino) {
   const padrao = `${ORIGEM_APP}/`
   if (typeof destino !== "string" || destino.length === 0 || destino.length > 2048) return padrao
   try {
-    // Caminho relativo local: "/..." mas não "//..." nem "/\...".
     if (destino.startsWith("/")) {
       if (destino.startsWith("//") || destino.startsWith("/\\")) return padrao
       return new URL(destino, ORIGEM_APP).toString()
@@ -118,7 +90,7 @@ function verificarJWT(token) {
     if (typeof token !== "string") return null
     const [h, c, s] = token.split(".")
     if (!h || !c || !s) return null
-    // codeql[js/insufficient-password-hash]: HMAC-SHA256 aqui autentica JWT (message auth), não armazena senha; senhas usam scrypt em hashSenha.
+    // codeql[js/insufficient-password-hash]: HMAC de JWT, não senha; senha utiliza scrypt
     const esperado = b64u(createHmac("sha256", JWT_SECRET).update(`${h}.${c}`).digest())
     const bufS = Buffer.from(s)
     const bufEsperado = Buffer.from(esperado)
@@ -143,10 +115,6 @@ function senhaCorreta(senha, guardada) {
   const alvo = Buffer.from(hash, "hex")
   return calculado.length === alvo.length && timingSafeEqual(calculado, alvo)
 }
-
-// ------------------------------------------------------------
-// loja de usuários + "caixa de e-mails"
-// ------------------------------------------------------------
 
 function limparDados() {
   mkdirSync(DADOS, { recursive: true })
@@ -184,14 +152,9 @@ export function ultimosEmails() {
   }
 }
 
-// ------------------------------------------------------------
-// banco: pool + tipos de colunas
-// ------------------------------------------------------------
-
 const adm = new Client(PG)
 await adm.connect()
 
-/** mapa tabela -> coluna -> tipo postgres (para casts corretos) */
 const TIPOS = new Map()
 {
   const { rows } = await adm.query(`
@@ -209,7 +172,6 @@ function tipoCol(tabela, coluna) {
   return TIPOS.get(tabela)?.get(coluna) ?? "text"
 }
 
-/** Prepara um valor JS para o parâmetro SQL (jsonb vira string JSON). */
 function prepararValor(tabela, coluna, valor) {
   const t = tipoCol(tabela, coluna)
   if ((t === "jsonb" || t === "json") && valor !== null && typeof valor !== "undefined") {
@@ -220,7 +182,6 @@ function prepararValor(tabela, coluna, valor) {
 
 const PAPEIS_VALIDOS = new Set(["anon", "authenticated", "service_role"])
 
-/** Executa SQL como um papel do Supabase (como o PostgREST faz). */
 async function comoPapel(papel, claims, sql, valores = []) {
   if (!PAPEIS_VALIDOS.has(papel)) throw new Error("papel inválido")
   const c = new Client(PG)
@@ -241,10 +202,6 @@ async function comoPapel(papel, claims, sql, valores = []) {
     await c.end().catch(() => undefined)
   }
 }
-
-// ------------------------------------------------------------
-// usuário GoTrue
-// ------------------------------------------------------------
 
 async function usuarioPG(id) {
   const { rows } = await adm.query("select * from auth.users where id = $1", [id])
@@ -298,10 +255,6 @@ function corpoSessao(u, loja) {
   }
 }
 
-// ------------------------------------------------------------
-// papel a partir dos cabeçalhos (apikey/Authorization)
-// ------------------------------------------------------------
-
 function papelDosHeaders(req) {
   const auth = req.headers.authorization ?? ""
   const apikey = req.headers.apikey ?? ""
@@ -314,10 +267,6 @@ function papelDosHeaders(req) {
   }
   return { papel: "anon", claims: { role: "anon" } }
 }
-
-// ------------------------------------------------------------
-// PostgREST: parser de filtros
-// ------------------------------------------------------------
 
 function castValor(tabela, coluna) {
   const t = tipoCol(tabela, coluna)
@@ -362,7 +311,6 @@ function montarWhere(tabela, query) {
       valores.push(resto.replace(/\*/g, "%"))
       clausulas.push(`${col} ilike $${valores.length}`)
     } else if (op === "cs") {
-      // cs.{v1,v2} ou cs.{"v1","v2"}
       const itens = resto
         .replace(/^\{|}$/g, "")
         .split(",")
@@ -377,13 +325,11 @@ function montarWhere(tabela, query) {
   return { clausulas, valores }
 }
 
-/** Relações FK conhecidas (tabela -> alvo) para o select embutido. */
 const FKS = {
   notas: { disciplinas: { coluna: "disciplina_id", ref: "id" } },
 }
 
 function montarSelect(tabela, spec, prefixo = "t") {
-  // spec: "*,disciplina:disciplinas(*)" | "id, titulo" | "*"
   const partes = spec
     .split(",")
     .map((p) => p.trim())
@@ -410,7 +356,6 @@ function montarSelect(tabela, spec, prefixo = "t") {
 
 function sqlComEmbutido(tabela, sqlInterno, embutidos, prefixo = "t") {
   if (embutidos.length === 0) return { sql: sqlInterno, juntas: [] }
-  // CTE (insert/update não podem ficar em subquery no Postgres)
   const joins = embutidos
     .map(
       ({ alias, alvo, fk }) =>
@@ -426,10 +371,6 @@ function sqlComEmbutido(tabela, sqlInterno, embutidos, prefixo = "t") {
     juntas: embutidos,
   }
 }
-
-// ------------------------------------------------------------
-// handler REST
-// ------------------------------------------------------------
 
 const CODIGO_HTTP = {
   23505: 409,
@@ -458,7 +399,6 @@ async function restHandler(req, res, url) {
   const retorno = (req.headers.prefer ?? "").includes("return=representation")
 
   try {
-    // ---------- RPC ----------
     if (caminho.startsWith("rpc/")) {
       const fn = caminho.slice(4)
       const args = req.__corpo ?? {}
@@ -476,7 +416,6 @@ async function restHandler(req, res, url) {
       return
     }
 
-    // ---------- tabela ----------
     const tabela = caminho
     if (!TIPOS.has(tabela)) {
       res.writeHead(404, { "Content-Type": "application/json" })
@@ -490,7 +429,6 @@ async function restHandler(req, res, url) {
     const where = clausulas.length ? `where ${clausulas.join(" and ")}` : ""
     const { colunas, embutidos } = montarSelect(tabela, spec)
 
-    // ordenação: order=col.dir,col2.dir2
     let order = ""
     const ordemBruta = query.get("order")
     if (ordemBruta) {
@@ -623,10 +561,6 @@ async function restHandler(req, res, url) {
   }
 }
 
-// ------------------------------------------------------------
-// handler Storage
-// ------------------------------------------------------------
-
 function caminhoArquivo(bucket, caminho) {
   const alvo = path.join(ARMAZENAMENTO, bucket, caminho)
   if (!alvo.startsWith(path.join(ARMAZENAMENTO, bucket))) throw new Error("caminho inválido")
@@ -638,7 +572,6 @@ async function storageHandler(req, res, url) {
   const partes = url.pathname.replace(/^\/storage\/v1\//, "").split("/")
   const recurso = partes[0] // "object" | "object" com ações
   try {
-    // POST /object/list/{bucket}
     if (req.method === "POST" && partes[1] === "list" && partes[2]) {
       const bucket = partes[2]
       const corpo = req.__corpo ?? {}
@@ -664,13 +597,11 @@ async function storageHandler(req, res, url) {
           metadata: row.metadata ?? { size: 0 },
         }
       })
-      // inclui pastas intermediárias quando há prefixo vazio
       res.writeHead(200, { "Content-Type": "application/json" })
       res.end(JSON.stringify(itens))
       return
     }
 
-    // DELETE /object/{bucket} com body {prefixes}
     if (req.method === "DELETE" && partes[1] && !partes[2]) {
       const bucket = partes[1]
       const prefixos = req.__corpo?.prefixes ?? []
@@ -689,7 +620,6 @@ async function storageHandler(req, res, url) {
       return
     }
 
-    // POST /object/{bucket}/{caminho...} : upload
     if (req.method === "POST" && partes[1] && partes.length >= 3) {
       const bucket = partes[1]
       const caminho = partes.slice(2).join("/")
@@ -715,7 +645,6 @@ async function storageHandler(req, res, url) {
       return
     }
 
-    // GET /object/{bucket}/{caminho...} : download (RLS no select)
     if (req.method === "GET" && partes[1] && partes.length >= 3) {
       const bucket = partes[1]
       const caminho = partes.slice(2).join("/")
@@ -760,10 +689,6 @@ async function storageHandler(req, res, url) {
   }
 }
 
-// ------------------------------------------------------------
-// handler Auth (GoTrue)
-// ------------------------------------------------------------
-
 async function authHandler(req, res, url) {
   const rota = url.pathname.replace(/^\/auth\/v1\//, "")
   const corpo = req.__corpo ?? {}
@@ -774,7 +699,6 @@ async function authHandler(req, res, url) {
     res.end(JSON.stringify(json))
   }
 
-  // ---- token (login / refresh) ----
   if (rota === "token") {
     const grant = url.searchParams.get("grant_type")
     if (grant === "password") {
@@ -821,7 +745,6 @@ async function authHandler(req, res, url) {
     return responder(400, { error: "unsupported_grant_type" })
   }
 
-  // ---- signup ----
   if (rota === "signup" && req.method === "POST") {
     const email = String(corpo.email ?? "")
       .trim()
@@ -866,7 +789,6 @@ async function authHandler(req, res, url) {
     return responder(200, objetoUsuario(u)) // só o usuário (sem sessão)
   }
 
-  // ---- logout ----
   if (rota === "logout" && req.method === "POST") {
     const auth = req.headers.authorization ?? ""
     const payload = verificarJWT(auth.replace(/^Bearer /, ""))
@@ -878,7 +800,6 @@ async function authHandler(req, res, url) {
     return res.end("{}")
   }
 
-  // ---- usuário atual ----
   if (rota === "user" && req.method === "GET") {
     const { papel, claims } = papelDosHeaders(req)
     if (papel !== "authenticated" || !claims.sub) {
@@ -889,7 +810,6 @@ async function authHandler(req, res, url) {
     return responder(200, objetoUsuario(u))
   }
 
-  // ---- atualizar usuário (senha / e-mail / metadados) ----
   if (rota === "user" && req.method === "PUT") {
     const { papel, claims } = papelDosHeaders(req)
     if (papel !== "authenticated" || !claims.sub) {
@@ -917,7 +837,6 @@ async function authHandler(req, res, url) {
       ])
       if (rows.length > 0)
         return responder(422, { code: "email_exists", msg: "This email is already in use" })
-      // guarda pendência e "envia" e-mail de confirmação
       loja[claims.sub].email_pendente = corpo.email.toLowerCase()
       salvarUsuarios(loja)
       registrarEmail(
@@ -943,7 +862,6 @@ async function authHandler(req, res, url) {
     )
   }
 
-  // ---- recuperação de senha (fluxo PKCE, como o GoTrue real) ----
   if (rota === "recover" && req.method === "POST") {
     const email = String(corpo.email ?? "")
       .trim()
@@ -968,7 +886,6 @@ async function authHandler(req, res, url) {
     return res.end("{}")
   }
 
-  // ---- verify: troca o token do e-mail por um código de autorização ----
   if (rota === "verify" && req.method === "GET") {
     const token = url.searchParams.get("token") ?? ""
     const pendencia = PENDENCIAS.get(token)
@@ -985,7 +902,6 @@ async function authHandler(req, res, url) {
     return res.end()
   }
 
-  // ---- admin: excluir usuário (service role) ----
   if (rota.startsWith("admin/users/") && req.method === "DELETE") {
     const { papel } = papelDosHeaders(req)
     if (papel !== "service_role")
@@ -1005,10 +921,6 @@ async function authHandler(req, res, url) {
   res.end(JSON.stringify({ error: `rota auth não implementada: ${rota}` }))
 }
 
-// ------------------------------------------------------------
-// servidor HTTP
-// ------------------------------------------------------------
-
 const CABECALHOS_CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
@@ -1027,7 +939,6 @@ const servidor = http.createServer(async (req, res) => {
 
   const url = new URL(req.url ?? "/", `http://127.0.0.1:${PORTA}`)
 
-  // corpo (texto para storage, json para o resto)
   await new Promise((resolver) => {
     const pedacos = []
     req.on("data", (c) => pedacos.push(c))
@@ -1052,7 +963,6 @@ const servidor = http.createServer(async (req, res) => {
     if (url.pathname.startsWith("/rest/v1/")) return await restHandler(req, res, url)
     if (url.pathname.startsWith("/storage/v1/")) return await storageHandler(req, res, url)
 
-    // utilidades de teste
     if (url.pathname === "/_teste/emails") {
       res.writeHead(200, { "Content-Type": "application/json" })
       return res.end(JSON.stringify(ultimosEmails()))
@@ -1083,7 +993,6 @@ export function iniciar() {
   })
 }
 
-// execução direta: `node tests/shim/servidor.mjs`
 if (import.meta.url === `file://${process.argv[1]}`) {
   iniciar()
   const desligar = async () => {

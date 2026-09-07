@@ -8,8 +8,7 @@ const ALFABETO = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 export function gerarToken(tamanho = 22): string {
   let saida = ""
   for (let i = 0; i < tamanho; i++) {
-    // randomInt gera um índice uniforme em [0, ALFABETO.length),
-    // sem o viés que `randomBytes(x) % N` introduz quando N não divide 256.
+    // Índice uniforme em todo o alfabeto
     saida += ALFABETO[randomInt(ALFABETO.length)]
   }
   return saida
