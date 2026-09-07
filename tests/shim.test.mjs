@@ -1,10 +1,5 @@
-// ============================================================
-// Teste de fumaça do shim : exercita o shim com o supabase-js
-// oficial (auth + rest + storage + rpc), validando que o E2E
-// do app tem uma base fiel do Supabase por baixo.
-//
+// Teste do shim com o supabase-js oficial.
 // Uso: node tests/harness/preparar.mjs && node tests/shim.test.mjs
-// ============================================================
 
 import { createClient } from "@supabase/supabase-js"
 import { ANON_KEY, SERVICE_KEY, PORTA, iniciar, ultimosEmails } from "./shim/servidor.mjs"
@@ -64,7 +59,6 @@ await teste("signup cria usuário + perfil (gatilho)", async () => {
 })
 
 function clienteDe(uid) {
-  // login fresh para obter JWT do usuário
   const c = createClient(URL_SHIM, ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
@@ -123,7 +117,6 @@ await teste("CRUD notas via PostgREST com RLS + embedded", async () => {
   )
   notaA = nota.id
 
-  // filtros: ilike + order múltiplo
   const { data: lista } = await A.from("notas")
     .select("*, disciplina:disciplinas(*)")
     .eq("professor_id", UID.A)
@@ -133,7 +126,6 @@ await teste("CRUD notas via PostgREST com RLS + embedded", async () => {
     .order("atualizado_em", { ascending: false })
   ok(lista?.length === 1, `ilike+order deveria trazer 1 (veio ${lista?.length})`)
 
-  // update com maybeSingle
   const { data: up } = await A.from("notas")
     .update({ titulo: "Função do 2º grau (revisada)" })
     .eq("id", notaA)
@@ -141,11 +133,10 @@ await teste("CRUD notas via PostgREST com RLS + embedded", async () => {
     .maybeSingle()
   ok(up?.titulo?.includes("revisada"), "update deveria aplicar")
 
-  // isolamento: B não vê a nota de A
   const { data: listaB } = await B.from("notas").select("id")
   ok((listaB ?? []).length === 0, "B não deveria ver notas de A")
 
-  // unique violation → código 23505
+  // Duplicidade registrada como 23505
   const { error: eDup } = await A.from("disciplinas").insert({
     professor_id: UID.A,
     nome: "Matemática",
@@ -184,7 +175,6 @@ await teste("links + leitura pública anon com RLS", async () => {
   })
   ok(eRoubo?.code === "42501", `B criando link p/ nota de A deveria dar RLS (veio ${eRoubo?.code})`)
 
-  // rpc contador
   const { data: contou } = await anon.rpc("registrar_acesso", { p_token: "tok-e2e-1" })
   ok(contou === true, "registrar_acesso deveria retornar true")
 })
@@ -232,7 +222,6 @@ await teste("atualização de senha via updateUser + novo login", async () => {
 })
 
 await teste("recuperação de senha gera e-mail com link de redefinição", async () => {
-  // fluxo PKCE, como o @supabase/ssr configura no app
   const c = createClient(URL_SHIM, ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, flowType: "pkce" },
   })
@@ -245,7 +234,7 @@ await teste("recuperação de senha gera e-mail com link de redefinição", asyn
     ultimo?.link?.includes("/auth/v1/verify?") && ultimo.link.includes("type=recovery"),
     "link de verificação PKCE no e-mail",
   )
-  // segue o link: verify → 302 com ?code= → troca o código por sessão
+  // Segue o link de verificação até a sessão
   const r = await fetch(ultimo.link, { redirect: "manual" })
   const destino = r.headers.get("location") ?? ""
   ok(r.status === 302 && destino.includes("code="), "verify deveria redirecionar com ?code=")

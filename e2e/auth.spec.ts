@@ -17,19 +17,16 @@ test.describe("Autenticação", () => {
     await page.getByRole("button", { name: "Criar conta" }).click()
     await expect(page.getByText("Conta criada. Confirme o e-mail")).toBeVisible({ timeout: 10000 })
     await expect(page.getByRole("button", { name: "Reenviar e-mail de confirmação" })).toBeVisible()
-    // tenta entrar antes de confirmar
     await page.goto("/#/entrar")
     await page.getByLabel("E-mail").fill(email)
     await page.getByLabel("Senha", { exact: true }).fill(senha)
     await page.getByRole("button", { name: "Entrar" }).click()
     await expect(page.getByText(/Confirme o e-mail/i)).toBeVisible({ timeout: 10000 })
-    // busca e-mail e confirma via Mailpit
     const mail = await buscarEmail(email, "Confirm", 20000)
     expect(mail.href).toContain("/auth/v1/verify")
     const link = corrigirRedirect(mail.href, baseURL!)
     await page.goto(link)
     await page.waitForTimeout(2000)
-    // agora login deve funcionar e cair em inicio
     await page.goto("/#/entrar")
     await page.getByLabel("E-mail").fill(email)
     await page.getByLabel("Senha", { exact: true }).fill(senha)
