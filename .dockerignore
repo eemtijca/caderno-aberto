@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+dist/
+.git/
+.github/
+supabase/
+tests/
+e2e/
+playwright-report/
+test-results/
+.env*
+!.env.example
+*.log
+.DS_Store
+pgdata/
+uploads/
