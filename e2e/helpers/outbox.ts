@@ -16,7 +16,11 @@ export async function buscarEmail(destinatario: string, assuntoInclui?: string, 
       await new Promise((res) => setTimeout(res, 500))
       continue
     }
-    const dados = (await r.json()) as { emails: EmailOutbox[] }
+    const dados = (await r.json()) as { emails?: EmailOutbox[] }
+    if (!Array.isArray(dados.emails)) {
+      await new Promise((res) => setTimeout(res, 500))
+      continue
+    }
     const msg = [...dados.emails]
       .reverse()
       .find(

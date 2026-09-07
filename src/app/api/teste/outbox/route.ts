@@ -3,15 +3,15 @@ import { limparOutbox, listarOutbox } from "@/lib/email/outbox"
 
 export const dynamic = "force-dynamic"
 
-// GET /api/teste/outbox. Caixa de e-mails em memória fora de produção.
+// GET /api/teste/outbox. Caixa de e-mails em memória, somente com ALLOW_TEST_OUTBOX=1.
 export async function GET() {
-  if (process.env.NODE_ENV === "production") return json({ erro: "Não encontrado." }, 404)
+  if (process.env.ALLOW_TEST_OUTBOX !== "1") return json({ erro: "Não encontrado." }, 404)
   return json({ emails: listarOutbox() })
 }
 
-// DELETE /api/teste/outbox. Limpa a caixa.
+// DELETE /api/teste/outbox. Limpa a caixa, somente com ALLOW_TEST_OUTBOX=1.
 export async function DELETE() {
-  if (process.env.NODE_ENV === "production") return json({ erro: "Não encontrado." }, 404)
+  if (process.env.ALLOW_TEST_OUTBOX !== "1") return json({ erro: "Não encontrado." }, 404)
   limparOutbox()
   return json({ ok: true })
 }

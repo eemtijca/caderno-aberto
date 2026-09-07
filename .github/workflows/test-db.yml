@@ -66,8 +66,10 @@ jobs:
           DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
           AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
           EMAIL_DRIVER: log
+          ALLOW_TEST_OUTBOX: "1"
 
       - name: Testes de contratos
         run: npm run test:contratos
         env:
           TEST_BASE_URL: http://127.0.0.1:3000
+          ALLOW_TEST_OUTBOX: "1"

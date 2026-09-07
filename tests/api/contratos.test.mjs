@@ -59,9 +59,27 @@ const emailB = `api_b_${sufixo}@exemplo.br`
 const senha = "senha123"
 
 async function tokenOutbox(email) {
+  let ultimoStatus = null
+  let ultimoCorpo = null
   for (let i = 0; i < 40; i++) {
     const r = await fetch(`${BASE}/api/teste/outbox`)
-    const { emails } = await r.json()
+    ultimoStatus = r.status
+    let corpo
+    try {
+      corpo = await r.json()
+    } catch {
+      corpo = null
+    }
+    ultimoCorpo = corpo
+    if (!r.ok) {
+      await new Promise((r2) => setTimeout(r2, 500))
+      continue
+    }
+    const { emails } = corpo ?? {}
+    if (!Array.isArray(emails)) {
+      await new Promise((r2) => setTimeout(r2, 500))
+      continue
+    }
     const achado = [...emails].reverse().find((e) => e.para.includes(email))
     if (achado) {
       const m = achado.html.match(/token=([0-9a-f]{64})/)
@@ -69,7 +87,9 @@ async function tokenOutbox(email) {
     }
     await new Promise((r2) => setTimeout(r2, 500))
   }
-  throw new Error(`sem token para ${email}`)
+  throw new Error(
+    `sem token para ${email} (outbox status=${ultimoStatus} corpo=${JSON.stringify(ultimoCorpo)?.slice(0, 200)}; dica: o app precisa rodar com ALLOW_TEST_OUTBOX=1)`,
+  )
 }
 
 // Saúde.
