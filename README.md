@@ -14,41 +14,77 @@ O professor cria uma conta, utiliza um editor visual de blocos (caixas COPIAR, e
 
 ## Recursos
 
-### Multiusuário (SaaS gratuito)
+### Organização
 
-- Cada professor possui uma conta com dados totalmente isolados. A segurança é garantida por Row Level Security no banco de dados, e não por código da aplicação.
-- Ciclo de vida completo da conta: cadastro com confirmação de e-mail e reenvio, bloqueio de login até a confirmação, logout, troca de senha, troca de e-mail, redefinição de senha por e-mail e exclusão com carência de 24 horas (dupla confirmação com a palavra EXCLUIR e senha, desativação de links, possibilidade de restauração dentro do prazo e purga automática).
-- Autenticação por e-mail e senha gerenciada pelo Supabase Auth.
+- Início com saudação, contadores clicáveis (notas, publicadas, disciplinas, links), notas do mês e últimas edições.
+- Notas em grade de cartões com busca local, filtros por disciplina, ano letivo, mês e turma, e contagem de resultados.
+- Organização por ano letivo, com acordeão por turma (agrupado por mês) e cartões por disciplina, além do grupo de notas sem turma.
+- Busca global (`Ctrl/Cmd+K`) com debounce, mínimo de 2 caracteres e tolerância a acentos, mostrando campo de origem e trecho contextual.
+
+### Editor de blocos
+
+- 12 tipos de bloco: seção numerada, parágrafo, fórmula em destaque, lista, tabela, chamada, figura, diagrama TikZ, COPIAR, exemplo, dica e exercícios.
+- Caixas COPIAR, exemplo e dica com blocos filhos (parágrafo, fórmula, lista, tabela, chamada).
+- Exercícios em 3 níveis renomeáveis (padrão Conceitos, Aplicação e Síntese), com questões abertas ou de múltipla escolha (até 5 alternativas), marcação da correta e gabarito manual ou automático.
+- Parágrafo com rótulos fixos (Definição, Fórmulas, Relações, Modelo básico, Resolução) ou rótulo livre; chamada em 3 estilos (Atenção, No dia a dia, Símbolos e unidades).
+- Tabela com linhas e colunas editáveis e primeira linha opcional como cabeçalho; figura por upload com compressão ou URL, com legenda.
+- Barra de formato inline (negrito, itálico, fórmula `$…$`, destaque `\resultado{…}`, química `$\ce{…}$`) e prévia KaTeX ao vivo.
+- Reordenação por arrastar e soltar (mouse e teclado), botões de mover, duplicar e excluir, paleta de inserção contextual.
+- Salvamento automático com indicador de estado; título editável na barra; ações de ler, exportar, compartilhar, duplicar (a cópia abre como rascunho), alternar rascunho e publicada, e excluir com confirmação.
+- Metadados por nota: disciplina, ano letivo, mês, turmas, resumo "Sobre" e habilidades BNCC/ENEM.
+- Aparência por nota: 5 fontes, 4 tamanhos e 3 entrelinhas, aplicadas ao professor, ao aluno e à impressão.
+- Diálogo Nova nota com título (mínimo 2 caracteres), disciplina (seleção ou criação inline com cor e ícone), ano, mês, turmas opcionais e interruptor "Começar do modelo".
+
+### Exportação e impressão
+
+- Do editor: arquivo para impressão (`.tex`), arquivo de texto (`.md`) e backup da nota (`.json`), todos anexados pelo slug da nota.
+- Da leitura (professor e aluno): botão Imprimir/PDF com layout A4 em duas colunas e ocultação de barras e rodapés; alternativas do quiz impressas como texto.
 
 ### Links únicos para os alunos
 
-- Compartilhamento de uma nota, de uma turma inteira ou de uma disciplina completa.
-- Cada link possui token próprio, com opções de copiar, pausar, reativar, regenerar o token (invalidando o anterior), agendar expiração ou excluir.
-- Contador de acessos por link.
+- Compartilhamento de uma nota (somente publicadas), de uma turma inteira ou de uma disciplina completa, com nome opcional; a criação já copia o endereço.
+- Gestão por cartão ou pelo diálogo rápido, sem sair da leitura: copiar, abrir como aluno, renomear, definir expiração, pausar e reativar, regenerar o endereço (invalida o anterior) e excluir com confirmação.
+- Contador de acessos por link e aviso quando a nota-alvo ainda é rascunho.
 - Endereço em caminho real (`/l/<token>`): WhatsApp, Telegram e redes mostram **preview com imagem, título e descrição gerados por nota** (OpenGraph). Links antigos em `/#/l/<token>` continuam funcionando.
-- Rascunhos nunca ficam visíveis; links revogados ou expirados exibem a mensagem "Link indisponível".
-- Vista do aluno: leitura mobile, busca entre as aulas do link, quiz com correção instantânea, gabarito ocultável, impressão A4 e tema claro/escuro.
+- Rascunhos nunca ficam visíveis; links pausados, expirados ou revogados exibem a mensagem "Link indisponível".
 
-### Escrita e organização
+### Conta
 
-- Editor visual de blocos com arrastar e soltar, prévia ao vivo, salvamento automático e barra de formato inline.
-- Editor **mobile-first**: todos os controles de bloco (arrastar, inserir, duplicar, mover e remover) ficam disponíveis no celular, não só no desktop.
-- **Aparência por nota**: fonte (padrão, serifada, alta legibilidade, leitura fluida ou monoespaçada), tamanho e entrelinha escolhidos no editor, vistos por professores e alunos e aplicados na impressão (a migração `20260901*` cria a coluna `notas.aparencia`).
-- Matemática em português: comandos `\sen`, `\tg`, `\cotg`, `\cossec`, vírgula decimal (`\dec{4,0}`), unidades (`\un{m/s^2}`) e `\resultado{...}`, correspondentes aos comandos do LaTeX original.
-- Fórmulas químicas por meio de mhchem ($\ce{H2O}$).
-- Campos BNCC/ENEM por nota.
-- Organização automática: Ano letivo, Turma, Mês e Disciplina.
-- CRUD completo: notas (criar, editar, duplicar, excluir, importar .md ou .json), disciplinas, turmas e links.
-- Busca global (Ctrl+K) sem acentos, abrangendo títulos, conteúdo, fórmulas, gabaritos e habilidades.
-- Backup completo em um único arquivo JSON (notas, links e imagens em base64), com restauração, incluindo o formato do aplicativo anterior "Notas de Aula".
-- Notificações toast em todas as ações, com mensagens de erro do Supabase traduzidas para o português.
+- Perfil com nome e escola (exibidos nas notas e impressos) e e-mail.
+- Segurança com troca de senha (mínimo 6 caracteres, com confirmação) e troca de e-mail com confirmação por link no novo endereço.
+- Disciplinas com nome, cor e ícone gráfico, contador de notas e renomeação; excluir preserva as notas (só desvincula).
+- Turmas com nome, série e ano letivo, agrupadas por ano; excluir preserva as notas.
+- Backup completo em um único arquivo JSON (disciplinas, turmas, notas, links e imagens em base64), com restauração substitutiva e importação de nota única (`.md` ou `.json`).
+- Exclusão de conta em 2 etapas (aceite, palavra EXCLUIR e senha) com carência de 24 horas, banner global de restauração e desativação dos links no período.
+
+### Vista do aluno (sem login)
+
+- Acesso por link único `/l/<token>`; coleções de turma e disciplina abrem lista de aulas com busca local.
+- Leitura com disciplina, mês e ano, turmas, professor, caixa "Sobre" e chips de habilidades; fórmulas, diagramas, tabelas, figuras e caixas coloridas.
+- Quiz de múltipla escolha com correção instantânea, botão de mostrar e ocultar gabarito, impressão em PDF e alternador de tema.
+- Herança da fonte, do tamanho e da entrelinha definidos pelo professor; faixa de aviso quando o link expira em menos de 3 dias; página de demonstração em `/l/demo-landing`.
+
+### Acesso e conta de professor
+
+- Página inicial com proposta, recursos, passo a passo em 3 etapas, perguntas frequentes e código aberto (licença MIT).
+- Cadastro com nome, e-mail e senha, confirmação por e-mail com reenvio, medidor de força e exibição da senha; login com bloqueio até a confirmação; recuperação em 2 fases (pedir link e definir nova senha); sessão persistente.
+- Temas claro, escuro e sistema; aplicativo somente em português; navegação por rotas hash (`#/`, `#/notas`, `#/organizacao`, `#/links`, `#/conta`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/cadastro`, `#/redefinir`) com retorno ao início em rota desconhecida.
+- Layout responsivo com barra lateral no desktop e navegação inferior no celular; notificações toast em todas as ações, com mensagens de erro em português.
 - Estados de carregamento independentes por elemento (esqueletos por cartão, filtro, número e seção) e animações sutis que respeitam `prefers-reduced-motion`.
+
+## Formatos de intercâmbio
+
+- **Backup JSON**: um arquivo com disciplinas, turmas, notas, links e imagens em base64; a restauração substitui todos os dados do professor, recria identificadores e remapeia imagens e URLs nos blocos.
+- **Nota `.md`**: front-matter (título, disciplina, ano, mês, turmas, habilidades, status, aparência) mais corpo com seções, fórmulas, listas, tabelas, figuras, TikZ, caixas e exercícios com gabarito; a importação recria disciplina e turmas faltantes.
+- **Nota `.json`**: envelope com os mesmos campos; aceito na importação e na exportação por nota.
+- **LaTeX `.tex`**: documento autocontido com pacotes padrão e ambientes para cada caixa; imagens locais referenciadas como arquivos, externas sinalizadas como aviso.
 
 ## Stack
 
-- Next.js 16 (App Router) com TypeScript.
-- Supabase: Auth (sessões), Postgres com RLS (dados) e Storage (figuras, bucket privado).
-- @supabase/ssr: sessão em cookies, renovada pelo middleware.
+- Next.js 16 (App Router) com TypeScript e Node 24.
+- PostgreSQL 15 ou superior com Prisma ORM v8 (contrato em `src/prisma/contract.prisma`).
+- Autenticação própria (scrypt + JWT em cookies HttpOnly); e-mails via Resend, SMTP genérico ou log local.
+- Imagens atrás de interface agnóstica: disco local (`disk`, volume Docker) ou API S3-compatível (`s3`: Supabase Storage, MinIO, R2).
 - Tailwind CSS 4 com shadcn/ui.
 - KaTeX com mhchem.
 - dnd-kit (editor) e TanStack Query.
@@ -57,108 +93,164 @@ Paleta: verde institucional #008241.
 
 ## Como executar
 
-### 1. Criar o projeto Supabase
+### Pré-requisitos
 
-1. Criar uma conta gratuita em [supabase.com](https://supabase.com) e um novo projeto (o plano gratuito é suficiente).
-2. Anotar, em Project Settings -> API, os seguintes valores:
-   - Project URL, que corresponde a NEXT_PUBLIC_SUPABASE_URL.
-   - anon/public key, que corresponde a NEXT_PUBLIC_SUPABASE_ANON_KEY.
-   - service_role key, que corresponde a SUPABASE_SERVICE_ROLE_KEY (utilizada somente no servidor).
+Node 24, Docker com Compose (para o modo recomendado) ou Supabase CLI com Docker (para o modo Supabase local).
 
-### 2. Aplicar o banco de dados (migrations)
-
-Com o Supabase CLI:
+### Com Docker Compose (recomendado)
 
 ```bash
-npx supabase login
-npx supabase link --project-ref SEU_PROJECT_REF
-npx supabase db push
+cp .env.example .env
+# Gere um segredo: openssl rand -base64 32  (cole em AUTH_SECRET no .env)
+docker compose up --build
 ```
 
-O comando `supabase db reset` pode ser utilizado para reiniciar o banco local.
+O Compose sobe o PostgreSQL 17 (`db:5432`, volume `pgdata`), aplica as migrações na partida (`docker/postgres/migracoes/`) e inicia o app em http://localhost:3000. Com `STORAGE_DRIVER=disk` (padrão), as imagens ficam no volume `uploads`.
 
-Alternativa sem CLI: copiar o conteúdo dos arquivos `supabase/migrations/20260830111154_schema_inicial.sql` e `supabase/migrations/20260901120000_aparencia_notas.sql`, nesta ordem, e executá-los no SQL Editor do Dashboard.
+### Com Supabase local (banco + Storage S3)
 
-### 3. Configurar autenticação
+```bash
+supabase start
+PGPASSWORD=postgres createdb -h 127.0.0.1 -p 54322 -U postgres cadernoaberto
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/cadernoaberto node docker/app/migrar.mjs
+```
 
-No Dashboard, em Authentication:
+Sem o cliente `postgresql-client`, crie o banco com `psql -h 127.0.0.1 -p 54322 -U postgres -c "CREATE DATABASE cadernoaberto;"` (com `PGPASSWORD=postgres` no ambiente).
 
-- URL Configuration -> Site URL: definir a URL onde o aplicativo é executado (por exemplo, http://localhost:3000 em desenvolvimento).
-- Email Templates: os modelos padrão funcionam; os links de confirmação e recuperação apontam para o Site URL configurado.
-- Em Providers -> Email, manter a opção "Confirm email" ativada (o aplicativo trata ambos os casos).
+Crie o bucket `imagens` uma vez por instância (privado, limite 6 MB, tipos de imagem):
 
-### 4. Executar o aplicativo
+```sql
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('imagens', 'imagens', false, 6291456,
+  '{image/png,image/jpeg,image/webp,image/gif,image/svg+xml}');
+```
+
+No `.env`, aponte `DATABASE_URL` para o banco acima e, para imagens no Storage, defina `STORAGE_DRIVER=s3` com `STORAGE_S3_ENDPOINT=http://127.0.0.1:54321/storage/v1/s3`, `STORAGE_S3_REGION=local`, `STORAGE_S3_BUCKET=imagens` e as chaves do protocolo S3 do serviço Storage (variáveis `S3_PROTOCOL_ACCESS_KEY_ID` e `S3_PROTOCOL_ACCESS_KEY_SECRET` do contêiner `storage`). Depois suba o app:
+
+```bash
+npm run dev
+```
+
+### Sem Docker (PostgreSQL próprio)
 
 ```bash
 npm install
 cp .env.example .env
+# Preencha DATABASE_URL (qualquer PostgreSQL 15+, incluindo o banco
+# direto de um projeto Supabase) e AUTH_SECRET no .env
+# Sem volume Docker, defina STORAGE_DRIVER=disk com UPLOAD_DIR local
+node docker/app/migrar.mjs
 npm run dev
 ```
 
-O arquivo `.env` deve ser preenchido com os três valores obtidos na etapa 1. O aplicativo estará disponível em http://localhost:3000.
+E-mails em desenvolvimento usam `EMAIL_DRIVER=log` (links impressos no console e visíveis em `/api/teste/outbox`). Para envios reais, configure `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, ou `EMAIL_DRIVER=smtp` com `SMTP_URL`.
 
 Após criar uma conta, cadastrar uma disciplina em Conta e escrever a primeira nota.
 
 ## Testes
 
-O repositório inclui uma suíte completa que executa sem Docker e com Supabase local real:
-
 ```bash
-npm run test:rls
-npm run test:shim
-npm run test:all
 npm run test:unit
+npm run test:api
+npm run test:contratos
 npm run test:e2e
 ```
 
 Os comandos correspondem a:
 
-- `test:rls`: 28 testes de isolamento (professor A/B, anônimo, links, gatilhos, storage, carência).
-- `test:shim`: 9 testes de ponta a ponta da camada Supabase (auth, REST, storage, PKCE).
-- `test:all`: executa RLS e Shim.
-- `test:unit`: testes puros de geração LaTeX/Markdown (autocontenção, round-trip, aparência) — também grava `.tex` de exemplo em `tests/tex/` para compilação manual com `tectonic`.
-- `test:e2e`: 93 testes Playwright em 3 navegadores, headless, cobrindo autenticação com confirmação e reenvio, notas com disciplina inline, links, conta com carência, ícones e casos extremos. Utiliza Supabase local real (npx supabase start) e Mailpit em http://127.0.0.1:54324.
+- `test:unit`: testes puros de geração LaTeX/Markdown (autocontenção, round-trip, aparência), também grava `.tex` de exemplo em `tests/tex/` para compilação manual com `tectonic`.
+- `test:api`: 6 testes de isolamento do backstop RLS (papel restrito `app_teste`, sem contexto, A/B, escrita cruzada). Exige `DATABASE_URL` com as migrações aplicadas.
+- `test:contratos`: 40 verificações HTTP de ponta a ponta da API (conta, CRUD, links públicos, imagens, backup). Exige o app no ar (`TEST_BASE_URL`, padrão http://127.0.0.1:3000).
+- `test:e2e`: suíte Playwright em 3 navegadores, headless, cobrindo autenticação com confirmação e reenvio, notas com disciplina inline, links, conta com carência, ícones e casos extremos. Os e-mails de teste são lidos em `/api/teste/outbox` (provedor `log`). A interface interativa (`test:e2e:ui`) abre o executor visual.
 
-Detalhes da implementação:
-
-- `tests/harness/stubs.sql` reproduz em um Postgres comum o mínimo do Supabase (papéis anon, authenticated, service_role, função auth.uid(), schemas auth e storage), equivalente ao comportamento do PostgREST em produção.
-- `tests/rls.test.mjs` executa consultas assumindo cada papel com JWT próprio e valida o isolamento.
-- `tests/shim/servidor.mjs` é um servidor local que implementa a linguagem do Supabase (autenticação com PKCE, PostgREST com filtros, Storage com políticas), servindo de base para testes de aplicação completos.
-
-Verificações de qualidade: `npm run lint`, `npm run tsc`, `npm run build` e `npx supabase db reset`.
+Verificações de qualidade: `npm run lint`, `npm run tsc`, `npm run build`.
 
 ## CI (GitHub Actions)
 
-O workflow em `.github/workflows/ci.yml` roda a cada push em `main` e pull request (Node 24, Ubuntu):
+Quatro workflows em `.github/workflows/` rodam a cada push em `main` e pull request (Node 24, Ubuntu):
 
-- **qualidade**: `npm run format:check`, `npm run lint` e `npm run tsc`.
-- **build**: `npm run build` com variáveis de ambiente fictícias (o prerender não depende de um Supabase real).
-- **testes**: `npm run test:all` (RLS + Shim) com Postgres embutido, sem Docker. Em falha, o log do servidor (`tools/pg/pg.log`) é enviado como artefato.
+- **quality**: `npm run format:check`, `npm run lint`, `npm run tsc` e `test:unit`.
+- **build**: `npm run build` com `DATABASE_URL`/`AUTH_SECRET` fictícios e `EMAIL_DRIVER=log`.
+- **test-db**: service `postgres:17`, migrações, `test:api` (isolamento RLS) e `test:contratos` (sobe o app e testa a API).
+- **db-reset**: só manual (`workflow_dispatch`), restrito ao environment `production` (detalhes abaixo).
 
-Os testes E2E (Playwright com Supabase local) não fazem parte do CI e devem ser executados localmente com `npm run test:e2e`.
+Os testes E2E (Playwright) não fazem parte do CI e devem ser executados localmente com o app no ar.
+
+## Reset do banco real (antes de haver usuários reais)
+
+Apaga **todos** os dados do banco (tabelas do app, `auth.users` e objetos do Storage) **sem volta** — não há backup — e reaplica as migrações do zero. Vale somente enquanto não há usuários reais; ao liberá-los, desabilite este workflow no GitHub UI (Actions → Reset do Banco Real → Disable workflow).
+
+Pré-requisitos no GitHub (Settings → Environments → `production`, com revisor obrigatório):
+
+| Secret | Valor |
+|---|---|
+| `DATABASE_URL_PROD` | Conexão **direta** `:5432` do projeto Supabase real (`postgresql://postgres:[senha]@db.[REF].supabase.co:5432/postgres`). Nunca pooler `:6543`, nunca outra base. |
+
+Para disparar: Actions → "Reset do Banco Real" → Run workflow → digite exatamente `APAGAR-BANCO-REAL`. O workflow trava se o host da URL não for `*.supabase.co`, executa `docker/postgres/repor.mjs` + `docker/app/migrar.mjs` e verifica o estado final (3 migrações aplicadas, zero usuários, isolamento). Segredos trafegam só via bloco `env:` (nunca em `echo` ou argumento de comando) e forks não os recebem em dispatch manual.
 
 ## Deploy
 
-1. Supabase: criar o projeto e aplicar as migrations (etapas 1 e 2 acima).
-2. Aplicativo: realizar o deploy em qualquer plataforma Node (Vercel, Railway, VPS), com comando de build `npm run build` e as três variáveis do .env.local (a `service_role` deve ser configurada apenas como variável de servidor, nunca com prefixo `NEXT_PUBLIC_`).
-3. Atualizar no Supabase a Site URL e as Redirect URLs com o domínio final.
+1. Banco: PostgreSQL 15 ou superior (Compose, gerenciado ou o banco direto de um projeto Supabase). As migrações aplicam sozinhas na partida do contêiner (`docker/app/migrar.mjs`); fora do Compose, rode o migrador com a `DATABASE_URL` de produção antes de publicar.
+2. Aplicativo na Vercel: comando de build `npm run build` e as variáveis do `.env.example` (`DATABASE_URL` do pooler de sessão com `?sslmode=require`, `AUTH_SECRET` com 32 ou mais bytes aleatórios, `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, `STORAGE_DRIVER=s3` com as 5 variáveis `STORAGE_S3_*` e `CRON_SECRET` com segredo aleatório). O disco é efêmero na Vercel: imagens exigem `s3`, nunca `disk`.
+3. Agendador da purga: o `vercel.json` já registra o Cron diário em `GET /api/conta/restaurar`; a Vercel envia `CRON_SECRET` como `Authorization` automaticamente. Fora da Vercel, agende a mesma chamada com o cabeçalho (cron do host, GitHub Actions com `schedule` ou similar).
+4. Produção: use um papel dono do schema na `DATABASE_URL` (as políticas RLS de segunda barreira valem para papéis com `bypassrls` apenas como documentação; o isolamento real é aplicado pela API). Aponte deploys de pré-visualização para um banco de staging, nunca para produção.
+5. Alternativa self-hosted: `docker compose up --build` com `.env` preenchido (o entrypoint migra e serve; imagens no volume `uploads`).
+
+## Referência da API
+
+Autenticação (`/api/auth`): `POST cadastro`, `POST entrar`, `POST` e `GET sair`, `GET verificar?token=`, `POST reenviar`, `POST redefinir` e `GET redefinir?token=`, `POST concluir`, `POST renovar`, `POST trocar-senha`, `POST trocar-email` e `GET confirmar-troca?token=`. E-mail inexistente sempre responde 200 na recuperação e no reenvio.
+
+Conta (`/api/conta`): `GET` (sessão com usuário e perfil), `PATCH` (nome e escola), `POST excluir` (exige senha e palavra EXCLUIR, carência de 24 horas), `POST restaurar` (dentro da carência) e `DELETE restaurar` (purga com segredo).
+
+Notas (`/api/notas`): `GET` com filtros `q`, `disciplina`, `ano`, `mes`, `turma` e `status`; `POST` (título e disciplina obrigatórios); `GET`, `PUT` e `DELETE /api/notas/[id]`; `POST /api/notas/[id]/duplicar` (cópia como rascunho); `GET /api/notas/[id]/exportar?formato=json|md|tex` (anexo pelo slug).
+
+Disciplinas, turmas e links: `GET` com contagens (`totalNotas`), `POST`, `PUT` e `DELETE` por id; links com `tipo` nota, turma ou disciplina, expiração, pausa e regeneração de token.
+
+Busca (`GET /api/busca?q=`, mínimo 2 caracteres, limite 40, com campo de origem e trecho); backup (`GET` exporta, `POST` restaura de forma substitutiva); importação (`POST /api/importar` com `conteudo` e `formato`); imagens (`POST` multipart até 6 MB, `GET ?path=` com `?png=1` para conversão, `DELETE`); visão pública sem login (`GET /api/publico/[token]` com contador de acessos e demonstração, `GET /api/publico/[token]/imagens` só para imagens referenciadas); saúde (`GET /api`); caixa de e-mail de teste fora de produção (`GET` e `DELETE /api/teste/outbox`).
+
+Os contratos vivos estão em `tests/api/contratos.test.mjs` (40 verificações) e o isolamento em `tests/api/isolamento.test.mjs`.
+
+## Perguntas frequentes
+
+**O Caderno Aberto é gratuito?**
+Sim, e de código aberto sob licença MIT. Cada professor cria a própria conta sem custo.
+
+**Meus dados ficam isolados dos outros professores?**
+Sim. Toda consulta é filtrada pelo professor dono no servidor, com políticas de segunda barreira no banco e suíte de isolamento automatizada.
+
+**Como levo minhas notas para outro lugar?**
+Baixe o backup completo em Conta (JSON com notas, links e imagens) ou exporte cada nota em `.md`, `.json` ou `.tex`. A restauração substitui os dados atuais.
+
+**Excluí minha conta. E agora?**
+Dentro de 24 horas, entre e escolha Restaurar conta no aviso exibido. Depois do prazo, a purga remove tudo permanentemente.
+
+**Funciona sem internet ou como aplicativo de celular?**
+Não. O Caderno Aberto é uma aplicação web responsiva, em português, que exige conexão; não há modo offline nem aplicativo nativo.
 
 ## Estrutura
 
 ```
 src/
   app/api/            rotas de API (multiusuário; sessão via cookies)
+    auth/             cadastro, login, verificação, recuperação e troca
     publico/[token]/  vista do aluno (sem login) e servidor de imagens
   components/         editor visual, vistas (notas, links, conta), shell
-  hooks/use-sessao    ciclo de vida da autenticação com PKCE e carência
+  hooks/use-sessao    ciclo de vida da autenticação com carência
   lib/
+    auth/             scrypt, JWT+sessões, validação e limite de tentativas
+    email/            provedor agnóstico (log, smtp, resend) e modelos pt-BR
+    armazenamento/    imagens atrás de interface única (disk, s3)
+    banco/            tipos das linhas (espelham o contrato Prisma)
     notas/            AST de blocos, LaTeX, Markdown, busca, paleta e ícones
-    supabase/         clientes (browser, servidor, admin) e tipos do banco
-    api/              helpers de sessão e serialização das rotas
+    api/              sessão, serialização, links públicos e limite
+  prisma/             contrato Prisma v8 (fonte da verdade do esquema)
+docker/
+  postgres/migracoes/ SQL versionado aplicado pelo migrador próprio
+  app/                entrypoint + migrador do contêiner
 supabase/
-  migrations/         schema inicial + aparencia_notas (fonte da verdade)
-tests/                harness (stubs), suíte de RLS e shim do Supabase
-e2e/                  suíte Playwright headless com Mailpit para confirmação
+  config.toml         orquestração mínima do stack local (banco + Storage S3)
+tests/api/            contratos HTTP + isolamento do backstop RLS
+e2e/                  suíte Playwright headless com outbox de e-mail local
 ```
 
 ## Licença

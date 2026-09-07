@@ -14,11 +14,11 @@ build/
 dev.log
 server.log
 
-# dados locais de teste (Postgres embutido / shim)
+# dados locais de teste
 tools/
 tests/shim/dados/
 
-# Supabase CLI
+# artefactos locais de base de dados
 supabase/.temp/
 supabase/.branches/
 
@@ -41,3 +41,4 @@ public/vendor/
 tests/unit/build/
 tests/tex/*.tex
 tests/tex/*.pdf
+dist/
