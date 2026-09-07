@@ -1,0 +1,2366 @@
+{
+  "schemaVersion": "1",
+  "targetFamily": "sql",
+  "target": "postgres",
+  "profileHash": "3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2",
+  "roots": {
+    "disciplinas": {
+      "model": "Disciplinas",
+      "namespace": "public"
+    },
+    "links": {
+      "model": "Links",
+      "namespace": "public"
+    },
+    "migracoes_aplicadas": {
+      "model": "MigracoesAplicadas",
+      "namespace": "public"
+    },
+    "notas": {
+      "model": "Notas",
+      "namespace": "public"
+    },
+    "profiles": {
+      "model": "Profiles",
+      "namespace": "public"
+    },
+    "sessoes": {
+      "model": "Sessoes",
+      "namespace": "public"
+    },
+    "tokens_verificacao": {
+      "model": "TokensVerificacao",
+      "namespace": "public"
+    },
+    "turmas": {
+      "model": "Turmas",
+      "namespace": "public"
+    },
+    "usuarios": {
+      "model": "Usuarios",
+      "namespace": "public"
+    }
+  },
+  "domain": {
+    "namespaces": {
+      "public": {
+        "models": {
+          "Disciplinas": {
+            "fields": {
+              "atualizadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "cor": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "criadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "icone": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "nome": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "ordem": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "professorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "links": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["disciplinaId"]
+                },
+                "to": {
+                  "model": "Links",
+                  "namespace": "public"
+                }
+              },
+              "notas": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["disciplinaId"]
+                },
+                "to": {
+                  "model": "Notas",
+                  "namespace": "public"
+                }
+              },
+              "professor": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["professorId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Profiles",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "atualizadoEm": {
+                  "column": "atualizado_em"
+                },
+                "cor": {
+                  "column": "cor"
+                },
+                "criadoEm": {
+                  "column": "criado_em"
+                },
+                "icone": {
+                  "column": "icone"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nome": {
+                  "column": "nome"
+                },
+                "ordem": {
+                  "column": "ordem"
+                },
+                "professorId": {
+                  "column": "professor_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "disciplinas"
+            }
+          },
+          "Links": {
+            "fields": {
+              "acessos": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "ativo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "criadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "disciplinaId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiraEm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "nome": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "notaId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "professorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "professorNome": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "tipo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "token": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "turmaId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "disciplina": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["disciplinaId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Disciplinas",
+                  "namespace": "public"
+                }
+              },
+              "nota": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["notaId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Notas",
+                  "namespace": "public"
+                }
+              },
+              "professor": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["professorId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Profiles",
+                  "namespace": "public"
+                }
+              },
+              "turma": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["turmaId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Turmas",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "acessos": {
+                  "column": "acessos"
+                },
+                "ativo": {
+                  "column": "ativo"
+                },
+                "criadoEm": {
+                  "column": "criado_em"
+                },
+                "disciplinaId": {
+                  "column": "disciplina_id"
+                },
+                "expiraEm": {
+                  "column": "expira_em"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nome": {
+                  "column": "nome"
+                },
+                "notaId": {
+                  "column": "nota_id"
+                },
+                "professorId": {
+                  "column": "professor_id"
+                },
+                "professorNome": {
+                  "column": "professor_nome"
+                },
+                "tipo": {
+                  "column": "tipo"
+                },
+                "token": {
+                  "column": "token"
+                },
+                "turmaId": {
+                  "column": "turma_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "links"
+            }
+          },
+          "MigracoesAplicadas": {
+            "fields": {
+              "aplicadaEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "nome": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "aplicadaEm": {
+                  "column": "aplicada_em"
+                },
+                "nome": {
+                  "column": "nome"
+                }
+              },
+              "namespaceId": "public",
+              "table": "migracoes_aplicadas"
+            }
+          },
+          "Notas": {
+            "fields": {
+              "anoLetivo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "aparencia": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "atualizadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "blocos": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "busca": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "criadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "disciplinaCor": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "disciplinaId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "disciplinaNome": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "habilidades": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "mes": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "professorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "sobre": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "titulo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "turmasIds": {
+                "many": true,
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "turmasNomes": {
+                "many": true,
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "disciplina": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["disciplinaId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Disciplinas",
+                  "namespace": "public"
+                }
+              },
+              "links": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["notaId"]
+                },
+                "to": {
+                  "model": "Links",
+                  "namespace": "public"
+                }
+              },
+              "professor": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["professorId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Profiles",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "anoLetivo": {
+                  "column": "ano_letivo"
+                },
+                "aparencia": {
+                  "column": "aparencia"
+                },
+                "atualizadoEm": {
+                  "column": "atualizado_em"
+                },
+                "blocos": {
+                  "column": "blocos"
+                },
+                "busca": {
+                  "column": "busca"
+                },
+                "criadoEm": {
+                  "column": "criado_em"
+                },
+                "disciplinaCor": {
+                  "column": "disciplina_cor"
+                },
+                "disciplinaId": {
+                  "column": "disciplina_id"
+                },
+                "disciplinaNome": {
+                  "column": "disciplina_nome"
+                },
+                "habilidades": {
+                  "column": "habilidades"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "mes": {
+                  "column": "mes"
+                },
+                "professorId": {
+                  "column": "professor_id"
+                },
+                "sobre": {
+                  "column": "sobre"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "titulo": {
+                  "column": "titulo"
+                },
+                "turmasIds": {
+                  "column": "turmas_ids"
+                },
+                "turmasNomes": {
+                  "column": "turmas_nomes"
+                }
+              },
+              "namespaceId": "public",
+              "table": "notas"
+            }
+          },
+          "Profiles": {
+            "fields": {
+              "atualizadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "criadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "email": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "escola": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "exclusaoSolicitadaEm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiraEm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "nome": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "preferencias": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "disciplinas": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["professorId"]
+                },
+                "to": {
+                  "model": "Disciplinas",
+                  "namespace": "public"
+                }
+              },
+              "links": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["professorId"]
+                },
+                "to": {
+                  "model": "Links",
+                  "namespace": "public"
+                }
+              },
+              "notas": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["professorId"]
+                },
+                "to": {
+                  "model": "Notas",
+                  "namespace": "public"
+                }
+              },
+              "turmas": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["professorId"]
+                },
+                "to": {
+                  "model": "Turmas",
+                  "namespace": "public"
+                }
+              },
+              "usuarios": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Usuarios",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "atualizadoEm": {
+                  "column": "atualizado_em"
+                },
+                "criadoEm": {
+                  "column": "criado_em"
+                },
+                "email": {
+                  "column": "email"
+                },
+                "escola": {
+                  "column": "escola"
+                },
+                "exclusaoSolicitadaEm": {
+                  "column": "exclusao_solicitada_em"
+                },
+                "expiraEm": {
+                  "column": "expira_em"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nome": {
+                  "column": "nome"
+                },
+                "preferencias": {
+                  "column": "preferencias"
+                }
+              },
+              "namespaceId": "public",
+              "table": "profiles"
+            }
+          },
+          "Sessoes": {
+            "fields": {
+              "agente": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "criadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiraEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "ip": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "ultimoUsoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "usuarioId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "usuario": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["usuarioId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Usuarios",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "agente": {
+                  "column": "agente"
+                },
+                "criadoEm": {
+                  "column": "criado_em"
+                },
+                "expiraEm": {
+                  "column": "expira_em"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "ip": {
+                  "column": "ip"
+                },
+                "tokenHash": {
+                  "column": "token_hash"
+                },
+                "ultimoUsoEm": {
+                  "column": "ultimo_uso_em"
+                },
+                "usuarioId": {
+                  "column": "usuario_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "sessoes"
+            }
+          },
+          "TokensVerificacao": {
+            "fields": {
+              "criadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiraEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "novoEmail": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "tipo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "usadoEm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "usuarioId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "usuario": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["usuarioId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Usuarios",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "criadoEm": {
+                  "column": "criado_em"
+                },
+                "expiraEm": {
+                  "column": "expira_em"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "novoEmail": {
+                  "column": "novo_email"
+                },
+                "tipo": {
+                  "column": "tipo"
+                },
+                "tokenHash": {
+                  "column": "token_hash"
+                },
+                "usadoEm": {
+                  "column": "usado_em"
+                },
+                "usuarioId": {
+                  "column": "usuario_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "tokens_verificacao"
+            }
+          },
+          "Turmas": {
+            "fields": {
+              "anoLetivo": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "atualizadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "criadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "nome": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "professorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "serie": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "links": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["turmaId"]
+                },
+                "to": {
+                  "model": "Links",
+                  "namespace": "public"
+                }
+              },
+              "professor": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": ["professorId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Profiles",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "anoLetivo": {
+                  "column": "ano_letivo"
+                },
+                "atualizadoEm": {
+                  "column": "atualizado_em"
+                },
+                "criadoEm": {
+                  "column": "criado_em"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nome": {
+                  "column": "nome"
+                },
+                "professorId": {
+                  "column": "professor_id"
+                },
+                "serie": {
+                  "column": "serie"
+                }
+              },
+              "namespaceId": "public",
+              "table": "turmas"
+            }
+          },
+          "Usuarios": {
+            "fields": {
+              "atualizadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "criadoEm": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "email": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "emailVerificadoEm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "senhaHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "profiles": {
+                "cardinality": "1:1",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Profiles",
+                  "namespace": "public"
+                }
+              },
+              "sessoes": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["usuarioId"]
+                },
+                "to": {
+                  "model": "Sessoes",
+                  "namespace": "public"
+                }
+              },
+              "tokensVerificacaos": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["usuarioId"]
+                },
+                "to": {
+                  "model": "TokensVerificacao",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "atualizadoEm": {
+                  "column": "atualizado_em"
+                },
+                "criadoEm": {
+                  "column": "criado_em"
+                },
+                "email": {
+                  "column": "email"
+                },
+                "emailVerificadoEm": {
+                  "column": "email_verificado_em"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "senhaHash": {
+                  "column": "senha_hash"
+                }
+              },
+              "namespaceId": "public",
+              "table": "usuarios"
+            }
+          }
+        }
+      }
+    }
+  },
+  "storage": {
+    "namespaces": {
+      "public": {
+        "entries": {
+          "policy": {
+            "isolamento_professor": {
+              "kind": "policy",
+              "name": "isolamento_professor",
+              "namespaceId": "public",
+              "operation": "all",
+              "permissive": true,
+              "roles": ["public"],
+              "tableName": "disciplinas",
+              "using": "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)",
+              "withCheck": "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+            },
+            "isolamento_professor_2": {
+              "kind": "policy",
+              "name": "isolamento_professor",
+              "namespaceId": "public",
+              "operation": "all",
+              "permissive": true,
+              "roles": ["public"],
+              "tableName": "links",
+              "using": "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)",
+              "withCheck": "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+            },
+            "isolamento_professor_3": {
+              "kind": "policy",
+              "name": "isolamento_professor",
+              "namespaceId": "public",
+              "operation": "all",
+              "permissive": true,
+              "roles": ["public"],
+              "tableName": "notas",
+              "using": "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)",
+              "withCheck": "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+            },
+            "isolamento_professor_4": {
+              "kind": "policy",
+              "name": "isolamento_professor",
+              "namespaceId": "public",
+              "operation": "all",
+              "permissive": true,
+              "roles": ["public"],
+              "tableName": "turmas",
+              "using": "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)",
+              "withCheck": "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+            },
+            "isolamento_proprio": {
+              "kind": "policy",
+              "name": "isolamento_proprio",
+              "namespaceId": "public",
+              "operation": "all",
+              "permissive": true,
+              "roles": ["public"],
+              "tableName": "profiles",
+              "using": "(id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)",
+              "withCheck": "(id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+            },
+            "isolamento_proprio_2": {
+              "kind": "policy",
+              "name": "isolamento_proprio",
+              "namespaceId": "public",
+              "operation": "all",
+              "permissive": true,
+              "roles": ["public"],
+              "tableName": "sessoes",
+              "using": "(usuario_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)",
+              "withCheck": "(usuario_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+            },
+            "isolamento_proprio_3": {
+              "kind": "policy",
+              "name": "isolamento_proprio",
+              "namespaceId": "public",
+              "operation": "all",
+              "permissive": true,
+              "roles": ["public"],
+              "tableName": "tokens_verificacao",
+              "using": "(usuario_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)",
+              "withCheck": "(usuario_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+            },
+            "isolamento_proprio_4": {
+              "kind": "policy",
+              "name": "isolamento_proprio",
+              "namespaceId": "public",
+              "operation": "all",
+              "permissive": true,
+              "roles": ["public"],
+              "tableName": "usuarios",
+              "using": "(id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)",
+              "withCheck": "(id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+            }
+          },
+          "rls": {
+            "disciplinas": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "disciplinas"
+            },
+            "links": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "links"
+            },
+            "notas": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "notas"
+            },
+            "profiles": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "profiles"
+            },
+            "sessoes": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "sessoes"
+            },
+            "tokens_verificacao": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "tokens_verificacao"
+            },
+            "turmas": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "turmas"
+            },
+            "usuarios": {
+              "kind": "rls",
+              "namespaceId": "public",
+              "tableName": "usuarios"
+            }
+          },
+          "table": {
+            "disciplinas": {
+              "columns": {
+                "atualizado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "cor": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "verde"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "criado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "icone": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "BookOpen"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "default": {
+                    "expression": "gen_random_uuid()",
+                    "kind": "function"
+                  },
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "nome": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "ordem": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "professor_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "disciplinas_professor_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["professor_id"],
+                    "namespaceId": "public",
+                    "tableName": "disciplinas"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "profiles"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["professor_id"],
+                  "name": "disciplinas_professor_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"],
+                "name": "disciplinas_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": ["professor_id", "nome"],
+                  "name": "disciplinas_professor_nome_unico"
+                }
+              ]
+            },
+            "links": {
+              "checks": [
+                {
+                  "expression": "(((tipo = 'nota'::text) AND (nota_id IS NOT NULL) AND (turma_id IS NULL) AND (disciplina_id IS NULL)) OR ((tipo = 'turma'::text) AND (turma_id IS NOT NULL) AND (nota_id IS NULL) AND (disciplina_id IS NULL)) OR ((tipo = 'disciplina'::text) AND (disciplina_id IS NOT NULL) AND (nota_id IS NULL) AND (turma_id IS NULL)))",
+                  "name": "links_alvo_valido"
+                },
+                {
+                  "expression": "(tipo = ANY (ARRAY['nota'::text, 'turma'::text, 'disciplina'::text]))",
+                  "name": "links_tipo_valido"
+                }
+              ],
+              "columns": {
+                "acessos": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "ativo": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "criado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "disciplina_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                },
+                "expira_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "default": {
+                    "expression": "gen_random_uuid()",
+                    "kind": "function"
+                  },
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "nome": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "nota_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                },
+                "professor_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "professor_nome": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "tipo": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "token": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "turma_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "links_disciplina_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["disciplina_id"],
+                    "namespaceId": "public",
+                    "tableName": "links"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "disciplinas"
+                  }
+                },
+                {
+                  "name": "links_nota_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["nota_id"],
+                    "namespaceId": "public",
+                    "tableName": "links"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "notas"
+                  }
+                },
+                {
+                  "name": "links_professor_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["professor_id"],
+                    "namespaceId": "public",
+                    "tableName": "links"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "profiles"
+                  }
+                },
+                {
+                  "name": "links_turma_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["turma_id"],
+                    "namespaceId": "public",
+                    "tableName": "links"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "turmas"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["disciplina_id"],
+                  "name": "links_disciplina_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["nota_id"],
+                  "name": "links_nota_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["professor_id"],
+                  "name": "links_professor_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["token"],
+                  "name": "links_token_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["turma_id"],
+                  "name": "links_turma_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"],
+                "name": "links_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": ["token"],
+                  "name": "links_token_key"
+                }
+              ]
+            },
+            "migracoes_aplicadas": {
+              "columns": {
+                "aplicada_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "nome": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": ["nome"],
+                "name": "migracoes_aplicadas_pkey"
+              },
+              "uniques": []
+            },
+            "notas": {
+              "checks": [
+                {
+                  "expression": "(status = ANY (ARRAY['rascunho'::text, 'publicada'::text]))",
+                  "name": "notas_status_valido"
+                }
+              ],
+              "columns": {
+                "ano_letivo": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "(EXTRACT(year FROM now()))::integer",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "aparencia": {
+                  "codecId": "pg/jsonb@1",
+                  "default": {
+                    "expression": "'{}'::jsonb",
+                    "kind": "function"
+                  },
+                  "nativeType": "jsonb",
+                  "nullable": false
+                },
+                "atualizado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "blocos": {
+                  "codecId": "pg/jsonb@1",
+                  "default": {
+                    "expression": "'[]'::jsonb",
+                    "kind": "function"
+                  },
+                  "nativeType": "jsonb",
+                  "nullable": false
+                },
+                "busca": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "criado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "disciplina_cor": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "verde"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "disciplina_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                },
+                "disciplina_nome": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "habilidades": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "default": {
+                    "expression": "gen_random_uuid()",
+                    "kind": "function"
+                  },
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "mes": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "(EXTRACT(month FROM now()))::integer",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "professor_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "sobre": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "rascunho"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "titulo": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "Sem título"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "turmas_ids": {
+                  "codecId": "pg/uuid@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": []
+                  },
+                  "many": true,
+                  "nativeType": "uuid",
+                  "noCheck": ["elementNotNull"],
+                  "nullable": false
+                },
+                "turmas_nomes": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": []
+                  },
+                  "many": true,
+                  "nativeType": "text",
+                  "noCheck": ["elementNotNull"],
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "notas_disciplina_id_fkey",
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": ["disciplina_id"],
+                    "namespaceId": "public",
+                    "tableName": "notas"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "disciplinas"
+                  }
+                },
+                {
+                  "name": "notas_professor_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["professor_id"],
+                    "namespaceId": "public",
+                    "tableName": "notas"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "profiles"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["professor_id", "ano_letivo", "mes"],
+                  "name": "notas_professor_ano_mes_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["professor_id", "atualizado_em"],
+                  "name": "notas_professor_atualizado_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["professor_id", "disciplina_id"],
+                  "name": "notas_professor_disciplina_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["professor_id", "status"],
+                  "name": "notas_professor_status_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["turmas_ids"],
+                  "name": "notas_turmas_ids_idx",
+                  "type": "gin",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"],
+                "name": "notas_pkey"
+              },
+              "uniques": []
+            },
+            "profiles": {
+              "columns": {
+                "atualizado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "criado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "email": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "escola": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "exclusao_solicitada_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "expira_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "nome": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "preferencias": {
+                  "codecId": "pg/jsonb@1",
+                  "default": {
+                    "expression": "'{}'::jsonb",
+                    "kind": "function"
+                  },
+                  "nativeType": "jsonb",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "profiles_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "profiles"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "usuarios"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": ["id"],
+                "name": "profiles_pkey"
+              },
+              "uniques": []
+            },
+            "sessoes": {
+              "columns": {
+                "agente": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "criado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "expira_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "default": {
+                    "expression": "gen_random_uuid()",
+                    "kind": "function"
+                  },
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "ip": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "token_hash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "ultimo_uso_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "usuario_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "sessoes_usuario_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["usuario_id"],
+                    "namespaceId": "public",
+                    "tableName": "sessoes"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "usuarios"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["expira_em"],
+                  "name": "sessoes_expira_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["usuario_id"],
+                  "name": "sessoes_usuario_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"],
+                "name": "sessoes_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": ["token_hash"],
+                  "name": "sessoes_token_hash_key"
+                }
+              ]
+            },
+            "tokens_verificacao": {
+              "checks": [
+                {
+                  "expression": "(tipo = ANY (ARRAY['verificacao'::text, 'recuperacao'::text, 'troca_email'::text]))",
+                  "name": "tokens_tipo_valido"
+                }
+              ],
+              "columns": {
+                "criado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "expira_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "default": {
+                    "expression": "gen_random_uuid()",
+                    "kind": "function"
+                  },
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "novo_email": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "tipo": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "token_hash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "usado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "usuario_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "tokens_verificacao_usuario_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["usuario_id"],
+                    "namespaceId": "public",
+                    "tableName": "tokens_verificacao"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "usuarios"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["expira_em"],
+                  "name": "tokens_expira_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["usuario_id"],
+                  "name": "tokens_usuario_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"],
+                "name": "tokens_verificacao_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": ["token_hash"],
+                  "name": "tokens_verificacao_token_hash_key"
+                }
+              ]
+            },
+            "turmas": {
+              "columns": {
+                "ano_letivo": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "(EXTRACT(year FROM now()))::integer",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "atualizado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "criado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "default": {
+                    "expression": "gen_random_uuid()",
+                    "kind": "function"
+                  },
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "nome": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "professor_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "serie": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "Outro"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "turmas_professor_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["professor_id"],
+                    "namespaceId": "public",
+                    "tableName": "turmas"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "profiles"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["professor_id", "ano_letivo"],
+                  "name": "turmas_professor_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"],
+                "name": "turmas_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": ["professor_id", "nome", "ano_letivo"],
+                  "name": "turmas_professor_ano_unico"
+                }
+              ]
+            },
+            "usuarios": {
+              "columns": {
+                "atualizado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "criado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "email": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "email_verificado_em": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "default": {
+                    "expression": "gen_random_uuid()",
+                    "kind": "function"
+                  },
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "senha_hash": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [
+                {
+                  "expression": "lower(email)",
+                  "name": "usuarios_email_unico",
+                  "unique": true
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"],
+                "name": "usuarios_pkey"
+              },
+              "uniques": []
+            }
+          }
+        },
+        "id": "public",
+        "kind": "postgres-schema"
+      }
+    },
+    "storageHash": "b369ae90f13b4db95e8bc75b6e6c7b6d7f27b1e52505766e36c47c8d70b1dc76"
+  },
+  "capabilities": {
+    "postgres": {
+      "distinctOn": true,
+      "jsonAgg": true,
+      "lateral": true,
+      "limit": true,
+      "orderBy": true,
+      "returning": true
+    },
+    "sql": {
+      "checkConstraint": true,
+      "defaultInInsert": true,
+      "enums": true,
+      "lateral": true,
+      "returning": true,
+      "scalarList": true
+    }
+  },
+  "extensions": {},
+  "meta": {},
+  "_generated": {
+    "warning": "⚠️  GENERATED FILE - DO NOT EDIT",
+    "message": "This file is automatically generated by \"prisma contract emit\".",
+    "regenerate": "To regenerate, run: prisma contract emit"
+  }
+}

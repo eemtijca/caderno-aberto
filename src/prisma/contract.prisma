@@ -1,0 +1,245 @@
+// use prisma-next
+// Contract inferred from the live database schema. Edit as needed, then run `prisma contract emit`.
+
+namespace public {
+  model Usuarios {
+    id                 Uuid                @id(map: "usuarios_pkey") @default(dbgenerated("gen_random_uuid()"))
+    email              String
+    senhaHash          String              @default("") @map("senha_hash")
+    emailVerificadoEm  TimestamptzString?        @map("email_verificado_em")
+    criadoEm           TimestamptzString         @default(now()) @map("criado_em")
+    atualizadoEm       TimestamptzString         @default(now()) @map("atualizado_em")
+    profiles           Profiles?
+    sessoes            Sessoes[]
+    tokensVerificacaos TokensVerificacao[]
+
+    @@index(expression: "lower(email)", map: "usuarios_email_unico", unique: true)
+    @@rls
+    @@map("usuarios")
+  }
+
+  model Profiles {
+    id                   Uuid          @id(map: "profiles_pkey")
+    nome                 String        @default("")
+    email                String        @default("")
+    escola               String        @default("")
+    preferencias         Jsonb         @default(dbgenerated("'{}'::jsonb"))
+    criadoEm             TimestamptzString   @default(now()) @map("criado_em")
+    atualizadoEm         TimestamptzString   @default(now()) @map("atualizado_em")
+    exclusaoSolicitadaEm TimestamptzString?  @map("exclusao_solicitada_em")
+    expiraEm             TimestamptzString?  @map("expira_em")
+    disciplinas          Disciplinas[]
+    links                Links[]
+    notas                Notas[]
+    turmas               Turmas[]
+    usuarios             Usuarios      @relation(fields: [id], references: [id], onDelete: Cascade, map: "profiles_id_fkey")
+
+    @@rls
+    @@map("profiles")
+  }
+
+  model Disciplinas {
+    id           Uuid        @id(map: "disciplinas_pkey") @default(dbgenerated("gen_random_uuid()"))
+    professorId  Uuid        @map("professor_id")
+    nome         String
+    cor          String      @default("verde")
+    icone        String      @default("BookOpen")
+    ordem        Int         @default(0)
+    criadoEm     TimestamptzString @default(now()) @map("criado_em")
+    atualizadoEm TimestamptzString @default(now()) @map("atualizado_em")
+    links        Links[]
+    notas        Notas[]
+    professor    Profiles    @relation(fields: [professorId], references: [id], onDelete: Cascade, map: "disciplinas_professor_id_fkey")
+
+    @@unique([professorId, nome], map: "disciplinas_professor_nome_unico")
+    @@index([professorId], map: "disciplinas_professor_idx")
+    @@rls
+    @@map("disciplinas")
+  }
+
+  model Notas {
+    id             Uuid         @id(map: "notas_pkey") @default(dbgenerated("gen_random_uuid()"))
+    professorId    Uuid         @map("professor_id")
+    titulo         String       @default("Sem título")
+    disciplinaId   Uuid?        @map("disciplina_id")
+    disciplinaNome String       @default("") @map("disciplina_nome")
+    disciplinaCor  String       @default("verde") @map("disciplina_cor")
+    turmasIds      Uuid[]       @default([]) @noCheck(elementNotNull) @map("turmas_ids")
+    turmasNomes    String[]     @default([]) @noCheck(elementNotNull) @map("turmas_nomes")
+    anoLetivo      Int          @default(dbgenerated("(EXTRACT(year FROM now()))::integer")) @map("ano_letivo")
+    mes            Int          @default(dbgenerated("(EXTRACT(month FROM now()))::integer"))
+    sobre          String       @default("")
+    habilidades    String       @default("")
+    status         String       @default("rascunho")
+    blocos         Jsonb        @default(dbgenerated("'[]'::jsonb"))
+    aparencia      Jsonb        @default(dbgenerated("'{}'::jsonb"))
+    busca          String       @default("")
+    criadoEm       TimestamptzString  @default(now()) @map("criado_em")
+    atualizadoEm   TimestamptzString  @default(now()) @map("atualizado_em")
+    links          Links[]
+    disciplina     Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: SetNull, map: "notas_disciplina_id_fkey", index: false)
+    professor      Profiles     @relation(fields: [professorId], references: [id], onDelete: Cascade, map: "notas_professor_id_fkey", index: false)
+
+    @@index([professorId, anoLetivo, mes], map: "notas_professor_ano_mes_idx")
+    @@index([professorId, atualizadoEm], map: "notas_professor_atualizado_idx")
+    @@index([professorId, disciplinaId], map: "notas_professor_disciplina_idx")
+    @@index([professorId, status], map: "notas_professor_status_idx")
+    @@index([turmasIds], map: "notas_turmas_ids_idx", type: "gin")
+    @@check(expression: "(status = ANY (ARRAY['rascunho'::text, 'publicada'::text]))", map: "notas_status_valido")
+    @@rls
+    @@map("notas")
+  }
+
+  model Turmas {
+    id           Uuid        @id(map: "turmas_pkey") @default(dbgenerated("gen_random_uuid()"))
+    professorId  Uuid        @map("professor_id")
+    nome         String
+    serie        String      @default("Outro")
+    anoLetivo    Int         @default(dbgenerated("(EXTRACT(year FROM now()))::integer")) @map("ano_letivo")
+    criadoEm     TimestamptzString @default(now()) @map("criado_em")
+    atualizadoEm TimestamptzString @default(now()) @map("atualizado_em")
+    links        Links[]
+    professor    Profiles    @relation(fields: [professorId], references: [id], onDelete: Cascade, map: "turmas_professor_id_fkey", index: false)
+
+    @@unique([professorId, nome, anoLetivo], map: "turmas_professor_ano_unico")
+    @@index([professorId, anoLetivo], map: "turmas_professor_idx")
+    @@rls
+    @@map("turmas")
+  }
+
+  model Links {
+    id            Uuid         @id(map: "links_pkey") @default(dbgenerated("gen_random_uuid()"))
+    professorId   Uuid         @map("professor_id")
+    tipo          String
+    notaId        Uuid?        @map("nota_id")
+    turmaId       Uuid?        @map("turma_id")
+    disciplinaId  Uuid?        @map("disciplina_id")
+    token         String       @unique(map: "links_token_key")
+    professorNome String       @default("") @map("professor_nome")
+    nome          String       @default("")
+    ativo         Boolean      @default(true)
+    expiraEm      TimestamptzString? @map("expira_em")
+    acessos       Int          @default(0)
+    criadoEm      TimestamptzString  @default(now()) @map("criado_em")
+    disciplina    Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: Cascade, map: "links_disciplina_id_fkey")
+    nota          Notas?       @relation(fields: [notaId], references: [id], onDelete: Cascade, map: "links_nota_id_fkey")
+    professor     Profiles     @relation(fields: [professorId], references: [id], onDelete: Cascade, map: "links_professor_id_fkey")
+    turma         Turmas?      @relation(fields: [turmaId], references: [id], onDelete: Cascade, map: "links_turma_id_fkey")
+
+    @@index([disciplinaId], map: "links_disciplina_idx")
+    @@index([notaId], map: "links_nota_idx")
+    @@index([professorId], map: "links_professor_idx")
+    @@index([token], map: "links_token_idx")
+    @@index([turmaId], map: "links_turma_idx")
+    @@check(expression: "(((tipo = 'nota'::text) AND (nota_id IS NOT NULL) AND (turma_id IS NULL) AND (disciplina_id IS NULL)) OR ((tipo = 'turma'::text) AND (turma_id IS NOT NULL) AND (nota_id IS NULL) AND (disciplina_id IS NULL)) OR ((tipo = 'disciplina'::text) AND (disciplina_id IS NOT NULL) AND (nota_id IS NULL) AND (turma_id IS NULL)))", map: "links_alvo_valido")
+    @@check(expression: "(tipo = ANY (ARRAY['nota'::text, 'turma'::text, 'disciplina'::text]))", map: "links_tipo_valido")
+    @@rls
+    @@map("links")
+  }
+
+  model MigracoesAplicadas {
+    nome       String      @id(map: "migracoes_aplicadas_pkey")
+    aplicadaEm TimestamptzString @default(now()) @map("aplicada_em")
+
+    @@map("migracoes_aplicadas")
+  }
+
+  model Sessoes {
+    id          Uuid        @id(map: "sessoes_pkey") @default(dbgenerated("gen_random_uuid()"))
+    usuarioId   Uuid        @map("usuario_id")
+    tokenHash   String      @unique(map: "sessoes_token_hash_key") @map("token_hash")
+    criadoEm    TimestamptzString @default(now()) @map("criado_em")
+    expiraEm    TimestamptzString @map("expira_em")
+    ultimoUsoEm TimestamptzString @default(now()) @map("ultimo_uso_em")
+    ip          String      @default("")
+    agente      String      @default("")
+    usuario     Usuarios    @relation(fields: [usuarioId], references: [id], onDelete: Cascade, map: "sessoes_usuario_id_fkey")
+
+    @@index([expiraEm], map: "sessoes_expira_idx")
+    @@index([usuarioId], map: "sessoes_usuario_idx")
+    @@rls
+    @@map("sessoes")
+  }
+
+  model TokensVerificacao {
+    id        Uuid         @id(map: "tokens_verificacao_pkey") @default(dbgenerated("gen_random_uuid()"))
+    usuarioId Uuid         @map("usuario_id")
+    tipo      String
+    tokenHash String       @unique(map: "tokens_verificacao_token_hash_key") @map("token_hash")
+    novoEmail String?      @map("novo_email")
+    expiraEm  TimestamptzString  @map("expira_em")
+    usadoEm   TimestamptzString? @map("usado_em")
+    criadoEm  TimestamptzString  @default(now()) @map("criado_em")
+    usuario   Usuarios     @relation(fields: [usuarioId], references: [id], onDelete: Cascade, map: "tokens_verificacao_usuario_id_fkey")
+
+    @@index([expiraEm], map: "tokens_expira_idx")
+    @@index([usuarioId], map: "tokens_usuario_idx")
+    @@check(expression: "(tipo = ANY (ARRAY['verificacao'::text, 'recuperacao'::text, 'troca_email'::text]))", map: "tokens_tipo_valido")
+    @@rls
+    @@map("tokens_verificacao")
+  }
+
+  policy_all isolamento_professor {
+    target = Disciplinas
+    roles = [public]
+    using = "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    withCheck = "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    @@map("isolamento_professor")
+  }
+
+  policy_all isolamento_professor_2 {
+    target = Links
+    roles = [public]
+    using = "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    withCheck = "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    @@map("isolamento_professor")
+  }
+
+  policy_all isolamento_professor_3 {
+    target = Notas
+    roles = [public]
+    using = "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    withCheck = "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    @@map("isolamento_professor")
+  }
+
+  policy_all isolamento_professor_4 {
+    target = Turmas
+    roles = [public]
+    using = "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    withCheck = "(professor_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    @@map("isolamento_professor")
+  }
+
+  policy_all isolamento_proprio {
+    target = Profiles
+    roles = [public]
+    using = "(id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    withCheck = "(id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    @@map("isolamento_proprio")
+  }
+
+  policy_all isolamento_proprio_2 {
+    target = Sessoes
+    roles = [public]
+    using = "(usuario_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    withCheck = "(usuario_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    @@map("isolamento_proprio")
+  }
+
+  policy_all isolamento_proprio_3 {
+    target = TokensVerificacao
+    roles = [public]
+    using = "(usuario_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    withCheck = "(usuario_id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    @@map("isolamento_proprio")
+  }
+
+  policy_all isolamento_proprio_4 {
+    target = Usuarios
+    roles = [public]
+    using = "(id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    withCheck = "(id = (NULLIF(current_setting('app.usuario_atual'::text, true), ''::text))::uuid)"
+    @@map("isolamento_proprio")
+  }
+}
