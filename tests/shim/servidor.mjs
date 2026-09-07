@@ -79,11 +79,50 @@ function assinarJWT(payload) {
   return `${header}.${corpo}.${sig}`
 }
 
+function chaveSegura(id) {
+  return (
+    typeof id === "string" &&
+    id.length > 0 &&
+    id !== "__proto__" &&
+    id !== "constructor" &&
+    id !== "prototype"
+  )
+}
+
+/**
+ * Valida o destino do redirect pós-recovery: aceita apenas caminhos
+ * relativos locais ("/...") ou URLs absolutas com a mesma origem do app.
+ * Qualquer outro valor cai para `${ORIGEM_APP}/`, evitando open redirect.
+ */
+function redirectSeguro(destino) {
+  const padrao = `${ORIGEM_APP}/`
+  if (typeof destino !== "string" || destino.length === 0 || destino.length > 2048) return padrao
+  try {
+    // Caminho relativo local: "/..." mas não "//..." nem "/\...".
+    if (destino.startsWith("/")) {
+      if (destino.startsWith("//") || destino.startsWith("/\\")) return padrao
+      return new URL(destino, ORIGEM_APP).toString()
+    }
+    const u = new URL(destino)
+    const origemApp = new URL(ORIGEM_APP).origin
+    const origemShim = new URL(URL_SHIM_PUBLICA).origin
+    if (u.origin === origemApp || u.origin === origemShim) return u.toString()
+    return padrao
+  } catch {
+    return padrao
+  }
+}
+
 function verificarJWT(token) {
   try {
+    if (typeof token !== "string") return null
     const [h, c, s] = token.split(".")
+    if (!h || !c || !s) return null
+    // codeql[js/insufficient-password-hash]: HMAC-SHA256 aqui autentica JWT (message auth), não armazena senha; senhas usam scrypt em hashSenha.
     const esperado = b64u(createHmac("sha256", JWT_SECRET).update(`${h}.${c}`).digest())
-    if (s !== esperado) return null
+    const bufS = Buffer.from(s)
+    const bufEsperado = Buffer.from(esperado)
+    if (bufS.length !== bufEsperado.length || !timingSafeEqual(bufS, bufEsperado)) return null
     const payload = JSON.parse(Buffer.from(c, "base64url").toString())
     if (payload.exp && payload.exp * 1000 < Date.now()) return null
     return payload
@@ -179,14 +218,19 @@ function prepararValor(tabela, coluna, valor) {
   return valor
 }
 
+const PAPEIS_VALIDOS = new Set(["anon", "authenticated", "service_role"])
+
 /** Executa SQL como um papel do Supabase (como o PostgREST faz). */
 async function comoPapel(papel, claims, sql, valores = []) {
+  if (!PAPEIS_VALIDOS.has(papel)) throw new Error("papel inválido")
   const c = new Client(PG)
   await c.connect()
   try {
     await c.query("begin")
-    await c.query(`set local role ${papel}`)
-    await c.query(`set local request.jwt.claims = '${JSON.stringify(claims ?? {})}'`)
+    await c.query("select set_config('role', $1, true)", [papel])
+    await c.query("select set_config('request.jwt.claims', $1, true)", [
+      JSON.stringify(claims ?? {}),
+    ])
     const r = await c.query(sql, valores)
     await c.query("commit")
     return r
@@ -241,6 +285,7 @@ function corpoSessao(u, loja) {
   const agora = Math.floor(Date.now() / 1000)
   const access = assinarJWT({ sub: u.id, role: "authenticated", email: u.email, exp: agora + 3600 })
   const refresh = randomBytes(24).toString("hex")
+  if (!chaveSegura(u.id) || !loja[u.id]) throw new Error("id de usuário inválido")
   loja[u.id].refresh_token = refresh
   salvarUsuarios(loja)
   return {
@@ -825,7 +870,7 @@ async function authHandler(req, res, url) {
   if (rota === "logout" && req.method === "POST") {
     const auth = req.headers.authorization ?? ""
     const payload = verificarJWT(auth.replace(/^Bearer /, ""))
-    if (payload?.sub && loja[payload.sub]) {
+    if (payload?.sub && chaveSegura(payload.sub) && loja[payload.sub]) {
       loja[payload.sub].refresh_token = null
       salvarUsuarios(loja)
     }
@@ -853,6 +898,9 @@ async function authHandler(req, res, url) {
     const u = await usuarioPG(claims.sub)
     if (!u) return responder(404, { message: "não encontrado" })
 
+    if (!chaveSegura(claims.sub) || !loja[claims.sub]) {
+      return responder(401, { code: "bad_jwt", msg: "invalid claim: sub" })
+    }
     if (typeof corpo.password === "string") {
       if (corpo.password.length < 6) {
         return responder(400, {
@@ -931,9 +979,9 @@ async function authHandler(req, res, url) {
     PENDENCIAS.delete(token)
     const code = randomBytes(20).toString("hex")
     CODIGOS_PKCE.set(code, { userId: pendencia.userId, code_challenge: pendencia.code_challenge })
-    const redirect = pendencia.redirect_to ?? `${ORIGEM_APP}/`
+    const redirect = redirectSeguro(pendencia.redirect_to ?? `${ORIGEM_APP}/`)
     const sep = redirect.includes("?") ? "&" : "?"
-    res.writeHead(302, { Location: `${redirect}${sep}code=${code}` })
+    res.writeHead(302, { Location: `${redirect}${sep}code=${encodeURIComponent(code)}` })
     return res.end()
   }
 
@@ -943,6 +991,7 @@ async function authHandler(req, res, url) {
     if (papel !== "service_role")
       return responder(403, { message: "Only service role can delete users" })
     const id = rota.split("/").pop()
+    if (!chaveSegura(id)) return responder(400, { message: "Invalid user id" })
     const u = await usuarioPG(id)
     if (!u) return responder(404, { message: "User not found" })
     await adm.query("delete from auth.users where id = $1", [id])
