@@ -56,11 +56,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ============================================================
-   Identidade "Caderno Aberto" — verde institucional #008241
-   sobre neutros quentes (stone). Acentos semânticos vindos dos
-   blocos pedagógicos (âmbar, coral, azul, lilás).
-   ============================================================ */
+/* Identidade Caderno Aberto */
 
 :root {
   --radius: 0.75rem;
@@ -167,11 +163,7 @@
   font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* ============================================================
-   Aparência da leitura, por nota (--na-fonte/--na-escala/
-   --na-entrelinha definidas pelo editor via style inline).
-   ============================================================ */
-
+/* Aparência da leitura por nota */
 .na-nota {
   font-family: var(--na-fonte, var(--font-corpo)), ui-sans-serif, system-ui, sans-serif;
   font-size: calc(1.02rem * var(--na-escala, 1));
@@ -183,9 +175,7 @@
   font-size: 1.06em;
 }
 
-/* ============================================================
-   Animações sutis de interface (respeitam prefers-reduced-motion)
-   ============================================================ */
+/* Animações sutis de interface */
 
 /* entrada de vista (fade + 6px para cima) */
 @keyframes na-entra {
@@ -240,9 +230,7 @@
   }
 }
 
-/* ============================================================
-   KaTeX — ajustes finos
-   ============================================================ */
+/* KaTeX: ajustes finos */
 
 .katex {
   font-size: 1.06em;
@@ -252,7 +240,7 @@
   margin: 0;
 }
 
-/* \resultado{...} → \htmlClass{na-resultado} */
+/* Estilo do resultado em KaTeX */
 .katex .na-resultado {
   color: oklch(0.55 0.19 20);
   font-weight: 600;
@@ -268,9 +256,7 @@
   scrollbar-width: thin;
 }
 
-/* ============================================================
-   Impressão — A4 claro, duas colunas, caixas sem quebrar
-   ============================================================ */
+/* Impressão: A4 claro, duas colunas, caixas sem quebrar */
 
 @media print {
   @page {

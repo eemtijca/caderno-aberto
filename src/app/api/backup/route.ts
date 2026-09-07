@@ -7,10 +7,6 @@ import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 
 export const dynamic = "force-dynamic"
 
-/**
- * GET /api/backup . Exporta TUDO do professor:
- * perfil, disciplinas, turmas, notas, links e imagens (base64).
- */
 export async function GET() {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -28,7 +24,6 @@ export async function GET() {
       cliente.from("links").select("*").eq("professor_id", usuario.id).order("criado_em"),
     ])
 
-  // imagens do Storage (download via cliente do professor . RLS)
   const { data: objetos } = await cliente.storage.from("imagens").list(usuario.id, { limit: 1000 })
   const imagens: { nome: string; mime: string; dados: string; caminho: string }[] = []
   for (const obj of objetos ?? []) {
@@ -98,10 +93,6 @@ export async function GET() {
   })
 }
 
-/**
- * POST /api/backup . Restaura um backup (v2 do app atual ou v1
- * do app antigo de arquivo único), SUBSTITUINDO os dados atuais.
- */
 export async function POST(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -116,7 +107,6 @@ export async function POST(req: NextRequest) {
   await cliente.from("turmas").delete().neq("id", "00000000-0000-0000-0000-000000000000")
   await cliente.from("disciplinas").delete().neq("id", "00000000-0000-0000-0000-000000000000")
 
-  // mapa: URL antiga -> caminho novo no Storage deste professor
   const mapaImagens = new Map<string, string>()
   const admin = clienteAdmin()
   for (const img of corpo.imagens ?? []) {
@@ -141,9 +131,7 @@ export async function POST(req: NextRequest) {
       } else if (img.id) {
         mapaImagens.set(`/api/imagens/${img.id}`, urlNova)
       }
-    } catch {
-      // ignora imagem corrompida e segue
-    }
+    } catch {}
   }
 
   const reescreverBlocos = (blocos: unknown): unknown => {
@@ -215,7 +203,6 @@ export async function POST(req: NextRequest) {
         : undefined) ??
       null
 
-    // turmas da nota
     let turmasIds: string[] = []
     if (versao === 2 && Array.isArray(n.turmasIds)) {
       turmasIds = n.turmasIds.map((id: unknown) => idTurma.get(String(id))).filter(Boolean)

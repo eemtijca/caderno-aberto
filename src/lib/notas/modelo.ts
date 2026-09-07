@@ -1,5 +1,3 @@
-// Modelo de nota nova. O esqueleto equivalente ao modelo.tex original: seção, caixa COPIAR com definição/fórmula/símbolos, exemplo, dica e exercícios com três níveis.
-
 import { Bloco, idBloco } from "./tipos"
 
 export function notaModelo(titulo: string): Bloco[] {
@@ -82,7 +80,6 @@ export function notaModelo(titulo: string): Bloco[] {
   ]
 }
 
-/** Nota vazia . Só a estrutura mínima. */
 export function notaVazia(titulo: string): Bloco[] {
   return [
     { id: idBloco(), tipo: "secao", titulo: "Primeiro tópico" },

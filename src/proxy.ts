@@ -1,8 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
-// Proxy. Renova a sessão do Supabase em cada navegação e aplica CSP estrita dinâmica com nonce.
-
 const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
 const CHAVE_ANON =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
@@ -15,9 +13,7 @@ function getSupabaseOrigin(request: NextRequest): string {
   if (direta) {
     try {
       return new URL(direta).origin
-    } catch {
-      // fallback
-    }
+    } catch {}
   }
   const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? ""
   if (host.includes("app.github.dev")) {
@@ -50,7 +46,9 @@ export async function proxy(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    "upgrade-insecure-requests",
+    // Somente em produção (HTTPS): no dev http+loopback a diretiva
+    // quebra motores sem isenção de loopback, como o WebKit.
+    ...(isDev ? [] : ["upgrade-insecure-requests"]),
   ].join("; ")
 
   const requestHeaders = new Headers(request.headers)
@@ -82,7 +80,6 @@ export async function proxy(request: NextRequest) {
         for (const [chave, valor] of Object.entries(headers)) {
           resposta.headers.set(chave, valor)
         }
-        // preservar CSP e nonce após recriação da resposta
         resposta.headers.set("Content-Security-Policy", csp)
         resposta.headers.set("x-nonce", nonce)
       },

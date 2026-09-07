@@ -1,15 +1,5 @@
-// ============================================================
-// Caderno Aberto : suíte de testes de RLS e gatilhos
-//
-// Roda contra o Postgres de teste preparado por
-// tests/harness/preparar.mjs, simulando exatamente o que o
-// PostgREST faz em produção: conecta e assume o papel
-// (anon/authenticated/service_role) com o JWT em
-// `request.jwt.claims`, de modo que auth.uid() e todas as
-// políticas de segurança de linha sejam exercidas de verdade.
-//
-// Uso:  node tests/harness/preparar.mjs && node tests/rls.test.mjs
-// ============================================================
+// Testes de RLS e gatilhos no Postgres de teste.
+// Uso: node tests/harness/preparar.mjs && node tests/rls.test.mjs
 
 import { Client } from "pg"
 import { PGHOST, PGPORT, PGDATABASE } from "./harness/preparar.mjs"
@@ -30,7 +20,6 @@ function ok(cond, msg) {
   if (!cond) throw new Error(msg)
 }
 
-/** Abre uma conexão assumindo um papel + JWT (como o PostgREST). */
 async function como(papel, uid) {
   const c = new Client({ host: PGHOST, port: PGPORT, user: "postgres", database: PGDATABASE })
   await c.connect()
@@ -47,7 +36,6 @@ async function superuser() {
   return c
 }
 
-/** Executa fn com um cliente no papel dado e fecha o cliente. */
 async function comPapel(papel, uid, fn) {
   const c = await como(papel, uid)
   try {
@@ -58,7 +46,6 @@ async function comPapel(papel, uid, fn) {
   }
 }
 
-/** Espera que a query lance "permission denied" (SQLSTATE 42501). */
 async function espereNegado(papel, uid, sql, valores = []) {
   return comPapel(papel, uid, async (c) => {
     try {
@@ -71,9 +58,6 @@ async function espereNegado(papel, uid, sql, valores = []) {
   })
 }
 
-// ------------------------------------------------------------
-// dados-base
-// ------------------------------------------------------------
 const UID_A = "11111111-1111-1111-1111-111111111111"
 const UID_B = "22222222-2222-2222-2222-222222222222"
 
@@ -173,9 +157,6 @@ await teste("sync_email_perfil: e-mail do auth.users propaga para o perfil", asy
   }
 })
 
-// ------------------------------------------------------------
-// disciplinas e turmas
-// ------------------------------------------------------------
 await teste(
   "disciplinas: CRUD do próprio professor; isolamento total entre professores",
   async () => {
@@ -255,9 +236,6 @@ await teste("turmas: criação, isolamento e restrição por professor", async (
   })
 })
 
-// ------------------------------------------------------------
-// notas
-// ------------------------------------------------------------
 await teste("notas: criação com blocos JSONB e isolamento entre professores", async () => {
   await comPapel("authenticated", UID_A, async (c) => {
     const n1 = await c.query(
@@ -300,9 +278,6 @@ await teste("notas: anon não insere, não atualiza, não exclui", async () => {
   await espereNegado("anon", null, "delete from notas where id = $1", [notaA_pub])
 })
 
-// ------------------------------------------------------------
-// links
-// ------------------------------------------------------------
 await teste("links: criação pelo dono, validação de alvo e isolamento", async () => {
   await comPapel("authenticated", UID_A, async (c) => {
     const l1 = await c.query(
@@ -336,7 +311,6 @@ await teste("links: criação pelo dono, validação de alvo e isolamento", asyn
     )
     linkRevogado = l5.rows[0].id
 
-    // alvo inconsistente deve ser rejeitado
     try {
       await c.query(
         `insert into links (professor_id, tipo, nota_id, turma_id, token)
@@ -349,13 +323,11 @@ await teste("links: criação pelo dono, validação de alvo e isolamento", asyn
     }
   })
 
-  // professor B não vê e não mexe nos links de A
   await comPapel("authenticated", UID_B, async (c) => {
     const { rows } = await c.query("select id from links")
     ok(rows.length === 0, "professor B não deveria ver links de A")
   })
 
-  // professor B não cria link apontando para nota de A
   await comPapel("authenticated", UID_B, async (c) => {
     try {
       await c.query(
@@ -371,7 +343,6 @@ await teste("links: criação pelo dono, validação de alvo e isolamento", asyn
     }
   })
 
-  // professor B também não cria links de turma/disciplina roubando alvos de A
   await comPapel("authenticated", UID_B, async (c) => {
     for (const [tipo, col, alvo] of [
       ["turma", "turma_id", turmaA1],
@@ -392,7 +363,6 @@ await teste("links: criação pelo dono, validação de alvo e isolamento", asyn
     }
   })
 
-  // professor A não consegue REASSIGNAR um link próprio para nota de B
   await comPapel("authenticated", UID_A, async (c) => {
     try {
       await c.query("update links set nota_id = $1 where token = 'tok-nota-a'", [notaB_pub])
@@ -442,9 +412,6 @@ await teste("registrar_acesso: conta acessos apenas de links válidos", async ()
   }
 })
 
-// ------------------------------------------------------------
-// leitura pública de notas via links
-// ------------------------------------------------------------
 await teste("leitura pública: nota publicada visível apenas com link ativo", async () => {
   await comPapel("anon", null, async (c) => {
     const { rows } = await c.query("select id, titulo from notas")
@@ -470,7 +437,6 @@ await teste("leitura pública: rascunho nunca é exposto, mesmo com link", async
 })
 
 await teste("leitura pública: revogar o link esconde a nota", async () => {
-  // nota isolada (sem turmas/disciplina) para o teste ser determinístico
   let id = ""
   await comPapel("authenticated", UID_A, async (c) => {
     const n = await c.query(
@@ -497,7 +463,6 @@ await teste("leitura pública: revogar o link esconde a nota", async () => {
 })
 
 await teste("leitura pública: link de turma expõe apenas as notas da turma", async () => {
-  // notas SEM disciplina, para o teste isolar o efeito do link de turma
   await comPapel("authenticated", UID_A, async (c) => {
     await c.query(
       `insert into notas (professor_id, titulo, status, turmas_ids, turmas_nomes)
@@ -522,7 +487,6 @@ await teste("leitura pública: link de turma expõe apenas as notas da turma", a
 
 await teste("leitura pública: link de disciplina expõe apenas as notas da disciplina", async () => {
   await comPapel("authenticated", UID_A, async (c) => {
-    // nota de A na disciplina Química (não coberta pelo link de Matemática)
     await c.query(
       `insert into notas (professor_id, titulo, status, disciplina_id, disciplina_nome)
        values ($1, 'Soluções químicas', 'publicada', $2, 'Química')`,
@@ -547,9 +511,6 @@ await teste("leitura pública: nota publicada de outro professor não vaza", asy
   })
 })
 
-// ------------------------------------------------------------
-// gatilhos de denormalização
-// ------------------------------------------------------------
 await teste("gatilho sync_disciplina: renomear propaga para notas", async () => {
   await comPapel("authenticated", UID_A, async (c) => {
     await c.query("update disciplinas set nome = 'Matemática Aplicada' where id = $1", [discA])
@@ -606,9 +567,6 @@ await teste("excluir nota derruba os links dela (cascade)", async () => {
   })
 })
 
-// ------------------------------------------------------------
-// storage
-// ------------------------------------------------------------
 await teste("storage: bucket privado e políticas por pasta do professor", async () => {
   const adm = await superuser()
   try {
@@ -627,7 +585,6 @@ await teste("storage: bucket privado e políticas por pasta do professor", async
     ok(rows.length === 1 && rows[0].name.startsWith(UID_A), "A deveria ver apenas a própria pasta")
   })
 
-  // A tenta subir objeto na pasta de B
   await comPapel("authenticated", UID_A, async (c) => {
     try {
       await c.query(
@@ -643,23 +600,18 @@ await teste("storage: bucket privado e políticas por pasta do professor", async
     }
   })
 
-  // anon não sobe nada
   await espereNegado(
     "anon",
     null,
     `insert into storage.objects (bucket_id, name) values ('imagens', 'x/y.png')`,
   )
 
-  // service_role vê tudo
   await comPapel("service_role", null, async (c) => {
     const { rows } = await c.query("select name from storage.objects")
     ok(rows.length === 1, "service_role deveria ver todos os objetos")
   })
 })
 
-// ------------------------------------------------------------
-// service_role / ciclo de vida da conta
-// ------------------------------------------------------------
 await teste("service_role enxerga dados de todos os professores (bypass RLS)", async () => {
   await comPapel("service_role", null, async (c) => {
     const { rows } = await c.query("select distinct professor_id from notas order by professor_id")
@@ -690,9 +642,6 @@ await teste("excluir a conta do professor A apaga TODOS os seus dados e preserva
   }
 })
 
-// ------------------------------------------------------------
-// resumo
-// ------------------------------------------------------------
 console.log("")
 if (falhas.length === 0) {
   console.log(`✓ RLS: ${passou} testes passaram.`)

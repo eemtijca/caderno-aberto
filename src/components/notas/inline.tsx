@@ -1,11 +1,8 @@
 "use client"
 
-// Renderizador de texto inline: $matemática$, **negrito**, *itálico*, `código`, \resultado{...} (coral) e \dest{...}.
-
 import { Fragment, type ReactNode } from "react"
 import { Matematica } from "./matematica"
 
-/** Divide o texto em segmentos de matemática ($...$) e texto. */
 function dividirMatematica(texto: string): { tipo: "texto" | "math"; valor: string }[] {
   const segmentos: { tipo: "texto" | "math"; valor: string }[] = []
   let buffer = ""
@@ -13,7 +10,6 @@ function dividirMatematica(texto: string): { tipo: "texto" | "math"; valor: stri
   while (i < texto.length) {
     const c = texto[i]
     if (c === "$") {
-      // procura o $ de fechamento
       let j = i + 1
       while (j < texto.length && texto[j] !== "$") {
         if (texto[j] === "\\") j++
@@ -34,7 +30,6 @@ function dividirMatematica(texto: string): { tipo: "texto" | "math"; valor: stri
   return segmentos
 }
 
-/** Extrai o argumento {balanceado} que começa em idx (posição do '{'). */
 function argumentoBalanceado(s: string, idx: number): { fim: number; conteudo: string } | null {
   let profundidade = 0
   for (let i = idx; i < s.length; i++) {
@@ -51,7 +46,6 @@ function argumentoBalanceado(s: string, idx: number): { fim: number; conteudo: s
   return null
 }
 
-/** Renderiza um segmento de texto puro com marcações inline. */
 function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
   const nos: ReactNode[] = []
   let buffer = ""
@@ -67,7 +61,6 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
   }
 
   while (i < valor.length) {
-    // \resultado{...} . Destaque coral (pode conter $math$)
     if (valor.startsWith("\\resultado{", i)) {
       const arg = argumentoBalanceado(valor, i + 10)
       if (arg) {
@@ -80,7 +73,6 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
         continue
       }
     }
-    // \dest{...} . Palavra-chave em negrito
     if (valor.startsWith("\\dest{", i)) {
       const arg = argumentoBalanceado(valor, i + 5)
       if (arg) {
@@ -93,7 +85,6 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
         continue
       }
     }
-    // \textbf{...}
     if (valor.startsWith("\\textbf{", i)) {
       const arg = argumentoBalanceado(valor, i + 7)
       if (arg) {
@@ -102,7 +93,6 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
         continue
       }
     }
-    // \textit{...}
     if (valor.startsWith("\\textit{", i)) {
       const arg = argumentoBalanceado(valor, i + 7)
       if (arg) {
@@ -111,7 +101,6 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
         continue
       }
     }
-    // **negrito**
     if (valor.startsWith("**", i)) {
       const fim = valor.indexOf("**", i + 2)
       if (fim !== -1) {
@@ -122,7 +111,6 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
         continue
       }
     }
-    // *itálico*
     if (valor[i] === "*" && valor[i + 1] !== "*") {
       const fim = valor.indexOf("*", i + 1)
       if (fim !== -1 && valor[fim + 1] !== "*") {
@@ -131,7 +119,6 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
         continue
       }
     }
-    // `código`
     if (valor[i] === "`") {
       const fim = valor.indexOf("`", i + 1)
       if (fim !== -1) {
@@ -151,7 +138,6 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
   return nos
 }
 
-/** Renderiza texto inline completo (math + marcações). */
 export function renderizarInline(texto: string, chave = "in"): ReactNode[] {
   if (!texto) return []
   return dividirMatematica(texto).map((seg, idx) =>
@@ -163,7 +149,6 @@ export function renderizarInline(texto: string, chave = "in"): ReactNode[] {
   )
 }
 
-/** Componente de conveniência para parágrafos inline. */
 export function Inline({ texto }: { texto: string }) {
   return <>{renderizarInline(texto)}</>
 }

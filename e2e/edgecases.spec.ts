@@ -1,11 +1,7 @@
 import { test, expect } from "@playwright/test"
-import { buscarEmail, limparMailpit, corrigirRedirect } from "./helpers/mailpit"
+import { confirmarEEntrar } from "./helpers/auth"
 
 test.describe("Edge cases", () => {
-  test.beforeEach(async () => {
-    await limparMailpit()
-  })
-
   test("strings formais sem travessão", async ({ page }) => {
     await page.goto("/#/entrar")
     await expect(page.getByText(/—/)).toHaveCount(0)
@@ -21,14 +17,7 @@ test.describe("Edge cases", () => {
     await page.getByLabel("Senha", { exact: true }).fill("senha123")
     await page.getByLabel("Confirmar senha").fill("senha123")
     await page.getByRole("button", { name: "Criar conta" }).click()
-    const mail = await buscarEmail(email, "Confirm", 20000)
-    await page.goto(corrigirRedirect(mail.href, baseURL))
-    await page.waitForTimeout(1000)
-    await page.goto("/#/entrar")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill("senha123")
-    await page.getByRole("button", { name: "Entrar" }).click()
-    await page.waitForURL(/#\//)
+    await confirmarEEntrar(page, baseURL, email, "senha123")
     await page.goto("/#/notas")
     await expect(page.getByText("rascunho")).toHaveCount(0)
   })
@@ -46,14 +35,7 @@ test.describe("Edge cases", () => {
     await page.getByLabel("Senha", { exact: true }).fill("senha123")
     await page.getByLabel("Confirmar senha").fill("senha123")
     await page.getByRole("button", { name: "Criar conta" }).click()
-    const mail = await buscarEmail(email, "Confirm", 20000)
-    await page.goto(corrigirRedirect(mail.href, baseURL))
-    await page.waitForTimeout(1000)
-    await page.goto("/#/entrar")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill("senha123")
-    await page.getByRole("button", { name: "Entrar" }).click()
-    await page.waitForURL(/#\//)
+    await confirmarEEntrar(page, baseURL, email, "senha123")
     await page.goto("/#/conta")
     await page.getByRole("button", { name: "Excluir minha conta" }).click()
     await page.getByRole("checkbox").check()
@@ -78,14 +60,7 @@ test.describe("Edge cases", () => {
     await page.getByLabel("Senha", { exact: true }).fill("senha123")
     await page.getByLabel("Confirmar senha").fill("senha123")
     await page.getByRole("button", { name: "Criar conta" }).click()
-    const mail = await buscarEmail(email, "Confirm", 20000)
-    await page.goto(corrigirRedirect(mail.href, baseURL))
-    await page.waitForTimeout(1000)
-    await page.goto("/#/entrar")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill("senha123")
-    await page.getByRole("button", { name: "Entrar" }).click()
-    await page.waitForURL(/#\//)
+    await confirmarEEntrar(page, baseURL, email, "senha123")
     await page.goto("/#/conta")
     await expect(page.getByText("Backup e importação")).toBeVisible()
   })

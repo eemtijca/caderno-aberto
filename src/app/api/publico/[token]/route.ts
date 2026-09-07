@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ token: string }> }
 
-/** Colunas mínimas que a vista pública precisa (RLS anon decide as linhas). */
 const COLUNAS =
   "id, titulo, disciplina_nome, disciplina_cor, turmas_nomes, ano_letivo, mes, sobre, habilidades, blocos, aparencia, atualizado_em"
 
@@ -24,17 +23,10 @@ export interface NotaPublica {
   sobre: string
   habilidades: string
   blocos: Bloco[]
-  /** Aparência definida pelo professor: o aluno vê a mesma escolha. */
   aparencia: AparenciaNota
   atualizadoEm: string
 }
 
-/**
- * GET /api/publico/[token] . Vista do aluno.
- * Sem login: o RLS só devolve links ativos/não expirados e notas
- * PUBLICADAS alcançáveis pelo link (nota própria, turma ou
- * disciplina).
- */
 export async function GET(_req: NextRequest, ctx: Ctx) {
   const { token } = await ctx.params
   if (token === DEMO_TOKEN) {
@@ -77,12 +69,9 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     return erroApi("Este link não existe, foi revogado ou expirou.", 404)
   }
 
-  // contador de acessos (função pública; falha não bloqueia a leitura)
   try {
     await cliente.rpc("registrar_acesso", { p_token: token })
-  } catch {
-    // ignora
-  }
+  } catch {}
 
   let consulta = cliente.from("notas").select(COLUNAS)
   if (link.tipo === "nota") {
@@ -99,7 +88,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 
   const { data: linhas } = await consulta
 
-  // link de nota apontando p/ rascunho → para o aluno é 404
+  // Rascunho não abre para o aluno
   if (link.tipo === "nota" && (!linhas || linhas.length === 0)) {
     return erroApi("Este link não existe, foi revogado ou expirou.", 404)
   }
@@ -130,7 +119,6 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   })
 }
 
-/** URLs internas de imagem viram o endpoint público do token. */
 function reescreverImagens(blocos: Bloco[], token: string): Bloco[] {
   const visita = (lista: Bloco[]): Bloco[] =>
     lista.map((b) => {
@@ -149,7 +137,6 @@ function reescreverImagens(blocos: Bloco[], token: string): Bloco[] {
 }
 
 export function urlImagemPublica(url: string, token: string): string {
-  // imagens do app: /api/imagens?path=<caminho>
   if (url.startsWith("/api/imagens?path=")) {
     const caminho = decodeURIComponent(url.slice("/api/imagens?path=".length))
     return `/api/publico/${encodeURIComponent(token)}/imagens?caminho=${encodeURIComponent(caminho)}`

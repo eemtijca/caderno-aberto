@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ id: string }> }
 
-/** GET /api/notas/[id]/exportar?formato=tex|md|json */
 export async function GET(req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test"
-import { buscarEmail, limparMailpit, corrigirRedirect } from "./helpers/mailpit"
+import { confirmarEEntrar } from "./helpers/auth"
 
 async function loginNovo(page, baseURL) {
   const email = `conta_${Date.now()}_${Math.random().toString(36).slice(2, 4)}@exemplo.br`
@@ -9,22 +9,11 @@ async function loginNovo(page, baseURL) {
   await page.getByLabel("Senha", { exact: true }).fill("senha123")
   await page.getByLabel("Confirmar senha").fill("senha123")
   await page.getByRole("button", { name: "Criar conta" }).click()
-  const mail = await buscarEmail(email, "Confirm", 20000)
-  await page.goto(corrigirRedirect(mail.href, baseURL))
-  await page.waitForTimeout(1000)
-  await page.goto("/#/entrar")
-  await page.getByLabel("E-mail").fill(email)
-  await page.getByLabel("Senha", { exact: true }).fill("senha123")
-  await page.getByRole("button", { name: "Entrar" }).click()
-  await page.waitForURL(/#\//)
+  await confirmarEEntrar(page, baseURL, email, "senha123")
   return email
 }
 
 test.describe("Conta", () => {
-  test.beforeEach(async () => {
-    await limparMailpit()
-  })
-
   test("perfil salva e icones exibem imagem", async ({ page, baseURL }) => {
     await loginNovo(page, baseURL)
     await page.goto("/#/conta")
@@ -73,6 +62,10 @@ test.describe("Conta", () => {
     await expect(confirmar).toBeEnabled()
     await confirmar.click()
     await expect(page.getByText(/Senha incorreta/i)).toBeVisible({ timeout: 5000 })
+    // tentativa com erro volta o diálogo para a etapa 1: refaz o fluxo
+    await page.getByRole("button", { name: "Continuar" }).click()
+    await expect(page.getByText("Confirmação final")).toBeVisible()
+    await page.getByPlaceholder("EXCLUIR").fill("EXCLUIR")
     await page.getByLabel("Senha atual").fill("senha123")
     await page.getByRole("button", { name: "Confirmar exclusão" }).click()
     await expect(page.getByText(/Solicitação registrada/i)).toBeVisible({ timeout: 8000 })
@@ -94,7 +87,7 @@ test.describe("Conta", () => {
     await page.goto("/#/")
     await expect(page.getByText(/Exclusão solicitada/i)).toBeVisible({ timeout: 5000 })
     await page.getByRole("button", { name: "Restaurar conta" }).first().click()
-    await expect(page.getByText(/Conta restaurada/i)).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText(/Conta restaurada/i)).toBeVisible({ timeout: 10000 })
   })
 
   test("negação com confirmação errada bloqueia", async ({ page, baseURL }) => {

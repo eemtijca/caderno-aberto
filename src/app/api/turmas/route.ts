@@ -3,7 +3,6 @@ import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao
 
 export const dynamic = "force-dynamic"
 
-/** GET /api/turmas . Lista com contagem de notas (?ano=) */
 export async function GET(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -38,7 +37,6 @@ export async function GET(req: NextRequest) {
   })
 }
 
-/** POST /api/turmas . Cria turma */
 export async function POST(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

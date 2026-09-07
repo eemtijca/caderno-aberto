@@ -1,7 +1,5 @@
 "use client"
 
-// Peças básicas do editor: textarea auto-dimensionável e barra de inserção de marcação inline.
-
 import { useEffect, useRef } from "react"
 import { Bold, Italic, Percent, Sigma, Highlighter } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -50,7 +48,6 @@ export function TextareaAuto({
   )
 }
 
-/** Insere texto na posição do cursor de um textarea. */
 export function inserirNoTextarea(
   el: HTMLTextAreaElement | null,
   antes: string,
@@ -67,7 +64,6 @@ export function inserirNoTextarea(
   return { valor: novo, pos }
 }
 
-/** Barra de botões que inserem marcação inline no textarea alvo. */
 export function BarraInline({
   alvo,
   onAplicar,

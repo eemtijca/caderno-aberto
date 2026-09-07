@@ -1,7 +1,3 @@
-// Gerador de .tex autocontido. Reproduz o visual da versão web (caixas
-// coloridas, A4 em duas colunas) usando apenas pacotes padrão de
-// Overleaf/TeX Live — sem depender de notaaula.cls nem de arquivos externos.
-
 import {
   AparenciaNota,
   Bloco,
@@ -16,12 +12,10 @@ import { escaparLatex, inlineParaLatex, prepararMatematicaTex } from "./latex"
 import { MESES_CAP } from "./texto"
 
 function nomeArquivoImagem(url: string): { arquivo: string | null; comentario: string } {
-  // imagens do app: /api/imagens?path=<uid>/<arquivo>
   if (url.startsWith("/api/imagens?path=")) {
     const caminho = decodeURIComponent(url.slice("/api/imagens?path=".length))
     const nome = caminho.split("/").pop() ?? "imagem"
     const ext = (nome.split(".").pop() ?? "").toLowerCase()
-    // pdfLaTeX aceita png/jpg; pedimos webp convertido no download
     const base = ext ? nome.slice(0, -(ext.length + 1)) : nome
     const saida = ext === "png" || ext === "jpg" || ext === "jpeg" ? nome : `${base}.png`
     return {
@@ -59,7 +53,6 @@ function filhoParaLatex(f: BlocoFilho): string {
         .map((linha) => linha.map((c) => inlineParaLatex(c)).join(" & "))
         .join(" \\\\\n")
       const corpo = f.comCabecalho ? linhas.replace(" \\\\\n", " \\\\\n\\midrule\n") : linhas
-      // a última linha também precisa de \\ antes do \bottomrule
       return `\\begin{center}\\footnotesize\n\\begin{tabular}{${spec}}\n\\toprule\n${corpo} \\\\\n\\bottomrule\n\\end{tabular}\n\\end{center}\n\n`
     }
     case "chamada": {
@@ -97,7 +90,6 @@ function blocoParaLatex(b: Bloco): string {
           b.url,
         )}}}\n\\end{figuranota}\n\n`
       }
-      // URL externa: fica o aviso com o endereço (pdfLaTeX não baixa arquivos)
       return `% ${comentario}\n\\begin{figuranota}{${inlineParaLatex(b.legenda)}}\n\\imagemexterna{${escaparLatex(
         b.url,
       )}}\n\\end{figuranota}\n\n`
@@ -167,7 +159,6 @@ function montarGabarito(b: Extract<Bloco, { tipo: "exercicios" }>): string {
   return partes.join(" \u00b7 ")
 }
 
-/** Linha de créditos igual à do sistema original. */
 export function montarCreditos(nota: NotaDados, professor: string): string {
   const partes: string[] = []
   if (nota.turmas.length === 1) partes.push(`Turma ${nota.turmas[0].nome}`)
@@ -179,9 +170,6 @@ export function montarCreditos(nota: NotaDados, professor: string): string {
   return partes.filter(Boolean).join(" \u00b7 ")
 }
 
-// ---------- preâmbulo autocontido ----------
-
-/** Mapeia a aparência da nota (escala/entrelinha) para opções do documento. */
 function opcoesDocumento(aparencia: AparenciaNota | null | undefined): {
   pt: string
   spread: string
@@ -190,12 +178,10 @@ function opcoesDocumento(aparencia: AparenciaNota | null | undefined): {
   const entrelinha = aparencia?.entrelinha ?? "normal"
   const pt = { p: "9pt", m: "10pt", g: "11pt", gg: "12pt" }[escala] ?? "10pt"
   const altura = ENTRELINHAS_NOTA.find((e) => e.chave === entrelinha)?.altura ?? 1.65
-  // LaTeX base ~1.2: 1.65/1.2 ≈ 1.38, etc.
   const spread = (altura / 1.2).toFixed(2)
   return { pt, spread }
 }
 
-/** A nota usa \\begin{axis}? (pgfplots só entra no preâmbulo se necessário) */
 function usaPgfplots(blocos: Bloco[]): boolean {
   return blocos.some((b) => b.tipo === "tikz" && b.codigo.includes("\\begin{axis}"))
 }
@@ -375,7 +361,6 @@ __PGFPLOTS__
 \setlength{\parskip}{4pt}
 `
 
-/** Gera o documento .tex completo (autocontido) de uma nota. */
 export function gerarTex(nota: NotaDados, professor: string): string {
   const creditos = montarCreditos(nota, professor)
   const { pt, spread } = opcoesDocumento(nota.aparencia)

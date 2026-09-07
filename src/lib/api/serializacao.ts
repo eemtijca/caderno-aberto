@@ -1,7 +1,5 @@
 import "server-only"
 
-// Serialização: linhas do banco -> tipos da AST do app (NotaDados/DisciplinaInfo/TurmaInfo seguem em tipos.ts).
-
 import type { Bloco, NotaDados } from "@/lib/notas/tipos"
 import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
 import { slugificar } from "@/lib/notas/texto"
@@ -9,7 +7,6 @@ import type { Database, DisciplinaLinha, NotaLinha, TurmaLinha } from "@/lib/sup
 
 type NotaComDisciplina = NotaLinha & { disciplina?: DisciplinaLinha | null }
 
-/** Converte a linha de `notas` em NotaDados (com AST validada). */
 export function linhaParaNota(
   linha: NotaComDisciplina,
   mapaTurmas: Map<string, TurmaLinha>,
@@ -24,7 +21,6 @@ export function linhaParaNota(
       }
     : linha.disciplina_id && linha.disciplina_nome
       ? {
-          // disciplina excluída: mantém o rótulo histórico denormalizado
           id: linha.disciplina_id,
           nome: linha.disciplina_nome,
           cor: linha.disciplina_cor,
@@ -62,7 +58,6 @@ export function linhaParaNota(
   }
 }
 
-/** Busca todas as turmas do professor (para montar NotaDados). */
 export async function mapaTurmasProfessor(
   cliente: import("@supabase/supabase-js").SupabaseClient<Database>,
   professorId: string,
@@ -71,7 +66,6 @@ export async function mapaTurmasProfessor(
   return new Map((data ?? []).map((t) => [t.id, t]))
 }
 
-/** Monta os campos denormalizados de disciplina/turmas para gravar. */
 export function camposDenormalizados(disciplina: DisciplinaLinha | null, turmas: TurmaLinha[]) {
   return {
     disciplina_id: disciplina?.id ?? null,

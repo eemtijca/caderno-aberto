@@ -1,5 +1,3 @@
-// Captura as URLs/headers que o supabase-js realmente envia para cada
-// padrão de query usado pelo app : base para o shim de testes.
 import http from "node:http"
 import { createClient } from "@supabase/supabase-js"
 
@@ -34,7 +32,6 @@ await c.auth.setSession({
   user: { id: uid },
 })
 
-// padrões usados pelas rotas do app
 await c
   .from("notas")
   .select("*, disciplina:disciplinas(*)")

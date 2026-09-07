@@ -1,7 +1,5 @@
 "use client"
 
-// SPA com roteamento por hash. Professores autenticados acessam notas e links. Alunos acessam via token público.
-
 import { useEffect, useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { DialogoNovaNota } from "@/components/dialogo-nova-nota"
@@ -17,6 +15,7 @@ import { VistaEditor } from "@/components/editor/editor-nota"
 import { useRota } from "@/lib/rota"
 import { useSessao } from "@/hooks/use-sessao"
 import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 export default function Home() {
   const { rota, navegar } = useRota()
@@ -75,8 +74,6 @@ export default function Home() {
       <VistaEditor id={rota.id} navegar={navegar} />
     ) : null
 
-  // a chave remonta o contêiner a cada troca de vista: dispara a
-  // animação de entrada (fade + deslize sutil)
   const chaveVista = rota.vista === "editor" ? `${rota.vista}:${rota.id}` : rota.vista
 
   return (
@@ -97,6 +94,9 @@ export default function Home() {
                   setRestaurando(true)
                   try {
                     await restaurarConta()
+                    toast.success("Conta restaurada. O acesso foi restabelecido.")
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Falha ao restaurar.")
                   } finally {
                     setRestaurando(false)
                   }

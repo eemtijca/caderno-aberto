@@ -5,7 +5,6 @@ import type { Bloco } from "@/lib/notas/tipos"
 
 export const dynamic = "force-dynamic"
 
-/** GET /api/busca?q=... . Busca global (sem acento) com trechos */
 export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim()
   if (q.length < 2) return json({ resultados: [] })

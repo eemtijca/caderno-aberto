@@ -1,17 +1,10 @@
-// Utilitários LaTeX. Compatibilidade com o pipeline original (notaaula.cls) e preparação para KaTeX.
-
-/**
- * Encontra o argumento `{...}` balanceado que começa em `abre`
- * (índice do `{`). Retorna { fim, conteudo }. Considera `\{`, `\}`
- * e comandos (`\alpha`) ao contar chaves.
- */
 export function varrerChaves(s: string, abre: number): { fim: number; conteudo: string } | null {
   if (s[abre] !== "{") return null
   let profundidade = 0
   for (let i = abre; i < s.length; i++) {
     const c = s[i]
     if (c === "\\") {
-      i++ // pula o caractere escapado/comando
+      i++
       continue
     }
     if (c === "{") profundidade++
@@ -25,7 +18,6 @@ export function varrerChaves(s: string, abre: number): { fim: number; conteudo: 
   return null
 }
 
-/** Substitui todas as ocorrências de `\cmd{...}` (chaves balanceadas). */
 export function substituirComando(
   latex: string,
   cmd: string,
@@ -59,20 +51,12 @@ export function substituirComando(
   return saida
 }
 
-/** Divide "4,0" em "4{,}0" . Vírgula decimal sem espaço espúrio. */
 function decParaKatex(conteudo: string): string {
   const i = conteudo.indexOf(",")
   if (i === -1) return conteudo
   return `${conteudo.slice(0, i)}{,}${conteudo.slice(i + 1)}`
 }
 
-/**
- * Prepara um trecho LaTeX matemático para o KaTeX:
- *  - `\dec{4,0}`      → `4{,}0`
- *  - `\un{m/s^2}`     → `\,\mathrm{m/s^2}`
- *  - `\resultado{X}`  → `\htmlClass{na-resultado}{X}` (coral, via CSS)
- *  - `\dest{X}`       → `\textbf{X}`
- */
 export function preprocessarLatex(latex: string): string {
   let r = latex
   r = substituirComando(r, "dec", decParaKatex)
@@ -82,11 +66,6 @@ export function preprocessarLatex(latex: string): string {
   return r
 }
 
-/**
- * Expande os comandos pt-BR para LaTeX puro no .tex gerado
- * (pdfLaTeX não conhece \dec/\un/\resultado, então traduzimos
- * para construções de amsmath/xcolor definidas no preâmbulo).
- */
 export function prepararMatematicaTex(latex: string): string {
   let r = latex
   r = substituirComando(r, "dec", (c) => c.replace(/,/g, "{,}"))
@@ -95,7 +74,6 @@ export function prepararMatematicaTex(latex: string): string {
   return r
 }
 
-/** Macros pt-BR passadas ao KaTeX (sen, tg, cotg, cossec). */
 export const MACROS_KATEX: Record<string, string> = {
   "\\sen": "\\operatorname{sen}",
   "\\tg": "\\operatorname{tg}",
@@ -103,34 +81,28 @@ export const MACROS_KATEX: Record<string, string> = {
   "\\cossec": "\\operatorname{cossec}",
 }
 
-// Escapamento para gerar.tex
-
-/** Escapa caracteres especiais do LaTeX em texto corrido. */
-export function escaparLatex(texto: string): string {
-  return texto
-    .replace(/\\/g, "\\textbackslash{}")
-    .replace(/&/g, "\\&")
-    .replace(/%/g, "\\%")
-    .replace(/#/g, "\\#")
-    .replace(/_/g, "\\_")
-    .replace(/\{/g, "\\{")
-    .replace(/\}/g, "\\}")
-    .replace(/~/g, "\\textasciitilde{}")
-    .replace(/\^/g, "\\textasciicircum{}")
+const MAPA_ESCAPE_LATEX: Record<string, string> = {
+  "\\": "\\textbackslash{}",
+  "&": "\\&",
+  "%": "\\%",
+  "#": "\\#",
+  _: "\\_",
+  "{": "\\{",
+  "}": "\\}",
+  "~": "\\textasciitilde{}",
+  "^": "\\textasciicircum{}",
 }
 
-/**
- * Converte texto-inline (com $matemática$, **negrito**, *itálico*,
- * `código`, \resultado{...}, \dest{...}) para LaTeX corrido.
- * Comandos e matemática passam direto (notaaula.cls os entende).
- */
+export function escaparLatex(texto: string): string {
+  return texto.replace(/[\\&%#_{}~^]/g, (ch) => MAPA_ESCAPE_LATEX[ch])
+}
+
 export function inlineParaLatex(texto: string): string {
   if (!texto) return ""
   let saida = ""
   let i = 0
   const n = texto.length
   while (i < n) {
-    // matemática inline $...$ (comandos pt-BR expandidos para pdfLaTeX)
     if (texto[i] === "$") {
       const fim = acharFimMatematica(texto, i)
       if (fim === -1) {
@@ -141,13 +113,11 @@ export function inlineParaLatex(texto: string): string {
       i = fim + 1
       continue
     }
-    // comandos que passam direto com argumento
     const mCmd = /^\\(resultado|dest|textbf|textit|texttt|text|mathrm|mathbf|ce|pu)\b/.exec(
       texto.slice(i),
     )
     if (mCmd) {
       const inicioArg = i + mCmd[0].length
-      // pula espaços
       let j = inicioArg
       while (j < n && texto[j] === " ") j++
       if (texto[j] === "{") {
@@ -158,13 +128,10 @@ export function inlineParaLatex(texto: string): string {
           continue
         }
       }
-      // sem argumento: passa o comando
       saida += mCmd[0]
       i = inicioArg
       continue
     }
-    // \ce sem chaves? (raro) . Outros comandos soltos em texto são escapados
-    // **negrito**
     if (texto.startsWith("**", i)) {
       const fim = texto.indexOf("**", i + 2)
       if (fim !== -1) {
@@ -173,7 +140,6 @@ export function inlineParaLatex(texto: string): string {
         continue
       }
     }
-    // *itálico*
     if (texto[i] === "*") {
       const fim = texto.indexOf("*", i + 1)
       if (fim !== -1 && texto[fim + 1] !== "*") {
@@ -182,7 +148,6 @@ export function inlineParaLatex(texto: string): string {
         continue
       }
     }
-    // `código`
     if (texto[i] === "`") {
       const fim = texto.indexOf("`", i + 1)
       if (fim !== -1) {
@@ -191,19 +156,17 @@ export function inlineParaLatex(texto: string): string {
         continue
       }
     }
-    // texto comum: acumula até o próximo caractere especial
     let j = i
     while (j < n && texto[j] !== "$" && texto[j] !== "*" && texto[j] !== "`" && texto[j] !== "\\") {
       j++
     }
-    if (j === i) j++ // garante progresso
+    if (j === i) j++
     saida += escaparLatex(texto.slice(i, j))
     i = j
   }
   return saida
 }
 
-/** Índice do `$` que fecha a matemática iniciada em `ini` (-1 se não fechar). */
 function acharFimMatematica(texto: string, ini: number): number {
   const n = texto.length
   let i = ini + 1
@@ -218,7 +181,6 @@ function acharFimMatematica(texto: string, ini: number): number {
   return -1
 }
 
-/** Escapa texto para uso dentro de \url / caminho de arquivo. */
 export function escaparCaminhoLatex(texto: string): string {
   return texto.replace(/[\\{}$&#^_~%]/g, "")
 }

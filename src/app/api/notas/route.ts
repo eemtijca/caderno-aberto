@@ -7,7 +7,6 @@ import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 
 export const dynamic = "force-dynamic"
 
-/** GET /api/notas . Lista com filtros (?q=&disciplina=&ano=&mes=&turma=&status=) */
 export async function GET(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -46,7 +45,6 @@ export async function GET(req: NextRequest) {
   return json({ notas })
 }
 
-/** POST /api/notas . Cria nota nova (com modelo ou vazia) */
 export async function POST(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

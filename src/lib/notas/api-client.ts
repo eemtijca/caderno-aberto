@@ -1,7 +1,5 @@
 "use client"
 
-// Cliente de API + hooks TanStack Query (rotas /api do app. Sessão via cookies do Supabase)
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { AparenciaNota, Bloco, DisciplinaInfo, NotaDados, TurmaInfo } from "./tipos"
 
@@ -14,7 +12,6 @@ async function pedir<T>(url: string, init?: RequestInit): Promise<T> {
       cache: "no-store",
     })
   } catch {
-    // falha de rede (offline, DNS, timeout) não devolve JSON
     throw new Error("Não foi possível falar com o servidor. Verifique sua conexão.")
   }
   if (!r.ok) {
@@ -290,8 +287,6 @@ export interface LinkInfo {
 }
 
 export function urlDoLink(token: string): string {
-  // caminho real (sem #): crawlers leem as meta tags do OpenGraph em
-  // /l/<token>; a página redireciona para a vista hash existente
   return typeof window !== "undefined" ? `${window.location.origin}/l/${token}` : `/l/${token}`
 }
 
@@ -366,7 +361,6 @@ export async function enviarImagem(
   return r.json() as Promise<{ caminho: string; url: string }>
 }
 
-/** Redimensiona/comprime a imagem no cliente antes do upload. */
 export async function comprimirImagem(arquivo: File, maxLado = 1600): Promise<Blob> {
   const bitmap = await createImageBitmap(arquivo).catch(() => null)
   if (!bitmap) return arquivo

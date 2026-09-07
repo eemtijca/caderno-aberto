@@ -5,7 +5,6 @@ export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ id: string }> }
 
-/** PUT /api/disciplinas/[id] . Edita nome/cor/ícone/ordem */
 export async function PUT(req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -41,7 +40,6 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   return json({ disciplina })
 }
 
-/** DELETE /api/disciplinas/[id] . Notas ficam (sem disciplina) */
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

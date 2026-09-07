@@ -1,7 +1,5 @@
 "use client"
 
-// Shell da aplicação. Sidebar no desktop, bottom navigation no celular (mobile-first), busca global (Ctrl+K), menu do professor e seletor de tema.
-
 import { useEffect, useRef, useState } from "react"
 import { useTheme } from "next-themes"
 import { VERSAO_CURTA } from "@/lib/versao"
@@ -56,7 +54,6 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
   const [buscaAberta, setBuscaAberta] = useState(false)
   const [saindo, setSaindo] = useState(false)
 
-  // Ctrl+K / Cmd+K abre a busca
   useEffect(() => {
     const aoTeclar = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -312,8 +309,6 @@ function ItemNavBaixo({
     </button>
   )
 }
-
-// Busca global (dialog com resultados instantâneos)
 
 function BuscaGlobal({
   aberta,

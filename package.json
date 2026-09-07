@@ -106,7 +106,9 @@
     "typescript": "^5.9.3"
   },
   "allowScripts": {
-    "@embedded-postgres/linux-x64@18.4.0-beta.17": true
+    "@embedded-postgres/linux-x64@18.4.0-beta.17": true,
+    "@swc/core@1.16.1": true,
+    "unrs-resolver@1.12.2": true
   },
   "description": "Notas de aula que chegam aos alunos. Editor de blocos, PDF A4, LaTeX e links gerenciáveis. Backend Supabase."
 }

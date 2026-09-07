@@ -1,8 +1,5 @@
 "use client"
 
-// Diagrama TikZ renderizado pelo TikzJax. Mostra carregamento próprio,
-// detecta falha (código inválido/timeout) e evita salto de layout.
-
 import { useEffect, useRef, useState } from "react"
 
 const BIBLIOTECAS = "arrows.meta,positioning,calc,decorations.markings"
@@ -44,7 +41,6 @@ export function Tikz({ codigo }: { codigo: string }) {
     container.addEventListener("tikzjax-load-finished", onFinish)
     container.appendChild(script)
 
-    // timeout: sem svg e sem evento => diagrama com erro
     const t = setTimeout(() => {
       if (!container.querySelector("svg")) setFalhou(true)
       setCarregando(false)
