@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
-import { linhaParaNota, mapaTurmasProfessor, camposDenormalizados } from "@/lib/api/serializacao"
+import {
+  linhaParaNota,
+  mapaTurmasProfessor,
+  camposDenormalizados,
+  paraJson,
+} from "@/lib/api/serializacao"
+import type { DisciplinaLinha, TurmaLinha } from "@/lib/banco/tipos"
 import { normalizarAparencia, normalizarBlocos, type AparenciaNota } from "@/lib/notas/tipos"
 import { analisarMarkdown } from "@/lib/notas/render-markdown"
 import { normalizar, textoDeBusca } from "@/lib/notas/texto"
@@ -8,9 +15,9 @@ import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 export const dynamic = "force-dynamic"
 
 export async function POST(req: NextRequest) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const corpo = await req.json().catch(() => null)
   if (!corpo || typeof corpo.conteudo !== "string") return erroApi("Conteúdo inválido.")
@@ -74,35 +81,38 @@ export async function POST(req: NextRequest) {
 
   if (!dados.titulo.trim()) return erroApi("Arquivo sem título identificável.")
 
+  const db = await banco()
+
   // disciplina: cria se não existir (do próprio professor)
   const nomeDisc = dados.disciplina.trim() || "Sem disciplina"
-  const { data: existente } = await cliente
-    .from("disciplinas")
-    .select("*")
-    .eq("professor_id", usuario.id)
-    .ilike("nome", nomeDisc)
-    .maybeSingle()
-
-  let disciplina = existente
+  const candidatas = (await db.orm.public.Disciplinas.where({
+    professorId: usuario.id,
+  }).all()) as unknown as DisciplinaLinha[]
+  let disciplina = candidatas.find((d) => d.nome.toLowerCase() === nomeDisc.toLowerCase()) ?? null
   if (!disciplina) {
-    const { data: criada, error } = await cliente
-      .from("disciplinas")
-      .insert({ professor_id: usuario.id, nome: nomeDisc, cor: "verde", icone: "BookOpen" })
-      .select("*")
-      .single()
-    if (error || !criada) return erroApi("Falha ao criar a disciplina.")
-    disciplina = criada
+    try {
+      disciplina = (await db.orm.public.Disciplinas.create({
+        professorId: usuario.id,
+        nome: nomeDisc,
+        cor: "verde",
+        icone: "BookOpen",
+      })) as unknown as DisciplinaLinha
+    } catch {
+      return erroApi("Falha ao criar a disciplina.")
+    }
   }
 
   // turmas: cria as que faltarem no ano letivo da nota
-  const { data: turmasExistentes } = await cliente
-    .from("turmas")
-    .select("*")
-    .eq("professor_id", usuario.id)
-    .eq("ano_letivo", dados.anoLetivo)
-  const porNome = new Map((turmasExistentes ?? []).map((t) => [t.nome.toUpperCase(), t]))
+  const turmasDoAno = (await db.orm.public.Turmas.where({
+    professorId: usuario.id,
+  }).all()) as unknown as TurmaLinha[]
+  const porNome = new Map(
+    turmasDoAno
+      .filter((t) => t.anoLetivo === dados.anoLetivo)
+      .map((t) => [t.nome.toUpperCase(), t]),
+  )
 
-  const turmasFinais: import("@/lib/supabase/tipos").TurmaLinha[] = []
+  const turmasFinais: TurmaLinha[] = []
   for (const nome of dados.turmas) {
     const nomeUp = nome.trim().toUpperCase()
     if (!nomeUp) continue
@@ -115,49 +125,47 @@ export async function POST(req: NextRequest) {
           : nomeUp.startsWith("3")
             ? "3º ano"
             : "Outro"
-      const { data: criada, error } = await cliente
-        .from("turmas")
-        .insert({ professor_id: usuario.id, nome: nomeUp, serie, ano_letivo: dados.anoLetivo })
-        .select("*")
-        .single()
-      if (!error && criada) {
-        turma = criada
-        porNome.set(nomeUp, criada)
+      try {
+        turma = (await db.orm.public.Turmas.create({
+          professorId: usuario.id,
+          nome: nomeUp,
+          serie,
+          anoLetivo: dados.anoLetivo,
+        })) as unknown as TurmaLinha
+        porNome.set(nomeUp, turma)
+      } catch {
+        turma = undefined
       }
     }
     if (turma) turmasFinais.push(turma)
   }
 
   const blocos = normalizarBlocos(dados.blocos)
-  const { data: linha, error } = await cliente
-    .from("notas")
-    .insert({
-      professor_id: usuario.id,
-      titulo: dados.titulo.trim(),
-      ...camposDenormalizados(disciplina, turmasFinais),
-      ano_letivo: dados.anoLetivo,
-      mes: dados.mes,
-      sobre: dados.sobre,
-      habilidades: dados.habilidades,
-      status: dados.status,
-      blocos,
-      aparencia: dados.aparencia,
-      busca: normalizar(
-        textoDeBusca({
-          titulo: dados.titulo,
-          sobre: dados.sobre,
-          habilidades: dados.habilidades,
-          blocos,
-          disciplina: { nome: disciplina.nome },
-          turmas: turmasFinais.map((t) => ({ nome: t.nome, serie: t.serie })),
-        }),
-      ),
-    })
-    .select("*, disciplina:disciplinas(*)")
-    .single()
+  const linha = (await db.orm.public.Notas.create({
+    professorId: usuario.id,
+    titulo: dados.titulo.trim(),
+    ...camposDenormalizados(disciplina, turmasFinais),
+    anoLetivo: dados.anoLetivo,
+    mes: dados.mes,
+    sobre: dados.sobre,
+    habilidades: dados.habilidades,
+    status: dados.status,
+    blocos: paraJson(blocos),
+    aparencia: paraJson(dados.aparencia),
+    busca: normalizar(
+      textoDeBusca({
+        titulo: dados.titulo,
+        sobre: dados.sobre,
+        habilidades: dados.habilidades,
+        blocos,
+        disciplina: { nome: disciplina.nome },
+        turmas: turmasFinais.map((t) => ({ nome: t.nome, serie: t.serie })),
+      }),
+    ),
+  }).catch(() => null)) as unknown as Parameters<typeof linhaParaNota>[0] | null
 
-  if (error || !linha) return erroApi("Falha ao importar a nota.")
+  if (!linha) return erroApi("Falha ao importar a nota.")
 
-  const mapaTurmas = await mapaTurmasProfessor(cliente, usuario.id)
+  const mapaTurmas = await mapaTurmasProfessor(usuario.id)
   return json({ nota: linhaParaNota(linha, mapaTurmas) }, 201)
 }

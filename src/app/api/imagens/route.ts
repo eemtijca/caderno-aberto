@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
+import { caminhoDoProfessor, obterArmazenamento } from "@/lib/armazenamento"
+import { mimePorExtensao } from "@/lib/armazenamento/provedor-disco"
 import { gerarToken } from "@/lib/api/token"
 import sharp from "sharp"
 
 export const dynamic = "force-dynamic"
 
 const MIMES = ["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"]
-const MAX_BYTES = 6 * 1024 * 1024 // 6 MB (igual ao bucket)
+const MAX_BYTES = 6 * 1024 * 1024 // Limite de 6 MB por imagem.
 
 export async function POST(req: NextRequest) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const form = await req.formData().catch(() => null)
   const arquivo = form?.get("arquivo")
@@ -25,44 +27,35 @@ export async function POST(req: NextRequest) {
   const ext = mime.split("/")[1].replace("jpeg", "jpg").replace("svg+xml", "svg")
   const caminho = `${usuario.id}/${gerarToken(14)}.${ext}`
 
-  const { error } = await cliente.storage
-    .from("imagens")
-    .upload(caminho, bytes, { contentType: mime, upsert: false })
-  if (error) return erroApi("Falha no upload da imagem.")
+  try {
+    await obterArmazenamento().salvar(caminho, bytes, mime)
+  } catch {
+    return erroApi("Falha no upload da imagem.")
+  }
 
   return json({ caminho, url: `/api/imagens?path=${encodeURIComponent(caminho)}` }, 201)
 }
 
 export async function GET(req: NextRequest) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const caminho = req.nextUrl.searchParams.get("path") ?? ""
-  if (!caminho.startsWith(`${usuario.id}/`) || caminho.includes("..")) {
+  if (!caminhoDoProfessor(caminho, usuario.id)) {
     return erroApi("Caminho inválido.", 400)
   }
 
-  const { data: arquivo, error } = await cliente.storage.from("imagens").download(caminho)
-  if (error || !arquivo) return erroApi("Imagem não encontrada.", 404)
+  const arquivo = await obterArmazenamento().ler(caminho)
+  if (!arquivo) return erroApi("Imagem não encontrada.", 404)
 
   const ext = caminho.split(".").pop()?.toLowerCase() ?? "png"
-  const MIMES_SAIDA: Record<string, string> = {
-    png: "image/png",
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    webp: "image/webp",
-    gif: "image/gif",
-    svg: "image/svg+xml",
-  }
 
   const converterPng =
     req.nextUrl.searchParams.get("png") === "1" && (ext === "webp" || ext === "svg")
   if (converterPng) {
     try {
-      const png = await sharp(Buffer.from(await arquivo.arrayBuffer()))
-        .png()
-        .toBuffer()
+      const png = await sharp(arquivo.bytes).png().toBuffer()
       return new NextResponse(png, {
         headers: {
           "Content-Type": "image/png",
@@ -74,25 +67,24 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return new NextResponse(await arquivo.arrayBuffer(), {
+  return new NextResponse(new Uint8Array(arquivo.bytes), {
     headers: {
-      "Content-Type": MIMES_SAIDA[ext] ?? "application/octet-stream",
+      "Content-Type": mimePorExtensao(caminho),
       "Cache-Control": "private, max-age=3600",
     },
   })
 }
 
 export async function DELETE(req: NextRequest) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const caminho = req.nextUrl.searchParams.get("path") ?? ""
-  if (!caminho.startsWith(`${usuario.id}/`) || caminho.includes("..")) {
+  if (!caminhoDoProfessor(caminho, usuario.id)) {
     return erroApi("Caminho inválido.", 400)
   }
 
-  const { error } = await cliente.storage.from("imagens").remove([caminho])
-  if (error) return erroApi("Falha ao excluir a imagem.")
+  await obterArmazenamento().remover(caminho)
   return json({ ok: true })
 }

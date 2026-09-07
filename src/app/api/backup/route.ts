@@ -1,83 +1,77 @@
 import { NextRequest, NextResponse } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
-import { clienteAdmin } from "@/lib/supabase/admin"
-import { camposDenormalizados } from "@/lib/api/serializacao"
+import { obterArmazenamento } from "@/lib/armazenamento"
+import { camposDenormalizados, paraJson } from "@/lib/api/serializacao"
+import type { DisciplinaLinha, TurmaLinha } from "@/lib/banco/tipos"
 import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
 import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
-  const sessao = await sessaoProfessor()
+export async function GET(req: NextRequest) {
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario, perfil } = sessao
+  const { usuario, perfil } = sessao
 
-  const [{ data: disciplinas }, { data: turmas }, { data: notas }, { data: links }] =
-    await Promise.all([
-      cliente.from("disciplinas").select("*").eq("professor_id", usuario.id).order("ordem"),
-      cliente.from("turmas").select("*").eq("professor_id", usuario.id).order("nome"),
-      cliente
-        .from("notas")
-        .select("*, disciplina:disciplinas(*)")
-        .eq("professor_id", usuario.id)
-        .order("criado_em"),
-      cliente.from("links").select("*").eq("professor_id", usuario.id).order("criado_em"),
-    ])
+  const db = await banco()
+  const disciplinas = await db.orm.public.Disciplinas.where({ professorId: usuario.id }).all()
+  const turmas = await db.orm.public.Turmas.where({ professorId: usuario.id }).all()
+  const notas = await db.orm.public.Notas.where({ professorId: usuario.id }).all()
+  const links = await db.orm.public.Links.where({ professorId: usuario.id }).all()
 
-  const { data: objetos } = await cliente.storage.from("imagens").list(usuario.id, { limit: 1000 })
+  const objetos = await obterArmazenamento().listar(usuario.id)
   const imagens: { nome: string; mime: string; dados: string; caminho: string }[] = []
-  for (const obj of objetos ?? []) {
-    if (!obj.name || obj.id === null) continue // pasta
-    const caminho = `${usuario.id}/${obj.name}`
-    const { data: arquivo } = await cliente.storage.from("imagens").download(caminho)
+  for (const obj of objetos.slice(0, 1000)) {
+    const arquivo = await obterArmazenamento().ler(obj.caminho)
     if (!arquivo) continue
-    const buf = Buffer.from(await arquivo.arrayBuffer())
-    const mime =
-      obj.metadata && typeof obj.metadata === "object" && "mimetype" in obj.metadata
-        ? String((obj.metadata as Record<string, unknown>).mimetype ?? "image/png")
-        : "image/png"
-    imagens.push({ nome: obj.name, mime, dados: buf.toString("base64"), caminho })
+    imagens.push({
+      nome: obj.caminho.split("/").pop() ?? "imagem.png",
+      mime: arquivo.mime,
+      dados: arquivo.bytes.toString("base64"),
+      caminho: obj.caminho,
+    })
   }
 
   const corpo = {
     versao: 2,
     exportadoEm: new Date().toISOString(),
     professor: { nome: perfil?.nome ?? "", escola: perfil?.escola ?? "" },
-    disciplinas: (disciplinas ?? []).map((d) => ({
+    disciplinas: disciplinas.map((d) => ({
       id: d.id,
       nome: d.nome,
       cor: d.cor,
       icone: d.icone,
       ordem: d.ordem,
     })),
-    turmas: (turmas ?? []).map((t) => ({
+    turmas: turmas.map((t) => ({
       id: t.id,
       nome: t.nome,
       serie: t.serie,
-      anoLetivo: t.ano_letivo,
+      anoLetivo: t.anoLetivo,
     })),
-    notas: (notas ?? []).map((n) => ({
+    notas: notas.map((n) => ({
       id: n.id,
       titulo: n.titulo,
-      disciplinaId: n.disciplina_id,
-      anoLetivo: n.ano_letivo,
+      disciplinaId: n.disciplinaId,
+      anoLetivo: n.anoLetivo,
       mes: n.mes,
       sobre: n.sobre,
       habilidades: n.habilidades,
       status: n.status,
-      turmasIds: n.turmas_ids,
+      turmasIds: n.turmasIds,
       blocos: n.blocos,
       aparencia: n.aparencia,
     })),
-    links: (links ?? []).map((l) => ({
+    links: links.map((l) => ({
       tipo: l.tipo,
       token: l.token,
       nome: l.nome,
       ativo: l.ativo,
-      expiraEm: l.expira_em,
-      notaId: l.nota_id,
-      turmaId: l.turma_id,
-      disciplinaId: l.disciplina_id,
+      expiraEm: l.expiraEm,
+      notaId: l.notaId,
+      turmaId: l.turmaId,
+      disciplinaId: l.disciplinaId,
     })),
     imagens,
   }
@@ -94,21 +88,22 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const corpo = await req.json().catch(() => null)
   if (!corpo || !Array.isArray(corpo.notas)) return erroApi("Arquivo de backup inválido.")
   const versao = Number(corpo.versao) === 2 ? 2 : 1
 
-  await cliente.from("links").delete().neq("id", "00000000-0000-0000-0000-000000000000")
-  await cliente.from("notas").delete().neq("id", "00000000-0000-0000-0000-000000000000")
-  await cliente.from("turmas").delete().neq("id", "00000000-0000-0000-0000-000000000000")
-  await cliente.from("disciplinas").delete().neq("id", "00000000-0000-0000-0000-000000000000")
+  const db = await banco()
+  await db.orm.public.Links.where({ professorId: usuario.id }).deleteAll()
+  await db.orm.public.Notas.where({ professorId: usuario.id }).deleteAll()
+  await db.orm.public.Turmas.where({ professorId: usuario.id }).deleteAll()
+  await db.orm.public.Disciplinas.where({ professorId: usuario.id }).deleteAll()
 
   const mapaImagens = new Map<string, string>()
-  const admin = clienteAdmin()
+  const armazenamento = obterArmazenamento()
   for (const img of corpo.imagens ?? []) {
     if (typeof img?.dados !== "string") continue
     try {
@@ -120,10 +115,7 @@ export async function POST(req: NextRequest) {
       const caminho = `${usuario.id}/${Date.now().toString(36)}-${Math.random()
         .toString(36)
         .slice(2, 8)}.${ext}`
-      const { error } = await admin.storage
-        .from("imagens")
-        .upload(caminho, buf, { contentType: mime })
-      if (error) continue
+      await armazenamento.salvar(caminho, buf, mime)
       const urlNova = `/api/imagens?path=${encodeURIComponent(caminho)}`
       if (versao === 2 && typeof img.caminho === "string") {
         mapaImagens.set(`/api/imagens?path=${encodeURIComponent(img.caminho)}`, urlNova)
@@ -146,46 +138,40 @@ export async function POST(req: NextRequest) {
 
   const idDisc = new Map<string, string>() // id antigo -> novo
   const nomeDisc = new Map<string, string>() // nome -> novo id
-  const listaDisc: import("@/lib/supabase/tipos").DisciplinaLinha[] = []
+  const listaDisc: DisciplinaLinha[] = []
   for (const d of corpo.disciplinas ?? []) {
     if (typeof d?.nome !== "string" || !d.nome.trim()) continue
-    const { data: criada, error } = await cliente
-      .from("disciplinas")
-      .insert({
-        professor_id: usuario.id,
+    try {
+      const criada = (await db.orm.public.Disciplinas.create({
+        professorId: usuario.id,
         nome: d.nome.trim(),
         cor: typeof d.cor === "string" ? d.cor : "verde",
         icone: typeof d.icone === "string" && d.icone ? d.icone : "BookOpen",
         ordem: Number(d.ordem) || 0,
-      })
-      .select("*")
-      .single()
-    if (error || !criada) continue
-    if (d.id) idDisc.set(String(d.id), criada.id)
-    nomeDisc.set(d.nome.trim(), criada.id)
-    listaDisc.push(criada)
+      })) as unknown as DisciplinaLinha
+      if (d.id) idDisc.set(String(d.id), criada.id)
+      nomeDisc.set(d.nome.trim(), criada.id)
+      listaDisc.push(criada)
+    } catch {}
   }
 
   const idTurma = new Map<string, string>()
-  const listaTurmas: import("@/lib/supabase/tipos").TurmaLinha[] = []
+  const listaTurmas: TurmaLinha[] = []
   const turmasV1 = new Map<string, string>() // "NOME-ANO" -> id
   for (const t of corpo.turmas ?? []) {
     if (typeof t?.nome !== "string" || !t.nome.trim()) continue
     const ano = Number(t.anoLetivo) || new Date().getFullYear()
-    const { data: criada, error } = await cliente
-      .from("turmas")
-      .insert({
-        professor_id: usuario.id,
+    try {
+      const criada = (await db.orm.public.Turmas.create({
+        professorId: usuario.id,
         nome: t.nome.trim().toUpperCase(),
         serie: typeof t.serie === "string" ? t.serie : "Outro",
-        ano_letivo: ano,
-      })
-      .select("*")
-      .single()
-    if (error || !criada) continue
-    if (t.id) idTurma.set(String(t.id), criada.id)
-    turmasV1.set(`${t.nome.trim().toUpperCase()}-${ano}`, criada.id)
-    listaTurmas.push(criada)
+        anoLetivo: ano,
+      })) as unknown as TurmaLinha
+      if (t.id) idTurma.set(String(t.id), criada.id)
+      turmasV1.set(`${t.nome.trim().toUpperCase()}-${ano}`, criada.id)
+      listaTurmas.push(criada)
+    } catch {}
   }
 
   const idNota = new Map<string, string>()
@@ -222,19 +208,18 @@ export async function POST(req: NextRequest) {
     const habilidades = String(n.habilidades ?? "")
     const aparencia = normalizarAparencia(n.aparencia)
 
-    const { data: criada, error } = await cliente
-      .from("notas")
-      .insert({
-        professor_id: usuario.id,
+    try {
+      const criada = (await db.orm.public.Notas.create({
+        professorId: usuario.id,
         titulo,
         ...camposDenormalizados(disciplina ?? null, turmasNota),
-        ano_letivo: Number(n.anoLetivo) || new Date().getFullYear(),
+        anoLetivo: Number(n.anoLetivo) || new Date().getFullYear(),
         mes: Math.min(12, Math.max(1, Number(n.mes) || 1)),
         sobre,
         habilidades,
         status: n.status === "publicada" ? "publicada" : "rascunho",
-        blocos,
-        aparencia,
+        blocos: paraJson(blocos),
+        aparencia: paraJson(aparencia),
         busca: normalizar(
           textoDeBusca({
             titulo,
@@ -245,20 +230,14 @@ export async function POST(req: NextRequest) {
             turmas: turmasNota.map((t) => ({ nome: t.nome, serie: t.serie })),
           }),
         ),
-      })
-      .select("*")
-      .single()
-    if (error || !criada) continue
-    if (n.id) idNota.set(String(n.id), criada.id)
-    notasCriadas.push({ id: criada.id, titulo })
+      })) as unknown as { id: string; titulo: string }
+      if (n.id) idNota.set(String(n.id), criada.id)
+      notasCriadas.push({ id: criada.id, titulo })
+    } catch {}
   }
 
   if (Array.isArray(corpo.links)) {
-    const { data: perfil } = await cliente
-      .from("profiles")
-      .select("nome")
-      .eq("id", usuario.id)
-      .maybeSingle()
+    const perfil = await db.orm.public.Profiles.where({ id: usuario.id }).first()
     for (const l of corpo.links) {
       if (!l || typeof l.token !== "string") continue
       if (!["nota", "turma", "disciplina"].includes(l.tipo)) continue
@@ -267,45 +246,33 @@ export async function POST(req: NextRequest) {
         (l.tipo === "turma" && l.turmaId && idTurma.get(String(l.turmaId))) ||
         (l.tipo === "disciplina" && l.disciplinaId && idDisc.get(String(l.disciplinaId)))
       if (!alvoOk) continue
-      await cliente
-        .from("links")
-        .insert({
-          professor_id: usuario.id,
-          tipo: l.tipo,
-          nota_id: l.tipo === "nota" ? idNota.get(String(l.notaId)) : null,
-          turma_id: l.tipo === "turma" ? idTurma.get(String(l.turmaId)) : null,
-          disciplina_id: l.tipo === "disciplina" ? idDisc.get(String(l.disciplinaId)) : null,
-          token: l.token,
-          professor_nome: perfil?.nome ?? "",
-          nome: typeof l.nome === "string" ? l.nome : "",
-          ativo: l.ativo !== false,
-          expira_em: typeof l.expiraEm === "string" && l.expiraEm ? l.expiraEm : null,
-        })
-        .then(({ error }) => {
-          if (error && error.code === "23505") {
-            // token repetido (restauração dupla): regenera
-            return cliente.from("links").insert({
-              professor_id: usuario.id,
-              tipo: l.tipo,
-              nota_id: l.tipo === "nota" ? idNota.get(String(l.notaId)) : null,
-              turma_id: l.tipo === "turma" ? idTurma.get(String(l.turmaId)) : null,
-              disciplina_id: l.tipo === "disciplina" ? idDisc.get(String(l.disciplinaId)) : null,
-              token: `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`,
-              professor_nome: perfil?.nome ?? "",
-              nome: typeof l.nome === "string" ? l.nome : "",
-              ativo: l.ativo !== false,
-              expira_em: typeof l.expiraEm === "string" && l.expiraEm ? l.expiraEm : null,
-            })
-          }
-          return null
-        })
+      const dadosBase = {
+        professorId: usuario.id,
+        tipo: l.tipo,
+        notaId: l.tipo === "nota" ? (idNota.get(String(l.notaId)) ?? null) : null,
+        turmaId: l.tipo === "turma" ? (idTurma.get(String(l.turmaId)) ?? null) : null,
+        disciplinaId: l.tipo === "disciplina" ? (idDisc.get(String(l.disciplinaId)) ?? null) : null,
+        token: l.token,
+        professorNome: perfil?.nome ?? "",
+        nome: typeof l.nome === "string" ? l.nome : "",
+        ativo: l.ativo !== false,
+        expiraEm: typeof l.expiraEm === "string" && l.expiraEm ? l.expiraEm : null,
+      }
+      try {
+        await db.orm.public.Links.create(dadosBase)
+      } catch {
+        // Token em colisão é regenerado.
+        try {
+          await db.orm.public.Links.create({
+            ...dadosBase,
+            token: `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`,
+          })
+        } catch {}
+      }
     }
   }
 
-  type AtualizacaoPerfil = Partial<
-    Pick<import("@/lib/supabase/tipos").PerfilLinha, "nome" | "escola">
-  >
-  const dadosPerfil: AtualizacaoPerfil = {}
+  const dadosPerfil: { nome?: string; escola?: string } = {}
   if (versao === 1 && corpo.config && typeof corpo.config === "object") {
     const cfg = corpo.config as Record<string, unknown>
     if (typeof cfg.professor === "string" && cfg.professor) dadosPerfil.nome = cfg.professor
@@ -316,7 +283,7 @@ export async function POST(req: NextRequest) {
     if (typeof p.escola === "string" && p.escola) dadosPerfil.escola = p.escola
   }
   if (Object.keys(dadosPerfil).length > 0) {
-    await cliente.from("profiles").update(dadosPerfil).eq("id", usuario.id)
+    await db.orm.public.Profiles.where({ id: usuario.id }).update(dadosPerfil)
   }
 
   return json({ ok: true, notas: notasCriadas.length })
