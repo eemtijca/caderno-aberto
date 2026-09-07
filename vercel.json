@@ -5,6 +5,12 @@
   "installCommand": "npm install",
   "outputDirectory": ".next",
   "cleanUrls": true,
+  "crons": [
+    {
+      "path": "/api/conta/restaurar",
+      "schedule": "0 4 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
