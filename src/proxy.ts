@@ -1,35 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerClient } from "@supabase/ssr"
+import * as jose from "jose"
 
-const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
-const CHAVE_ANON =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-  ""
+const SEGREDO = new TextEncoder().encode(process.env.AUTH_SECRET ?? "")
 
-function getSupabaseOrigin(request: NextRequest): string {
-  const direta =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL_PRODUCTION ?? ""
-  if (direta) {
-    try {
-      return new URL(direta).origin
-    } catch {}
+async function lerUsuarioId(req: NextRequest): Promise<string | null> {
+  const token = req.cookies.get("sessao")?.value
+  if (!token || !process.env.AUTH_SECRET) return null
+  try {
+    const { payload } = await jose.jwtVerify(token, SEGREDO)
+    return typeof payload.sub === "string" ? payload.sub : null
+  } catch {
+    return null
   }
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? ""
-  if (host.includes("app.github.dev")) {
-    return `https://${host.replace(/-3000\./, "-54321.")}`
-  }
-  const nome = process.env.CODESPACE_NAME ?? process.env.NEXT_PUBLIC_CODESPACE_NAME ?? ""
-  const dominio = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN ?? "app.github.dev"
-  if (nome) return `https://${nome}-54321.${dominio}`
-  return "http://127.0.0.1:54321"
 }
 
 export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64")
   const isDev = process.env.NODE_ENV === "development"
-  const supaOrigin = getSupabaseOrigin(request)
-  const supaWs = supaOrigin.replace(/^http/, "ws")
 
   const csp = [
     "default-src 'self'",
@@ -39,15 +26,14 @@ export async function proxy(request: NextRequest) {
     "style-src-attr 'unsafe-inline'",
     "worker-src 'self' blob:",
     "child-src blob:",
-    `connect-src 'self' ${supaOrigin} ${supaWs} http://127.0.0.1:54321 ws://127.0.0.1:54321 http://localhost:54321 ws://localhost:54321 https://*.app.github.dev wss://*.app.github.dev https://*.supabase.co wss://*.supabase.co`,
+    "connect-src 'self'",
     "font-src 'self' data:",
-    "img-src 'self' data: blob: https://*.app.github.dev https://*.supabase.co",
+    "img-src 'self' data: blob:",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    // Somente em produção (HTTPS): no dev http+loopback a diretiva
-    // quebra motores sem isenção de loopback, como o WebKit.
+    // Produção usa HTTPS; desenvolvimento mantém loopback.
     ...(isDev ? [] : ["upgrade-insecure-requests"]),
   ].join("; ")
 
@@ -55,38 +41,16 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce)
   requestHeaders.set("Content-Security-Policy", csp)
 
-  let resposta = NextResponse.next({
+  // Propaga o usuário do JWT válido; sem acesso ao banco.
+  const usuarioId = await lerUsuarioId(request)
+  if (usuarioId) requestHeaders.set("x-usuario-id", usuarioId)
+
+  const resposta = NextResponse.next({
     request: { headers: requestHeaders },
   })
 
   resposta.headers.set("Content-Security-Policy", csp)
   resposta.headers.set("x-nonce", nonce)
-
-  if (!URL_SUPABASE || !CHAVE_ANON) return resposta
-
-  const supabase = createServerClient(URL_SUPABASE, CHAVE_ANON, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
-      },
-      setAll(lista, headers) {
-        for (const { name, value } of lista) {
-          request.cookies.set(name, value)
-        }
-        resposta = NextResponse.next({ request })
-        for (const { name, value, options } of lista) {
-          resposta.cookies.set(name, value, options)
-        }
-        for (const [chave, valor] of Object.entries(headers)) {
-          resposta.headers.set(chave, valor)
-        }
-        resposta.headers.set("Content-Security-Policy", csp)
-        resposta.headers.set("x-nonce", nonce)
-      },
-    },
-  })
-
-  await supabase.auth.getUser()
 
   return resposta
 }
