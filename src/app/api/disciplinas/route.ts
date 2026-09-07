@@ -1,59 +1,68 @@
 import { NextRequest } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
+import type { DisciplinaLinha } from "@/lib/banco/tipos"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
-  const sessao = await sessaoProfessor()
+function ehConflito(erro: unknown): boolean {
+  const e = erro as { code?: string; constraint?: string; message?: string } | null
+  if (!e) return false
+  if (e.code === "23505") return true
+  const texto = `${e.constraint ?? ""} ${e.message ?? ""}`
+  return texto.includes("disciplinas_professor_nome_unico")
+}
+
+function paraResposta(d: DisciplinaLinha) {
+  return { id: d.id, nome: d.nome, cor: d.cor, icone: d.icone, ordem: d.ordem }
+}
+
+export async function GET(req: NextRequest) {
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
-  const [{ data: disciplinas }, { data: notas }] = await Promise.all([
-    cliente.from("disciplinas").select("*").eq("professor_id", usuario.id).order("ordem"),
-    cliente.from("notas").select("disciplina_id").eq("professor_id", usuario.id),
-  ])
+  const db = await banco()
+  const disciplinas = (await db.orm.public.Disciplinas.where({
+    professorId: usuario.id,
+  }).all()) as unknown as DisciplinaLinha[]
+  disciplinas.sort((a, b) => a.ordem - b.ordem)
+  const notas = await db.orm.public.Notas.where({ professorId: usuario.id }).all()
 
+  // Contagem por disciplina via mapa em memória.
   const contagem = new Map<string, number>()
-  for (const n of notas ?? []) {
-    if (n.disciplina_id) contagem.set(n.disciplina_id, (contagem.get(n.disciplina_id) ?? 0) + 1)
+  for (const n of notas) {
+    if (n.disciplinaId) contagem.set(n.disciplinaId, (contagem.get(n.disciplinaId) ?? 0) + 1)
   }
 
   return json({
-    disciplinas: (disciplinas ?? []).map((d) => ({
-      id: d.id,
-      nome: d.nome,
-      cor: d.cor,
-      icone: d.icone,
-      ordem: d.ordem,
+    disciplinas: disciplinas.map((d) => ({
+      ...paraResposta(d),
       totalNotas: contagem.get(d.id) ?? 0,
     })),
   })
 }
 
 export async function POST(req: NextRequest) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const corpo = await req.json().catch(() => null)
   const nome = typeof corpo?.nome === "string" ? corpo.nome.trim() : ""
   if (!nome) return erroApi("Informe o nome da disciplina.")
 
-  const { data: disciplina, error } = await cliente
-    .from("disciplinas")
-    .insert({
-      professor_id: usuario.id,
+  const db = await banco()
+  try {
+    const disciplina = (await db.orm.public.Disciplinas.create({
+      professorId: usuario.id,
       nome,
       cor: typeof corpo?.cor === "string" ? corpo.cor : "verde",
       icone: typeof corpo?.icone === "string" ? corpo.icone : "BookOpen",
-    })
-    .select("*")
-    .single()
-
-  if (error || !disciplina) {
-    if (error?.code === "23505") return erroApi("Já existe uma disciplina com esse nome.")
+    })) as unknown as DisciplinaLinha
+    return json({ disciplina: paraResposta(disciplina) }, 201)
+  } catch (erro) {
+    if (ehConflito(erro)) return erroApi("Já existe uma disciplina com esse nome.")
     return erroApi("Falha ao criar a disciplina.")
   }
-
-  return json({ disciplina }, 201)
 }

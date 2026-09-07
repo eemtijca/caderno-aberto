@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json } from "@/lib/api/sessao"
 import { extrairTextoBlocos, normalizar } from "@/lib/notas/texto"
 import type { Bloco } from "@/lib/notas/tipos"
+import type { NotaLinha } from "@/lib/banco/tipos"
 
 export const dynamic = "force-dynamic"
 
@@ -9,22 +11,20 @@ export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim()
   if (q.length < 2) return json({ resultados: [] })
 
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return json({ resultados: [] })
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const alvo = normalizar(q)
-  const { data: linhas } = await cliente
-    .from("notas")
-    .select(
-      "id, titulo, sobre, habilidades, status, ano_letivo, mes, blocos, turmas_nomes, disciplina_nome, disciplina_cor, atualizado_em",
-    )
-    .eq("professor_id", usuario.id)
-    .ilike("busca", `%${alvo}%`)
-    .order("atualizado_em", { ascending: false })
-    .limit(40)
+  const db = await banco()
+  const linhas = (await db.orm.public.Notas.where((n: any) =>
+    n.busca.ilike(`%${alvo}%`),
+  ).all()) as unknown as NotaLinha[]
 
-  const resultados = (linhas ?? [])
+  const resultados = linhas
+    .filter((linha) => linha.professorId === usuario.id)
+    .sort((a, b) => (a.atualizadoEm < b.atualizadoEm ? 1 : -1))
+    .slice(0, 40)
     .map((linha) => {
       const blocos = (linha.blocos ?? []) as Bloco[]
       const campos: { campo: string; texto: string }[] = [
@@ -44,12 +44,12 @@ export async function GET(req: NextRequest) {
           return {
             id: linha.id,
             titulo: linha.titulo,
-            disciplina: linha.disciplina_nome,
-            cor: linha.disciplina_cor,
+            disciplina: linha.disciplinaNome,
+            cor: linha.disciplinaCor,
             status: linha.status,
-            anoLetivo: linha.ano_letivo,
+            anoLetivo: linha.anoLetivo,
             mes: linha.mes,
-            turmas: linha.turmas_nomes ?? [],
+            turmas: linha.turmasNomes ?? [],
             campo,
             trecho,
           }

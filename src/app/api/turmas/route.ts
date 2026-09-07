@@ -1,46 +1,52 @@
 import { NextRequest } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
+import type { TurmaLinha } from "@/lib/banco/tipos"
 
 export const dynamic = "force-dynamic"
 
+function ehConflito(erro: unknown): boolean {
+  const e = erro as { code?: string; constraint?: string; message?: string } | null
+  if (!e) return false
+  if (e.code === "23505") return true
+  const texto = `${e.constraint ?? ""} ${e.message ?? ""}`
+  return texto.includes("turmas_professor_ano_unico")
+}
+
+function paraResposta(t: TurmaLinha, totalNotas: number) {
+  return { id: t.id, nome: t.nome, serie: t.serie, anoLetivo: t.anoLetivo, totalNotas }
+}
+
 export async function GET(req: NextRequest) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const ano = Number(req.nextUrl.searchParams.get("ano")) || undefined
 
-  let consulta = cliente.from("turmas").select("*").eq("professor_id", usuario.id)
-  if (ano) consulta = consulta.eq("ano_letivo", ano)
-  consulta = consulta.order("ano_letivo", { ascending: false }).order("nome")
-
-  const [{ data: turmas }, { data: notas }] = await Promise.all([
-    consulta,
-    cliente.from("notas").select("turmas_ids").eq("professor_id", usuario.id),
-  ])
+  const db = await banco()
+  const todas = (await db.orm.public.Turmas.where({
+    professorId: usuario.id,
+  }).all()) as unknown as TurmaLinha[]
+  const turmas = todas
+    .filter((t) => !ano || t.anoLetivo === ano)
+    .sort((a, b) => b.anoLetivo - a.anoLetivo || a.nome.localeCompare(b.nome, "pt-BR"))
+  const notas = await db.orm.public.Notas.where({ professorId: usuario.id }).all()
 
   const contagem = new Map<string, number>()
-  for (const n of notas ?? []) {
-    for (const tid of n.turmas_ids ?? []) {
+  for (const n of notas) {
+    for (const tid of n.turmasIds ?? []) {
       contagem.set(tid, (contagem.get(tid) ?? 0) + 1)
     }
   }
 
-  return json({
-    turmas: (turmas ?? []).map((t) => ({
-      id: t.id,
-      nome: t.nome,
-      serie: t.serie,
-      anoLetivo: t.ano_letivo,
-      totalNotas: contagem.get(t.id) ?? 0,
-    })),
-  })
+  return json({ turmas: turmas.map((t) => paraResposta(t, contagem.get(t.id) ?? 0)) })
 }
 
 export async function POST(req: NextRequest) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const corpo = await req.json().catch(() => null)
   const nome = typeof corpo?.nome === "string" ? corpo.nome.trim().toUpperCase() : ""
@@ -57,21 +63,17 @@ export async function POST(req: NextRequest) {
             ? "3º ano"
             : "Outro"
 
-  const { data: turma, error } = await cliente
-    .from("turmas")
-    .insert({
-      professor_id: usuario.id,
+  const db = await banco()
+  try {
+    const turma = (await db.orm.public.Turmas.create({
+      professorId: usuario.id,
       nome,
       serie,
-      ano_letivo: Number(corpo?.anoLetivo) || new Date().getFullYear(),
-    })
-    .select("*")
-    .single()
-
-  if (error || !turma) {
-    if (error?.code === "23505") return erroApi("Essa turma já existe no ano letivo.")
+      anoLetivo: Number(corpo?.anoLetivo) || new Date().getFullYear(),
+    })) as unknown as TurmaLinha
+    return json({ turma: paraResposta(turma, 0) }, 201)
+  } catch (erro) {
+    if (ehConflito(erro)) return erroApi("Essa turma já existe no ano letivo.")
     return erroApi("Falha ao criar a turma.")
   }
-
-  return json({ turma }, 201)
 }

@@ -3,10 +3,14 @@ import "server-only"
 import type { Bloco, NotaDados } from "@/lib/notas/tipos"
 import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
 import { slugificar } from "@/lib/notas/texto"
-import type { Database, DisciplinaLinha, NotaLinha, TurmaLinha } from "@/lib/supabase/tipos"
+import { banco } from "@/lib/banco"
+import type { DisciplinaLinha, NotaLinha, TurmaLinha } from "@/lib/banco/tipos"
 
-type NotaComDisciplina = NotaLinha & { disciplina?: DisciplinaLinha | null }
+type NotaComDisciplina = NotaLinha & {
+  disciplina?: Pick<DisciplinaLinha, "id" | "nome" | "cor" | "icone" | "ordem"> | null
+}
 
+/** Linha do banco para NotaDados, com fallback denormalizado. */
 export function linhaParaNota(
   linha: NotaComDisciplina,
   mapaTurmas: Map<string, TurmaLinha>,
@@ -19,59 +23,63 @@ export function linhaParaNota(
         icone: linha.disciplina.icone,
         ordem: linha.disciplina.ordem,
       }
-    : linha.disciplina_id && linha.disciplina_nome
+    : linha.disciplinaId && linha.disciplinaNome
       ? {
-          id: linha.disciplina_id,
-          nome: linha.disciplina_nome,
-          cor: linha.disciplina_cor,
+          id: linha.disciplinaId,
+          nome: linha.disciplinaNome,
+          cor: linha.disciplinaCor,
           icone: "BookOpen",
           ordem: 0,
         }
       : null
 
-  const turmas = linha.turmas_ids
+  const turmas = linha.turmasIds
     .map((id) => mapaTurmas.get(id))
     .filter((t): t is TurmaLinha => Boolean(t))
     .map((t) => ({
       id: t.id,
       nome: t.nome,
       serie: t.serie,
-      anoLetivo: t.ano_letivo,
+      anoLetivo: t.anoLetivo,
     }))
 
   return {
     id: linha.id,
     slug: slugificar(linha.titulo) || "nota",
     titulo: linha.titulo,
-    disciplinaId: linha.disciplina_id ?? "",
+    disciplinaId: linha.disciplinaId ?? "",
     disciplina,
-    anoLetivo: linha.ano_letivo,
+    anoLetivo: linha.anoLetivo,
     mes: linha.mes,
     sobre: linha.sobre,
     habilidades: linha.habilidades,
     status: linha.status,
     blocos: normalizarBlocos(linha.blocos) as Bloco[],
     aparencia: normalizarAparencia(linha.aparencia),
-    criadoEm: linha.criado_em,
-    atualizadoEm: linha.atualizado_em,
+    criadoEm: linha.criadoEm,
+    atualizadoEm: linha.atualizadoEm,
     turmas,
   }
 }
 
-export async function mapaTurmasProfessor(
-  cliente: import("@supabase/supabase-js").SupabaseClient<Database>,
-  professorId: string,
-): Promise<Map<string, TurmaLinha>> {
-  const { data } = await cliente.from("turmas").select("*").eq("professor_id", professorId)
-  return new Map((data ?? []).map((t) => [t.id, t]))
+/** Turmas do professor indexadas por id. */
+export async function mapaTurmasProfessor(professorId: string): Promise<Map<string, TurmaLinha>> {
+  const db = await banco()
+  const turmas = await db.orm.public.Turmas.where({ professorId }).all()
+  return new Map((turmas as unknown as TurmaLinha[]).map((t) => [t.id, t]))
 }
 
 export function camposDenormalizados(disciplina: DisciplinaLinha | null, turmas: TurmaLinha[]) {
   return {
-    disciplina_id: disciplina?.id ?? null,
-    disciplina_nome: disciplina?.nome ?? "",
-    disciplina_cor: disciplina?.cor ?? "verde",
-    turmas_ids: turmas.map((t) => t.id),
-    turmas_nomes: turmas.map((t) => t.nome),
+    disciplinaId: disciplina?.id ?? null,
+    disciplinaNome: disciplina?.nome ?? "",
+    disciplinaCor: disciplina?.cor ?? "verde",
+    turmasIds: turmas.map((t) => t.id),
+    turmasNomes: turmas.map((t) => t.nome),
   }
+}
+
+/** Converte blocos/aparência em JSON puro aceito pelo contrato. */
+export function paraJson(valor: unknown): any {
+  return JSON.parse(JSON.stringify(valor ?? null))
 }

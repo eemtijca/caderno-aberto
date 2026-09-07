@@ -1,58 +1,72 @@
 import { NextRequest } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
+import type { LinkLinha } from "@/lib/banco/tipos"
 import { gerarToken } from "@/lib/api/token"
 
 export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ id: string }> }
 
+function paraResposta(l: LinkLinha) {
+  return {
+    id: l.id,
+    tipo: l.tipo,
+    token: l.token,
+    nome: l.nome,
+    notaId: l.notaId,
+    turmaId: l.turmaId,
+    disciplinaId: l.disciplinaId,
+    ativo: l.ativo,
+    expiraEm: l.expiraEm,
+    acessos: l.acessos,
+    criadoEm: l.criadoEm,
+  }
+}
+
 export async function PUT(req: NextRequest, ctx: Ctx) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente } = sessao
+  const { usuario } = sessao
   const { id } = await ctx.params
 
   const corpo = await req.json().catch(() => null)
   if (!corpo) return erroApi("Corpo inválido.")
 
-  const dados: Partial<
-    Pick<import("@/lib/supabase/tipos").LinkLinha, "nome" | "ativo" | "expira_em" | "token">
-  > = {}
+  const dados: { nome?: string; ativo?: boolean; expiraEm?: string | null; token?: string } = {}
   if (typeof corpo.nome === "string") dados.nome = corpo.nome.trim().slice(0, 120)
   if (typeof corpo.ativo === "boolean") dados.ativo = corpo.ativo
   if (corpo.expiraEm !== undefined) {
     if (corpo.expiraEm === null || corpo.expiraEm === "") {
-      dados.expira_em = null
+      dados.expiraEm = null
     } else {
       const d = new Date(String(corpo.expiraEm))
       if (Number.isNaN(d.getTime())) return erroApi("Data de expiração inválida.")
       if (d.getTime() < Date.now() - 60_000)
         return erroApi("A expiração não pode estar no passado.")
-      dados.expira_em = d.toISOString()
+      dados.expiraEm = d.toISOString()
     }
   }
   if (corpo.regenerar === true) dados.token = gerarToken()
 
   if (Object.keys(dados).length === 0) return erroApi("Nada para atualizar.")
 
-  const { data: link, error } = await cliente
-    .from("links")
-    .update(dados)
-    .eq("id", id)
-    .select("*")
-    .maybeSingle()
+  const db = await banco()
+  const link = (await db.orm.public.Links.where({ id, professorId: usuario.id }).update(
+    dados,
+  )) as unknown as LinkLinha | null
 
-  if (error || !link) return erroApi("Link não encontrado.", 404)
-  return json({ link })
+  if (!link) return erroApi("Link não encontrado.", 404)
+  return json({ link: paraResposta(link) })
 }
 
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
-  const sessao = await sessaoProfessor()
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente } = sessao
+  const { usuario } = sessao
   const { id } = await ctx.params
 
-  const { error } = await cliente.from("links").delete().eq("id", id)
-  if (error) return erroApi("Falha ao excluir o link.")
+  const db = await banco()
+  await db.orm.public.Links.where({ id, professorId: usuario.id }).deleteAll()
   return json({ ok: true })
 }

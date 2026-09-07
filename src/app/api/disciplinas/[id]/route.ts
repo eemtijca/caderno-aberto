@@ -1,22 +1,30 @@
 import { NextRequest } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
+import type { DisciplinaLinha } from "@/lib/banco/tipos"
 
 export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ id: string }> }
 
+function ehConflito(erro: unknown): boolean {
+  const e = erro as { code?: string; constraint?: string; message?: string } | null
+  if (!e) return false
+  if (e.code === "23505") return true
+  const texto = `${e.constraint ?? ""} ${e.message ?? ""}`
+  return texto.includes("disciplinas_professor_nome_unico")
+}
+
 export async function PUT(req: NextRequest, ctx: Ctx) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente } = sessao
+  const { usuario } = sessao
   const { id } = await ctx.params
 
   const corpo = await req.json().catch(() => null)
   if (!corpo) return erroApi("Corpo inválido.")
 
-  const dados: Partial<
-    Pick<import("@/lib/supabase/tipos").DisciplinaLinha, "nome" | "cor" | "icone" | "ordem">
-  > = {}
+  const dados: { nome?: string; cor?: string; icone?: string; ordem?: number } = {}
   if (typeof corpo.nome === "string" && corpo.nome.trim()) dados.nome = corpo.nome.trim()
   if (typeof corpo.cor === "string") dados.cor = corpo.cor
   if (typeof corpo.icone === "string") dados.icone = corpo.icone
@@ -24,29 +32,27 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
   if (Object.keys(dados).length === 0) return erroApi("Nada para atualizar.")
 
-  const { data: disciplina, error } = await cliente
-    .from("disciplinas")
-    .update(dados)
-    .eq("id", id)
-    .select("*")
-    .maybeSingle()
-
-  if (error) {
-    if (error.code === "23505") return erroApi("Já existe uma disciplina com esse nome.")
+  const db = await banco()
+  try {
+    const disciplina = (await db.orm.public.Disciplinas.where({
+      id,
+      professorId: usuario.id,
+    }).update(dados)) as unknown as DisciplinaLinha | null
+    if (!disciplina) return erroApi("Disciplina não encontrada.", 404)
+    return json({ disciplina })
+  } catch (erro) {
+    if (ehConflito(erro)) return erroApi("Já existe uma disciplina com esse nome.")
     return erroApi("Falha ao editar a disciplina.")
   }
-  if (!disciplina) return erroApi("Disciplina não encontrada.", 404)
-
-  return json({ disciplina })
 }
 
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
-  const sessao = await sessaoProfessor()
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente } = sessao
+  const { usuario } = sessao
   const { id } = await ctx.params
 
-  const { error } = await cliente.from("disciplinas").delete().eq("id", id)
-  if (error) return erroApi("Falha ao excluir a disciplina.")
+  const db = await banco()
+  await db.orm.public.Disciplinas.where({ id, professorId: usuario.id }).deleteAll()
   return json({ ok: true })
 }
