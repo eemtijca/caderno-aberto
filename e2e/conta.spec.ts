@@ -24,7 +24,7 @@ test.describe("Conta", () => {
     await expect(page.getByText("Perfil salvo")).toBeVisible({ timeout: 5000 })
     const selectIcone = page.getByText("BookOpen").first()
     await expect(selectIcone).toBeVisible({ timeout: 5000 })
-    // verifica que icone tem svg
+    // O ícone renderiza SVG.
     const svg = page.locator("svg").first()
     await expect(svg).toBeVisible()
   })
@@ -62,7 +62,7 @@ test.describe("Conta", () => {
     await expect(confirmar).toBeEnabled()
     await confirmar.click()
     await expect(page.getByText(/Senha incorreta/i)).toBeVisible({ timeout: 5000 })
-    // tentativa com erro volta o diálogo para a etapa 1: refaz o fluxo
+    // Erro retorna o diálogo à primeira etapa.
     await page.getByRole("button", { name: "Continuar" }).click()
     await expect(page.getByText("Confirmação final")).toBeVisible()
     await page.getByPlaceholder("EXCLUIR").fill("EXCLUIR")

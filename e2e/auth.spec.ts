@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test"
-import { buscarEmail, corrigirRedirect } from "./helpers/mailpit"
+import { buscarEmail, corrigirRedirect } from "./helpers/outbox"
 import { entrarSeNecessario, confirmarEEntrar } from "./helpers/auth"
 
 test.describe("Autenticação", () => {
@@ -19,8 +19,8 @@ test.describe("Autenticação", () => {
     await page.getByLabel("Senha", { exact: true }).fill(senha)
     await page.getByRole("button", { name: "Entrar" }).click()
     await expect(page.getByText(/Confirme o e-mail/i)).toBeVisible({ timeout: 10000 })
-    const mail = await buscarEmail(email, "Confirm", 20000)
-    expect(mail.href).toContain("/auth/v1/verify")
+    const mail = await buscarEmail(email, "Confirme", 20000)
+    expect(mail.href).toContain("/api/auth/verificar?token=")
     const link = corrigirRedirect(mail.href, baseURL!)
     await page.goto(link)
     await page.waitForTimeout(2000)
@@ -37,8 +37,6 @@ test.describe("Autenticação", () => {
     await page.getByLabel("Confirmar senha").fill("senha123")
     await page.getByRole("button", { name: "Criar conta" }).click()
     await expect(page.getByText("Conta criada.")).toBeVisible()
-    // GoTrue limita reenvios seguidos; aguarda a janela antes de clicar
-    await page.waitForTimeout(8000)
     await page.getByRole("button", { name: "Reenviar e-mail de confirmação" }).click()
     await expect(page.getByText("E-mail de confirmação reenviado")).toBeVisible({ timeout: 10000 })
   })

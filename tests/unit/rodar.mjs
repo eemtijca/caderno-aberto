@@ -1,6 +1,4 @@
-// Roda os testes unitários das bibliotecas puras (sem banco e sem React):
-// LaTeX, Markdown, inline e normalização de aparência.
-// Compila src/lib/notas/*.ts para CJS com tsc e carrega com createRequire.
+// Testes das bibliotecas puras via tsc e createRequire.
 
 import { execSync } from "node:child_process"
 import { createRequire } from "node:module"
@@ -12,6 +10,9 @@ const aqui = dirname(fileURLToPath(import.meta.url))
 const raiz = join(aqui, "..", "..")
 
 execSync("npx tsc -p tests/unit/tsconfig.json", { cwd: raiz, stdio: "inherit" })
+
+// Marca a saída como CommonJS (o pacote raiz é "type": "module").
+writeFileSync(join(aqui, "build", "package.json"), JSON.stringify({ type: "commonjs" }))
 
 const req = createRequire(import.meta.url)
 const { gerarTex, montarCreditos } = req("./build/lib/notas/render-latex.js")
@@ -261,7 +262,7 @@ t(
   volta.blocos.some((b) => b.tipo === "tabela" && b.linhas.length === 2),
 )
 
-// tolerância ao formato antigo ("Nível 1 . Conceitos")
+// Compatibilidade com o formato "Nível 1 . Conceitos"
 const mdAntigo = gerarMarkdown(notaCompleta).replace(
   "### Nível 1 · Conceitos",
   "### Nível 1 . Conceitos",
