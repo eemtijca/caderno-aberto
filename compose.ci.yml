@@ -1,0 +1,20 @@
+# Caderno Aberto. Sobreposição do Compose somente para o CI (test-db.yml).
+# Reaproveita compose.yml e adiciona apenas o necessário aos testes:
+# segredos fictícios e a caixa de e-mail de teste. As imagens usam o
+# volume uploads:/data/imagens do compose base, sem ajustes manuais.
+# ATENÇÃO: se compose.yml ganhar variável obrigatória nova, ela precisa
+# ser espelhada aqui.
+services:
+  db:
+    ports:
+      - "5432:5432"
+  app:
+    # Imagem construída pelo passo de build do workflow (com cache).
+    # O `up -d` sem `--build` a reaproveita; sem ela, o Compose compila.
+    image: caderno-aberto:ci
+    ports:
+      - "3000:3000"
+    environment:
+      AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
+      EMAIL_DRIVER: log
+      ALLOW_TEST_OUTBOX: "1"

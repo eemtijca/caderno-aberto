@@ -11,28 +11,42 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write # Necessário para o cache GHA do build Docker.
 
 jobs:
   testes:
     name: Migrações, Isolamento e Contratos
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: caderno
-          POSTGRES_PASSWORD: caderno
-          POSTGRES_DB: caderno
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U caderno -d caderno"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
+    timeout-minutes: 30
+    # Supre a interpolação obrigatória de compose.yml (o serviço app
+    # recebe o mesmo valor via compose.ci.yml).
+    env:
+      AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construir imagem (com cache, valida o Dockerfile)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: caderno-aberto:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Iniciar serviços
+        run: |
+          docker compose -f compose.yml -f compose.ci.yml up -d
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:3000/api > /dev/null && break
+            sleep 4
+          done
+          curl -sf http://127.0.0.1:3000/api > /dev/null
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -40,36 +54,23 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Instalar dependências
+      - name: Instalar dependências (clientes de teste)
         run: npm ci
-
-      - name: Aplicar migrações
-        run: node docker/app/migrar.mjs
-        env:
-          DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
 
       - name: Testes de isolamento (RLS)
         run: npm run test:api
         env:
           DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
 
-      - name: Subir app para contratos
-        run: |
-          npm run build
-          (npm run start -- -p 3000 > /tmp/next-start.log 2>&1 &)
-          for i in $(seq 1 30); do
-            curl -sf http://127.0.0.1:3000/api > /dev/null && break
-            sleep 4
-          done
-          curl -sf http://127.0.0.1:3000/api > /dev/null
-        env:
-          DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
-          AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
-          EMAIL_DRIVER: log
-          ALLOW_TEST_OUTBOX: "1"
-
       - name: Testes de contratos
         run: npm run test:contratos
         env:
           TEST_BASE_URL: http://127.0.0.1:3000
-          ALLOW_TEST_OUTBOX: "1"
+
+      - name: Logs dos serviços (em falha)
+        if: failure()
+        run: docker compose -f compose.yml -f compose.ci.yml logs
+
+      - name: Derrubar serviços
+        if: always()
+        run: docker compose -f compose.yml -f compose.ci.yml down -v
