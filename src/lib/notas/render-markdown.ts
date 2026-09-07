@@ -24,6 +24,45 @@ function inlineParaMd(texto: string): string {
   return texto.replace(/\\resultado\{([^}]*)\}/g, "==$1==").replace(/\\dest\{([^}]*)\}/g, "**$1**")
 }
 
+/**
+ * Escapa o conteúdo de uma célula de tabela Markdown.
+ * A barra invertida é escapada antes do pipe para que `\|`
+ * não se torne ambíguo na leitura (round-trip).
+ */
+function escaparTabelaMd(texto: string): string {
+  return inlineParaMd(texto).replace(/\\/g, "\\\\").replace(/\|/g, "\\|")
+}
+
+/**
+ * Divide o interior de uma linha de tabela (`a | b`) em células,
+ * respeitando `\|` (pipe escapado) e `\\` (barra escapada).
+ * O escape é desfeito em passagem única para não reinterpretar
+ * sequências já convertidas.
+ */
+function dividirCelulasTabela(conteudo: string): string[] {
+  const celulas: string[] = []
+  let atual = ""
+  for (let i = 0; i < conteudo.length; i++) {
+    const c = conteudo[i]
+    if (c === "\\" && i + 1 < conteudo.length) {
+      const prox = conteudo[i + 1]
+      if (prox === "|" || prox === "\\") {
+        atual += prox
+        i++
+        continue
+      }
+    }
+    if (c === "|") {
+      celulas.push(atual)
+      atual = ""
+      continue
+    }
+    atual += c
+  }
+  celulas.push(atual)
+  return celulas
+}
+
 function mdParaInline(texto: string): string {
   // inverso: ==X== → \resultado{X}
   return texto.replace(/==([^=]+)==/g, "\\resultado{$1}")
@@ -56,7 +95,7 @@ function filhoParaMd(f: BlocoFilho): string {
       const norm = f.linhas.map((l) => {
         const c = [...l]
         while (c.length < nCol) c.push("")
-        return c.map((x) => inlineParaMd(x).replace(/\|/g, "\\|"))
+        return c.map((x) => escaparTabelaMd(x))
       })
       const sep = `|${Array.from({ length: nCol }, () => "---").join("|")}|`
       const linhas = norm.map((l) => `| ${l.join(" | ")} |`)
@@ -309,12 +348,9 @@ export function analisarMarkdown(md: string): MarkdownNota {
     const celulas = linhas
       .filter((l) => !/^\|[\s:|-]+\|?$/.test(l.trim()))
       .map((l) =>
-        l
-          .trim()
-          .replace(/^\|/, "")
-          .replace(/\|$/, "")
-          .split("|")
-          .map((c) => mdParaInline(c.trim())),
+        dividirCelulasTabela(l.trim().replace(/^\|/, "").replace(/\|$/, "")).map((c) =>
+          mdParaInline(c.trim()),
+        ),
       )
     if (celulas.length === 0) return
     const ehSep = linhas.some((l) => /^\|[\s:|-]+\|?$/.test(l.trim()))

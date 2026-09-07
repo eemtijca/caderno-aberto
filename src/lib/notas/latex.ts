@@ -105,18 +105,23 @@ export const MACROS_KATEX: Record<string, string> = {
 
 // Escapamento para gerar.tex
 
+const MAPA_ESCAPE_LATEX: Record<string, string> = {
+  "\\": "\\textbackslash{}",
+  "&": "\\&",
+  "%": "\\%",
+  "#": "\\#",
+  _: "\\_",
+  "{": "\\{",
+  "}": "\\}",
+  "~": "\\textasciitilde{}",
+  "^": "\\textasciicircum{}",
+}
+
 /** Escapa caracteres especiais do LaTeX em texto corrido. */
 export function escaparLatex(texto: string): string {
-  return texto
-    .replace(/\\/g, "\\textbackslash{}")
-    .replace(/&/g, "\\&")
-    .replace(/%/g, "\\%")
-    .replace(/#/g, "\\#")
-    .replace(/_/g, "\\_")
-    .replace(/\{/g, "\\{")
-    .replace(/\}/g, "\\}")
-    .replace(/~/g, "\\textasciitilde{}")
-    .replace(/\^/g, "\\textasciicircum{}")
+  // Passagem única: evita reinterpretar as barras introduzidas pelas
+  // próprias substituições e escapa a barra junto dos demais especiais.
+  return texto.replace(/[\\&%#_{}~^]/g, (ch) => MAPA_ESCAPE_LATEX[ch])
 }
 
 /**
