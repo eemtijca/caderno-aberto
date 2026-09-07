@@ -3,7 +3,6 @@ import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao
 
 export const dynamic = "force-dynamic"
 
-/** GET /api/conta . Sessão + perfil do professor logado */
 export async function GET() {
   const sessao = await sessaoProfessor()
   if (!sessao) {
@@ -31,7 +30,6 @@ export async function GET() {
   })
 }
 
-/** PATCH /api/conta . Atualiza nome/escola do perfil */
 export async function PATCH(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

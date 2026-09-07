@@ -1,15 +1,10 @@
-// Tipos da AST de blocos. O coração do editor visual. A mesma AST alimenta três renderizadores: 1. Web (React + KaTeX). Vista de leitura responsiva 2. Arquivo para impressão. Compatível com a classe notaaula.cls 3. Arquivo de texto. Intercâmbio, backup e leitura
-
-/** Rótulo azul de abertura de parágrafo (\definicao, \rotulo{...}...) */
 export type RotuloTipo = "definicao" | "formulas" | "relacoes" | "modelo" | "resolucao" | "livre"
 
 export interface Rotulo {
   tipo: RotuloTipo
-  /** texto livre, usado quando tipo === "livre" */
   texto?: string
 }
 
-/** Chamadas curtas destacadas (\atencao, \diaadia, \simbolos) */
 export type EstiloChamada = "atencao" | "diaadia" | "simbolos"
 
 export interface BlocoBase {
@@ -23,17 +18,12 @@ export interface BlocoSecao extends BlocoBase {
 
 export interface BlocoParagrafo extends BlocoBase {
   tipo: "paragrafo"
-  /**
-   * Texto com marcação inline: $matemática$, **negrito**, *itálico*,
-   * `código`, \resultado{...} (destaque coral) e \dest{...} (palavra-chave).
-   */
   texto: string
   rotulo?: Rotulo | null
 }
 
 export interface BlocoFormula extends BlocoBase {
   tipo: "formula"
-  /** LaTeX puro (suporta \dec{}, \un{}, \resultado{}, \sen, \ce{}...) */
   latex: string
 }
 
@@ -45,7 +35,6 @@ export interface BlocoLista extends BlocoBase {
 export interface BlocoTabela extends BlocoBase {
   tipo: "tabela"
   comCabecalho: boolean
-  /** linhas[0] é o cabeçalho quando comCabecalho */
   linhas: string[][]
 }
 
@@ -57,27 +46,22 @@ export interface BlocoChamada extends BlocoBase {
 
 export interface BlocoFigura extends BlocoBase {
   tipo: "figura"
-  /** URL externa ou /api/imagens/<id> */
   url: string
   legenda: string
 }
 
 export interface BlocoTikz extends BlocoBase {
   tipo: "tikz"
-  /** Código TikZ bruto. Pode ser só o corpo \draw... ou completo \begin{tikzpicture}...\end{tikzpicture} */
   codigo: string
-  /** Legenda opcional exibida abaixo (suporta inline **, $math$, \resultado) */
   legenda: string
 }
 
-/** Blocos aceitos dentro das caixas (copiar/exemplo/dica) */
 export type BlocoFilho = BlocoParagrafo | BlocoFormula | BlocoLista | BlocoTabela | BlocoChamada
 
 export type TipoCaixa = "copiar" | "exemplo" | "dica"
 
 export interface BlocoCaixa extends BlocoBase {
   tipo: TipoCaixa
-  /** "Taxa de transformação" (copiar), "Exemplo resolvido", "Dica / erro comum"... */
   rotulo: string
   filhos: BlocoFilho[]
 }
@@ -85,9 +69,7 @@ export interface BlocoCaixa extends BlocoBase {
 export interface Questao {
   id: string
   enunciado: string
-  /** vazio => questão aberta (discursiva) */
   alternativas: string[]
-  /** índice (0-based) da alternativa correta; null = não marcada */
   correta: number | null
 }
 
@@ -99,10 +81,8 @@ export interface Nivel {
 
 export interface BlocoExercicios extends BlocoBase {
   tipo: "exercicios"
-  /** "Exercícios propostos" */
   rotulo: string
   niveis: Nivel[]
-  /** gabarito livre para as questões abertas */
   gabarito: string
 }
 
@@ -128,7 +108,6 @@ export const ROTULOS_FIXOS: { tipo: RotuloTipo; texto: string }[] = [
   { tipo: "resolucao", texto: "Resolução." },
 ]
 
-/** Texto exibido de um rótulo */
 export function textoRotulo(rotulo: Rotulo | null | undefined): string {
   if (!rotulo) return ""
   if (rotulo.tipo === "livre") return rotulo.texto?.trim() || ""
@@ -140,8 +119,6 @@ export const ESTILOS_CHAMADA: { estilo: EstiloChamada; nome: string }[] = [
   { estilo: "diaadia", nome: "No dia a dia" },
   { estilo: "simbolos", nome: "Símbolos e unidades" },
 ]
-
-// Nota completa (serializada da API)
 
 export interface TurmaInfo {
   id: string
@@ -173,12 +150,8 @@ export interface NotaDados {
   criadoEm: string
   atualizadoEm: string
   turmas: TurmaInfo[]
-  /** Aparência da leitura definida pelo professor (ausente = padrão do app). */
   aparencia?: AparenciaNota
 }
-
-// Aparência da leitura, por nota. Escolhida no editor e aplicada na leitura
-// do professor, na vista pública dos alunos, na prévia e na impressão.
 
 export type FonteNota = "corpo" | "serifada" | "legivel" | "lexend" | "mono"
 export type EscalaNota = "p" | "m" | "g" | "gg"
@@ -196,7 +169,6 @@ export const APARENCIA_PADRAO: Required<AparenciaNota> = {
   entrelinha: "normal",
 }
 
-/** Catálogo de fontes exibido no editor (familia é a CSS var aplicada). */
 export const FONTES_NOTA: { chave: FonteNota; nome: string; familia: string }[] = [
   { chave: "corpo", nome: "Padrão", familia: "var(--font-corpo)" },
   { chave: "serifada", nome: "Serifada", familia: "var(--font-serifada)" },
@@ -205,7 +177,6 @@ export const FONTES_NOTA: { chave: FonteNota; nome: string; familia: string }[] 
   { chave: "mono", nome: "Monoespaçada", familia: "var(--font-mono-latex)" },
 ]
 
-/** Escalas do texto de leitura (fator multiplicado no tamanho base). */
 export const ESCALAS_NOTA: { chave: EscalaNota; nome: string; fator: number }[] = [
   { chave: "p", nome: "Pequena", fator: 0.94 },
   { chave: "m", nome: "Média", fator: 1 },
@@ -213,14 +184,12 @@ export const ESCALAS_NOTA: { chave: EscalaNota; nome: string; fator: number }[] 
   { chave: "gg", nome: "Muito grande", fator: 1.16 },
 ]
 
-/** Entrelinha (altura de linha relativa) da leitura. */
 export const ENTRELINHAS_NOTA: { chave: EntrelinhaNota; nome: string; altura: number }[] = [
   { chave: "compacta", nome: "Compacta", altura: 1.45 },
   { chave: "normal", nome: "Normal", altura: 1.65 },
   { chave: "ampla", nome: "Ampla", altura: 1.85 },
 ]
 
-/** Garante um objeto de aparência válido a partir de JSON desconhecido. */
 export function normalizarAparencia(entrada: unknown): AparenciaNota {
   if (!entrada || typeof entrada !== "object") return {}
   const a = entrada as Record<string, unknown>
@@ -237,10 +206,6 @@ export function normalizarAparencia(entrada: unknown): AparenciaNota {
   return saida
 }
 
-/**
- * Variáveis CSS do contêiner de leitura, prontas para spread em `style`.
- * Aparencia ausente devolve o objeto vazio (o CSS aplica os padrões).
- */
 export function variaveisAparencia(ap: AparenciaNota | null | undefined): Record<string, string> {
   const fonte = ap?.fonte ?? APARENCIA_PADRAO.fonte
   const escala = ap?.escala ?? APARENCIA_PADRAO.escala
@@ -254,8 +219,6 @@ export function variaveisAparencia(ap: AparenciaNota | null | undefined): Record
     "--na-entrelinha": String(altura),
   }
 }
-
-// Normalização defensiva de JSON desconhecido (imports, API)
 
 function comoTexto(v: unknown, padrao = ""): string {
   return typeof v === "string" ? v : padrao
@@ -329,7 +292,6 @@ function normalizarNivel(v: unknown): Nivel {
   }
 }
 
-/** Garante que qualquer JSON (backup antigo, editado à mão...) vire uma AST válida. */
 export function normalizarBlocos(entrada: unknown): Bloco[] {
   if (!Array.isArray(entrada)) return []
   const resultado: Bloco[] = []
@@ -400,7 +362,6 @@ export function normalizarBlocos(entrada: unknown): Bloco[] {
   return resultado
 }
 
-/** Cria um id novo para blocos (usado pelo editor) */
 export function idBloco(): string {
   return novoId("b")
 }

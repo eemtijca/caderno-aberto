@@ -1,5 +1,3 @@
-// Paleta de cores das disciplinas. Classes Tailwind estáticas para seleção do professor.
-
 export interface CorDisciplina {
   chave: string
   nome: string
@@ -160,7 +158,6 @@ export function nomeIconeValido(nome: string | undefined): string {
     : "BookOpen"
 }
 
-// Mapa de componentes Lucide para renderizacao de icones.
 import {
   BookOpen,
   FlaskConical,

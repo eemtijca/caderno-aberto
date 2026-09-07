@@ -16,14 +16,7 @@ const MIMES: Record<string, string> = {
   svg: "image/svg+xml",
 }
 
-/**
- * GET /api/publico/[token]/imagens?caminho=<uid>/<arquivo>
- *
- * Serve figuras das notas públicas SEM expor o bucket: valida o
- * link (ativo/não expirado via RLS), confere que a imagem
- * pertence ao professor do link E que o caminho está referenciado
- * nos blocos de uma nota alcançável por esse link.
- */
+// Confere a pasta do professor e o caminho referenciado nos blocos
 export async function GET(req: NextRequest, ctx: Ctx) {
   const { token } = await ctx.params
   const caminho = req.nextUrl.searchParams.get("caminho") ?? ""
@@ -40,12 +33,10 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     .maybeSingle()
   if (!link) return erroApi("Link indisponível.", 404)
 
-  // a pasta do objeto precisa ser a do professor dono do link
   if (!caminho.startsWith(`${link.professor_id}/`)) {
     return erroApi("Link indisponível.", 404)
   }
 
-  // o caminho precisa estar referenciado em uma nota alcançável pelo link
   let consulta = anon.from("notas").select("blocos")
   if (link.tipo === "nota") consulta = consulta.eq("id", link.nota_id as string)
   else if (link.tipo === "turma")

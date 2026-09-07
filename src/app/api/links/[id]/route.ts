@@ -6,10 +6,6 @@ export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ id: string }> }
 
-/**
- * PUT /api/links/[id] . Gerencia o link:
- *   { nome?, ativo?, expiraEm? (ISO | null), regenerar? }
- */
 export async function PUT(req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -50,7 +46,6 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   return json({ link })
 }
 
-/** DELETE /api/links/[id] . Exclui o link (alunos perdem o acesso) */
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

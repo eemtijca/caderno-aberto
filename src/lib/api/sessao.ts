@@ -1,7 +1,5 @@
 import "server-only"
 
-// Helpers das rotas de API: sessão do professor, respostas e erros padronizados.
-
 import { NextResponse } from "next/server"
 import type { SupabaseClient, User } from "@supabase/supabase-js"
 import { clienteServidor } from "@/lib/supabase/servidor"
@@ -13,10 +11,7 @@ export interface SessaoProfessor {
   perfil: PerfilLinha | null
 }
 
-/**
- * Sessão do professor logado (validada contra o servidor de
- * auth . Nunca confiamos apenas no JWT). Null se não houver.
- */
+// Sessão validada no servidor de autenticação
 export async function sessaoProfessor(): Promise<SessaoProfessor | null> {
   const cliente = await clienteServidor()
   const { data, error } = await cliente.auth.getUser()
@@ -31,7 +26,6 @@ export async function sessaoProfessor(): Promise<SessaoProfessor | null> {
   return { cliente, usuario: data.user, perfil: perfil ?? null }
 }
 
-/** Resposta JSON sem cache (dados personalizados por usuário). */
 export function json(dados: unknown, status = 200): NextResponse {
   return NextResponse.json(dados, {
     status,

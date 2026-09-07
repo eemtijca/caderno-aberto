@@ -7,7 +7,6 @@ import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 
 export const dynamic = "force-dynamic"
 
-/** POST /api/importar . Importa UMA nota de arquivo .md ou .json */
 export async function POST(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

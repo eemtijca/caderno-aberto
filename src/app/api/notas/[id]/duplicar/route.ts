@@ -6,7 +6,6 @@ export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ id: string }> }
 
-/** POST /api/notas/[id]/duplicar . Cria uma cópia completa da nota */
 export async function POST(_req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

@@ -4,7 +4,6 @@ import { gerarToken } from "@/lib/api/token"
 
 export const dynamic = "force-dynamic"
 
-/** GET /api/links . Links do professor com rótulo do alvo */
 export async function GET() {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -62,7 +61,6 @@ export async function GET() {
   return json({ links: lista })
 }
 
-/** POST /api/links . Cria link p/ nota, turma ou disciplina */
 export async function POST(req: NextRequest) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()

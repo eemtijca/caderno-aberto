@@ -1,8 +1,5 @@
-// Utilitários de texto: slugs, busca sem acento, extração de texto puro da AST (para a busca global).
-
 import { Bloco, BlocoFilho, NotaDados } from "./tipos"
 
-/** Remove acentos e deixa minúsculo. */
 export function normalizar(s: string): string {
   return s
     .normalize("NFD")
@@ -10,7 +7,6 @@ export function normalizar(s: string): string {
     .toLowerCase()
 }
 
-/** Gera um slug a partir de um título. */
 export function slugificar(titulo: string): string {
   return (
     normalizar(titulo)
@@ -20,7 +16,6 @@ export function slugificar(titulo: string): string {
   )
 }
 
-/** Remove a marcação inline, mantendo o texto puro. */
 export function textoPuro(texto: string): string {
   return texto
     .replace(/\$\$([^$]+)\$\$/g, " $1 ")
@@ -34,7 +29,6 @@ export function textoPuro(texto: string): string {
     .trim()
 }
 
-/** Extrai todo o texto indexável de uma lista de blocos. */
 export function extrairTextoBlocos(blocos: Bloco[]): string {
   const partes: string[] = []
   const visita = (lista: Bloco[]): void => {
@@ -101,7 +95,6 @@ export function extrairTextoBlocos(blocos: Bloco[]): string {
   return partes.filter(Boolean).join(" \u00b7 ")
 }
 
-/** Texto de busca completo de uma nota (metadados + conteúdo). */
 export function textoDeBusca(nota: {
   titulo: string
   sobre: string
@@ -120,7 +113,6 @@ export function textoDeBusca(nota: {
   return normalizar([...meta, extrairTextoBlocos(nota.blocos)].join(" \u00b7 "))
 }
 
-/** Quantos blocos de conteúdo uma nota tem (para exibir resumo). */
 export function contarBlocos(blocos: Bloco[]): number {
   let total = 0
   for (const b of blocos) {
@@ -135,7 +127,6 @@ export function contarBlocos(blocos: Bloco[]): number {
   return total
 }
 
-/** Nomes dos meses em português. */
 export const MESES = [
   "janeiro",
   "fevereiro",
@@ -153,7 +144,6 @@ export const MESES = [
 
 export const MESES_CAP = MESES.map((m) => m.charAt(0).toUpperCase() + m.slice(1))
 
-/** Lista de habilidades separadas por vírgula. */
 export function separarHabilidades(h: string): string[] {
   return h
     .split(/[,;]/)
@@ -161,7 +151,6 @@ export function separarHabilidades(h: string): string[] {
     .filter(Boolean)
 }
 
-/** Gabarito automático a partir das alternativas marcadas como corretas. */
 export function gabaritoAutomatico(
   niveis: {
     numero: number
@@ -182,7 +171,6 @@ export function gabaritoAutomatico(
   return itens
 }
 
-/** Conta questões em todos os níveis. */
 export function contarQuestoes(nota: NotaDados): number {
   let total = 0
   for (const b of nota.blocos) {

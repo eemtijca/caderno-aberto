@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ id: string }> }
 
-/** GET /api/notas/[id] . Nota do professor por id */
 export async function GET(_req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -27,7 +26,6 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   return json({ nota: linhaParaNota(linha, mapaTurmas) })
 }
 
-/** PUT /api/notas/[id] . Salva metadados + blocos */
 export async function PUT(req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
@@ -46,7 +44,6 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     dados.titulo = corpo.titulo.trim()
   }
 
-  // disciplina/turmas: revalida posse e recalcula a denormalização
   let disciplina: import("@/lib/supabase/tipos").DisciplinaLinha | null = null
   if (atual.disciplina_id) {
     const { data: d } = await cliente
@@ -105,10 +102,8 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   if (corpo.status === "publicada" || corpo.status === "rascunho")
     dados.status = corpo.status as "publicada" | "rascunho"
   if (corpo.blocos !== undefined) dados.blocos = normalizarBlocos(corpo.blocos)
-  // aparência da leitura (fonte/escala/entrelinha): validada e sempre objeto
   if (corpo.aparencia !== undefined) dados.aparencia = normalizarAparencia(corpo.aparencia)
 
-  // recalcula o texto de busca com o estado final
   const tituloFinal = dados.titulo ?? atual.titulo
   const sobreFinal = dados.sobre ?? atual.sobre
   const habilidadesFinal = dados.habilidades ?? atual.habilidades
@@ -137,7 +132,6 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   return json({ nota: linhaParaNota(linha, mapaTurmas) })
 }
 
-/** DELETE /api/notas/[id] */
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const sessao = await sessaoProfessor()
   if (!sessao) return naoAutenticado()
