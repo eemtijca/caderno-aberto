@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test"
-import { buscarEmail, limparMailpit, corrigirRedirect } from "./helpers/mailpit"
+import { confirmarEEntrar } from "./helpers/auth"
 
 async function loginNovo(page, baseURL) {
   const email = `notas_${Date.now()}_${Math.random().toString(36).slice(2, 4)}@exemplo.br`
@@ -9,22 +9,11 @@ async function loginNovo(page, baseURL) {
   await page.getByLabel("Senha", { exact: true }).fill("senha123")
   await page.getByLabel("Confirmar senha").fill("senha123")
   await page.getByRole("button", { name: "Criar conta" }).click()
-  const mail = await buscarEmail(email, "Confirm", 20000)
-  await page.goto(corrigirRedirect(mail.href, baseURL))
-  await page.waitForTimeout(1000)
-  await page.goto("/#/entrar")
-  await page.getByLabel("E-mail").fill(email)
-  await page.getByLabel("Senha", { exact: true }).fill("senha123")
-  await page.getByRole("button", { name: "Entrar" }).click()
-  await page.waitForURL(/#\//)
+  await confirmarEEntrar(page, baseURL, email, "senha123")
   return email
 }
 
 test.describe("Notas", () => {
-  test.beforeEach(async () => {
-    await limparMailpit()
-  })
-
   test("criar disciplina inline no dialogo de nova nota", async ({ page, baseURL }) => {
     await loginNovo(page, baseURL)
     await page.goto("/#/notas")
@@ -49,7 +38,8 @@ test.describe("Notas", () => {
     const botao = page.getByRole("button", { name: /Nova nota/i }).first()
     if (await botao.isVisible()) await botao.click()
     await expect(page.getByText("Nova nota de aula")).toBeVisible()
-    await page.getByRole("button", { name: "Criar nota" }).click()
+    await expect(page.getByRole("button", { name: "Criar nota" })).toBeDisabled()
+    await page.getByLabel("Título da aula").fill("A")
     await expect(page.getByRole("button", { name: "Criar nota" })).toBeDisabled()
   })
 

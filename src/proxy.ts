@@ -46,7 +46,9 @@ export async function proxy(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    "upgrade-insecure-requests",
+    // Somente em produção (HTTPS): no dev http+loopback a diretiva
+    // quebra motores sem isenção de loopback, como o WebKit.
+    ...(isDev ? [] : ["upgrade-insecure-requests"]),
   ].join("; ")
 
   const requestHeaders = new Headers(request.headers)

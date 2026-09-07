@@ -843,7 +843,7 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
 
 // Exclusão com carência de 24 horas
 function SecaoExcluirConta() {
-  const { perfil, solicitarExclusao, restaurarConta } = useSessao()
+  const { perfil, solicitarExclusao, restaurarConta, recarregarPerfil } = useSessao()
   const [senha, setSenha] = useState("")
   const [confirmacao, setConfirmacao] = useState("")
   const [aceita, setAceita] = useState(false)
@@ -1001,6 +1001,7 @@ function SecaoExcluirConta() {
                         description: `Expira em ${new Date(r.expiraEm).toLocaleString("pt-BR")}`,
                       })
                       setAberto(false)
+                      await recarregarPerfil()
                     } catch (err) {
                       toast.error(err instanceof Error ? err.message : "Erro ao solicitar.")
                     } finally {

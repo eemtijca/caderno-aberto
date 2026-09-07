@@ -15,6 +15,7 @@ import { VistaEditor } from "@/components/editor/editor-nota"
 import { useRota } from "@/lib/rota"
 import { useSessao } from "@/hooks/use-sessao"
 import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 export default function Home() {
   const { rota, navegar } = useRota()
@@ -93,6 +94,9 @@ export default function Home() {
                   setRestaurando(true)
                   try {
                     await restaurarConta()
+                    toast.success("Conta restaurada. O acesso foi restabelecido.")
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Falha ao restaurar.")
                   } finally {
                     setRestaurando(false)
                   }

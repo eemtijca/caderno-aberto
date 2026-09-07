@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test"
-import { buscarEmail, limparMailpit, corrigirRedirect } from "./helpers/mailpit"
+import { confirmarEEntrar } from "./helpers/auth"
 
 async function criarEConfirmar(page, baseURL) {
   const email = `nav_${Date.now()}_${Math.random().toString(36).slice(2, 5)}@exemplo.br`
@@ -9,22 +9,11 @@ async function criarEConfirmar(page, baseURL) {
   await page.getByLabel("Senha", { exact: true }).fill("senha123")
   await page.getByLabel("Confirmar senha").fill("senha123")
   await page.getByRole("button", { name: "Criar conta" }).click()
-  const mail = await buscarEmail(email, "Confirm", 20000)
-  await page.goto(corrigirRedirect(mail.href, baseURL))
-  await page.waitForTimeout(1000)
-  await page.goto("/#/entrar")
-  await page.getByLabel("E-mail").fill(email)
-  await page.getByLabel("Senha", { exact: true }).fill("senha123")
-  await page.getByRole("button", { name: "Entrar" }).click()
-  await page.waitForURL(/#\//)
+  await confirmarEEntrar(page, baseURL, email, "senha123")
   return email
 }
 
 test.describe("Navegação e roteamento", () => {
-  test.beforeEach(async () => {
-    await limparMailpit()
-  })
-
   test("rotas hash funcionam e fallback para inicio", async ({ page, baseURL }) => {
     await criarEConfirmar(page, baseURL)
     await page.goto("/#/notas")

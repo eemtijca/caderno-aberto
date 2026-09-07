@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test"
-import { buscarEmail, limparMailpit, corrigirRedirect } from "./helpers/mailpit"
+import { confirmarEEntrar } from "./helpers/auth"
 
 async function loginNovo(page, baseURL) {
   const email = `disc_${Date.now()}@exemplo.br`
@@ -9,21 +9,10 @@ async function loginNovo(page, baseURL) {
   await page.getByLabel("Senha", { exact: true }).fill("senha123")
   await page.getByLabel("Confirmar senha").fill("senha123")
   await page.getByRole("button", { name: "Criar conta" }).click()
-  const mail = await buscarEmail(email, "Confirm", 20000)
-  await page.goto(corrigirRedirect(mail.href, baseURL))
-  await page.waitForTimeout(1000)
-  await page.goto("/#/entrar")
-  await page.getByLabel("E-mail").fill(email)
-  await page.getByLabel("Senha", { exact: true }).fill("senha123")
-  await page.getByRole("button", { name: "Entrar" }).click()
-  await page.waitForURL(/#\//)
+  await confirmarEEntrar(page, baseURL, email, "senha123")
 }
 
 test.describe("Disciplina e ícones", () => {
-  test.beforeEach(async () => {
-    await limparMailpit()
-  })
-
   test("seletor de ícone exibe ícone gráfico não só texto", async ({ page, baseURL }) => {
     await loginNovo(page, baseURL)
     await page.goto("/#/conta")
@@ -41,7 +30,7 @@ test.describe("Disciplina e ícones", () => {
     await loginNovo(page, baseURL)
     await page.goto("/#/conta")
     await page.getByPlaceholder("Nova disciplina (ex.: Química)").fill("História")
-    await page.getByRole("button", { name: "Criar" }).click()
+    await page.getByRole("button", { name: "Criar" }).first().click()
     await expect(page.getByText("Disciplina criada")).toBeVisible({ timeout: 5000 })
     await expect(page.getByText("História").first()).toBeVisible()
   })

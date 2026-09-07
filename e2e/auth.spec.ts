@@ -1,11 +1,8 @@
 import { test, expect } from "@playwright/test"
-import { buscarEmail, limparMailpit, corrigirRedirect } from "./helpers/mailpit"
+import { buscarEmail, corrigirRedirect } from "./helpers/mailpit"
+import { entrarSeNecessario, confirmarEEntrar } from "./helpers/auth"
 
 test.describe("Autenticação", () => {
-  test.beforeEach(async () => {
-    await limparMailpit()
-  })
-
   test("cadastro exige confirmação e bloqueia login até confirmar", async ({ page, baseURL }) => {
     const email = `auth_${Date.now()}@exemplo.br`
     const senha = "senha123"
@@ -27,12 +24,8 @@ test.describe("Autenticação", () => {
     const link = corrigirRedirect(mail.href, baseURL!)
     await page.goto(link)
     await page.waitForTimeout(2000)
-    await page.goto("/#/entrar")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill(senha)
-    await page.getByRole("button", { name: "Entrar" }).click()
-    await expect(page).toHaveURL(/#\//, { timeout: 10000 })
-    await expect(page.getByText("Caderno Aberto")).toBeVisible()
+    await entrarSeNecessario(page, email, senha)
+    await expect(page.getByText("Caderno Aberto").first()).toBeVisible()
   })
 
   test("reenviar e-mail funciona", async ({ page }) => {
@@ -44,6 +37,8 @@ test.describe("Autenticação", () => {
     await page.getByLabel("Confirmar senha").fill("senha123")
     await page.getByRole("button", { name: "Criar conta" }).click()
     await expect(page.getByText("Conta criada.")).toBeVisible()
+    // GoTrue limita reenvios seguidos; aguarda a janela antes de clicar
+    await page.waitForTimeout(8000)
     await page.getByRole("button", { name: "Reenviar e-mail de confirmação" }).click()
     await expect(page.getByText("E-mail de confirmação reenviado")).toBeVisible({ timeout: 10000 })
   })
@@ -67,14 +62,7 @@ test.describe("Autenticação", () => {
     await page.getByLabel("Confirmar senha").fill("senha123")
     await page.getByRole("button", { name: "Criar conta" }).click()
     await expect(page.getByText("Conta criada.")).toBeVisible()
-    const mail = await buscarEmail(email, "Confirm", 20000)
-    await page.goto(corrigirRedirect(mail.href, baseURL!))
-    await page.waitForTimeout(1500)
-    await page.goto("/#/entrar")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill("senha123")
-    await page.getByRole("button", { name: "Entrar" }).click()
-    await page.waitForURL(/#\//)
+    await confirmarEEntrar(page, baseURL, email, "senha123")
     expect(page.url()).not.toContain("#/conta")
     await expect(page.getByRole("heading", { name: /Turmas|Notas|Inicio/i }).first()).toBeVisible({
       timeout: 5000,
@@ -96,14 +84,7 @@ test.describe("Autenticação", () => {
     await page.getByLabel("Senha", { exact: true }).fill("senha123")
     await page.getByLabel("Confirmar senha").fill("senha123")
     await page.getByRole("button", { name: "Criar conta" }).click()
-    const mail = await buscarEmail(email, "Confirm", 20000)
-    await page.goto(corrigirRedirect(mail.href, baseURL!))
-    await page.waitForTimeout(1500)
-    await page.goto("/#/entrar")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill("senha123")
-    await page.getByRole("button", { name: "Entrar" }).click()
-    await page.waitForURL(/#\//)
+    await confirmarEEntrar(page, baseURL, email, "senha123")
     await page.goto("/#/cadastro")
     await expect(page).toHaveURL(/#\//, { timeout: 5000 })
   })
