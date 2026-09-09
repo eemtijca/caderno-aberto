@@ -9,9 +9,3 @@ export async function POST(req: NextRequest) {
   await encerrarSessao(req)
   return json({ ok: true })
 }
-
-// GET /api/auth/sair. Equivalente para links diretos.
-export async function GET(req: NextRequest) {
-  await encerrarSessao(req)
-  return json({ ok: true })
-}
