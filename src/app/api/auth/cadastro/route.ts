@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic"
 
 // POST /api/auth/cadastro. Cria usuário e perfil; responde sempre "confirmar".
 export async function POST(req: NextRequest) {
-  const limite = cabeNoLimite(chavePorIp(req, "cadastro"))
+  const limite = await cabeNoLimite(chavePorIp(req, "cadastro"))
   if (!limite.permitido)
     return erroApi("Muitas tentativas. Aguarde um momento e tente novamente.", 429)
 
@@ -22,26 +22,31 @@ export async function POST(req: NextRequest) {
   const senha = typeof corpo?.senha === "string" ? corpo.senha : ""
   if (!nome) return erroApi("Informe seu nome.")
   if (!email) return erroApi("E-mail inválido. Confira o endereço digitado.")
-  if (!senhaValida(senha)) return erroApi("A senha deve ter pelo menos 6 caracteres.")
+  if (!senhaValida(senha)) return erroApi("A senha deve ter pelo menos 8 caracteres.")
 
   const db = await banco()
-  const existente = await db.orm.public.Usuarios.where({ email }).first()
-  if (existente) return erroApi("Já existe uma conta com este e-mail.")
+  const existente = await db.usuarios.findFirst({ where: { email } })
+  // Resposta igual para e-mail novo ou existente (sem enumeração).
+  if (existente) return json({ estado: "confirmar" }, 201)
 
   const senhaHash = await hashSenha(senha)
-  const usuario = await db.transaction(async (tx: any) => {
-    const criado = await tx.orm.public.Usuarios.create({ email, senhaHash })
-    await tx.orm.public.Profiles.create({ id: criado.id, nome, email })
+  const usuario = await db.$transaction(async (tx) => {
+    const criado = await tx.usuarios.create({ data: { email, senhaHash } })
+    await tx.profiles.create({ data: { id: criado.id, nome, email } })
     return criado
   })
 
   const { token, hash } = gerarTokenEmail()
   const expira = new Date(Date.now() + 24 * 60 * 60 * 1000)
-  await db.orm.public.TokensVerificacao.create({
-    usuarioId: usuario.id,
-    tipo: "verificacao",
-    tokenHash: hash,
-    expiraEm: expira.toISOString(),
+  // Tokens anteriores do mesmo tipo perdem a validade.
+  await db.tokensVerificacao.deleteMany({ where: { usuarioId: usuario.id, tipo: "verificacao" } })
+  await db.tokensVerificacao.create({
+    data: {
+      usuarioId: usuario.id,
+      tipo: "verificacao",
+      tokenHash: hash,
+      expiraEm: expira.toISOString(),
+    },
   })
 
   const url = `${origemApp(req)}/api/auth/verificar?token=${token}`

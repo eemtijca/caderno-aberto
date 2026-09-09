@@ -20,19 +20,23 @@ export async function POST(req: NextRequest) {
   if (novoEmail === sessao.usuario.email) return erroApi("O novo e-mail é igual ao atual.")
 
   const db = await banco()
-  const ocupado = await db.orm.public.Usuarios.where({ email: novoEmail }).first()
-  if (ocupado) return erroApi("Já existe uma conta com este e-mail.")
+  const ocupado = await db.usuarios.findFirst({ where: { email: novoEmail } })
+  if (ocupado) return erroApi("Não foi possível usar este e-mail.")
 
-  const usuario = await db.orm.public.Usuarios.where({ id: sessao.usuario.id }).first()
+  const usuario = await db.usuarios.findFirst({ where: { id: sessao.usuario.id } })
   if (!usuario) return naoAutenticado()
 
   const { token, hash } = gerarTokenEmail()
-  await db.orm.public.TokensVerificacao.create({
-    usuarioId: usuario.id,
-    tipo: "troca_email",
-    tokenHash: hash,
-    novoEmail,
-    expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  // Tokens anteriores do mesmo tipo perdem a validade.
+  await db.tokensVerificacao.deleteMany({ where: { usuarioId: usuario.id, tipo: "troca_email" } })
+  await db.tokensVerificacao.create({
+    data: {
+      usuarioId: usuario.id,
+      tipo: "troca_email",
+      tokenHash: hash,
+      novoEmail,
+      expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    },
   })
 
   const origem = origemApp(req)
@@ -46,7 +50,7 @@ export async function POST(req: NextRequest) {
       para: [novoEmail],
       assunto: modelo.assunto,
       html: modelo.html,
-      chaveIdempotencia: `troca-email/${usuario.id}/${Date.now()}`,
+      chaveIdempotencia: `troca-email/${usuario.id}/${hash}`,
       etiquetas: [{ nome: "categoria", valor: "troca_email" }],
     })
   } catch (erro) {

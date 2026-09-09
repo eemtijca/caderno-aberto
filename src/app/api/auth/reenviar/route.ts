@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic"
 
 // POST /api/auth/reenviar {email}. Responde sempre 200, sem distinguir contas existentes.
 export async function POST(req: NextRequest) {
-  const limite = cabeNoLimite(chavePorIp(req, "reenviar"), LIMITE_EMAIL)
+  const limite = await cabeNoLimite(chavePorIp(req, "reenviar"), LIMITE_EMAIL)
   if (!limite.permitido)
     return erroApi("Muitos e-mails enviados em pouco tempo. Tente de novo em alguns minutos.", 429)
 
@@ -20,16 +20,20 @@ export async function POST(req: NextRequest) {
   if (!email) return json({ ok: true })
 
   const db = await banco()
-  const usuario = await db.orm.public.Usuarios.where({ email }).first()
+  const usuario = await db.usuarios.findFirst({ where: { email } })
   if (!usuario || usuario.emailVerificadoEm) return json({ ok: true })
 
-  const perfil = await db.orm.public.Profiles.where({ id: usuario.id }).first()
+  const perfil = await db.profiles.findFirst({ where: { id: usuario.id } })
   const { token, hash } = gerarTokenEmail()
-  await db.orm.public.TokensVerificacao.create({
-    usuarioId: usuario.id,
-    tipo: "verificacao",
-    tokenHash: hash,
-    expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  // Tokens anteriores do mesmo tipo perdem a validade.
+  await db.tokensVerificacao.deleteMany({ where: { usuarioId: usuario.id, tipo: "verificacao" } })
+  await db.tokensVerificacao.create({
+    data: {
+      usuarioId: usuario.id,
+      tipo: "verificacao",
+      tokenHash: hash,
+      expiraEm: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    },
   })
 
   try {
@@ -41,7 +45,7 @@ export async function POST(req: NextRequest) {
       para: [email],
       assunto: modelo.assunto,
       html: modelo.html,
-      chaveIdempotencia: `verificacao/${usuario.id}/${Date.now()}`,
+      chaveIdempotencia: `verificacao/${usuario.id}/${hash}`,
       etiquetas: [{ nome: "categoria", valor: "verificacao" }],
     })
   } catch (erro) {

@@ -9,13 +9,23 @@ const scryptAsync = promisify(scryptCb) as unknown as (
   opcoes?: Record<string, number>,
 ) => Promise<Buffer>
 
-// Parâmetros scrypt: N=16384, r=8, p=1.
+// Parâmetros atuais: N=131072, r=8, p=1 (mínimo do OWASP).
+// Hashes antigos (N=16384) continuam válidos e sobem no login.
+const N_ATUAL = 131072
+const R_ATUAL = 8
+const P_ATUAL = 1
+const MEMORIA_MAXIMA = 256 * 1024 * 1024
+
 // Formato: scrypt$N$r$p$salHex$chaveHex
 export async function hashSenha(senha: string): Promise<string> {
   const sal = randomBytes(16)
-  // Padrões do scrypt já atendem aos parâmetros acima.
-  const chave = (await scryptAsync(senha, sal, 64)) as Buffer
-  return `scrypt$16384$8$1$${sal.toString("hex")}$${chave.toString("hex")}`
+  const chave = (await scryptAsync(senha, sal, 64, {
+    N: N_ATUAL,
+    r: R_ATUAL,
+    p: P_ATUAL,
+    maxmem: MEMORIA_MAXIMA,
+  })) as Buffer
+  return `scrypt$${N_ATUAL}$${R_ATUAL}$${P_ATUAL}$${sal.toString("hex")}$${chave.toString("hex")}`
 }
 
 export async function confereSenha(senha: string, hash: string): Promise<boolean> {
@@ -28,7 +38,7 @@ export async function confereSenha(senha: string, hash: string): Promise<boolean
       N: Number(nStr),
       r: Number(rStr),
       p: Number(pStr),
-      maxmem: 64 * 1024 * 1024,
+      maxmem: MEMORIA_MAXIMA,
     })
     return chave.length === chaveEsperada.length && timingSafeEqual(chave, chaveEsperada)
   } catch {
@@ -36,7 +46,13 @@ export async function confereSenha(senha: string, hash: string): Promise<boolean
   }
 }
 
-/** Mínimo de 6 caracteres. */
+/** Indica hash com parâmetros antigos, para subir no login. */
+export function hashDesatualizado(hash: string): boolean {
+  const partes = hash.split("$")
+  return partes.length !== 6 || partes[0] !== "scrypt" || partes[1] !== String(N_ATUAL)
+}
+
+/** Mínimo de 8 caracteres. */
 export function senhaValida(senha: string): boolean {
-  return senha.length >= 6 && senha.length <= 256
+  return senha.length >= 8 && senha.length <= 256
 }

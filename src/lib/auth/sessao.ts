@@ -1,7 +1,7 @@
 // Sessões em cookie HttpOnly: JWT de acesso e refresh com rotação.
 import { cookies } from "next/headers"
 import type { NextRequest } from "next/server"
-import { createHash, randomBytes } from "crypto"
+import { createHash, randomBytes, timingSafeEqual } from "crypto"
 import * as jose from "jose"
 import { AUTH_SECRET } from "@/lib/ambiente"
 import { banco } from "@/lib/banco"
@@ -68,22 +68,24 @@ export async function iniciarSessao(
   usuarioId: string,
   req?: NextRequest,
 ): Promise<{ acesso: string }> {
-  const db = await banco()
+  const db = banco()
   const refresh = randomBytes(32).toString("hex")
   const expira = new Date(Date.now() + TRINTA_DIAS * 1000)
-  await db.orm.public.Sessoes.create({
-    usuarioId,
-    tokenHash: hashOpaco(refresh),
-    expiraEm: expira.toISOString(),
-    ip:
-      req?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      req?.headers.get("x-real-ip") ??
-      "",
-    agente: req?.headers.get("user-agent")?.slice(0, 300) ?? "",
+  await db.sessoes.create({
+    data: {
+      usuarioId,
+      tokenHash: hashOpaco(refresh),
+      expiraEm: expira,
+      ip:
+        req?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+        req?.headers.get("x-real-ip") ??
+        "",
+      agente: req?.headers.get("user-agent")?.slice(0, 300) ?? "",
+    },
   })
   // Remove sessões vencidas, exceto a atual.
-  const limite = new Date().toISOString()
-  await silenciar(db.orm.public.Sessoes.where((s: any) => s.expiraEm.lt(limite)).deleteAll())
+  const limite = new Date()
+  await silenciar(db.sessoes.deleteMany({ where: { expiraEm: { lt: limite } } }))
   const acesso = await emitirAcesso(usuarioId)
   const jar = await cookies()
   jar.set(COOKIE_ACESSO, acesso, opcoesCookie(UMA_HORA))
@@ -95,25 +97,26 @@ export async function iniciarSessao(
 export async function encerrarSessao(req: NextRequest): Promise<void> {
   const refresh = req.cookies.get(COOKIE_REFRESH)?.value
   if (refresh) {
-    const db = await banco()
-    await silenciar(db.orm.public.Sessoes.where({ tokenHash: hashOpaco(refresh) }).deleteAll())
+    const db = banco()
+    await silenciar(db.sessoes.deleteMany({ where: { tokenHash: hashOpaco(refresh) } }))
   }
   const jar = await cookies()
   jar.set(COOKIE_ACESSO, "", { ...opcoesCookie(0), maxAge: 0 })
   jar.set(COOKIE_REFRESH, "", { ...opcoesCookie(0), maxAge: 0 })
 }
 
-/** Renova o acesso a partir do refresh. */
+/** Renova o acesso a partir do refresh, com detecção de reuso. */
 export async function renovarSessao(req: NextRequest): Promise<SessaoUsuario | null> {
   const refresh = req.cookies.get(COOKIE_REFRESH)?.value
   if (!refresh) return null
-  const db = await banco()
-  const sessao = await db.orm.public.Sessoes.where({ tokenHash: hashOpaco(refresh) }).first()
-  if (!sessao || new Date(sessao.expiraEm) < new Date()) return null
-  const usuario = await db.orm.public.Usuarios.where({ id: sessao.usuarioId }).first()
+  const db = banco()
+  const sessao = await db.sessoes.findFirst({ where: { tokenHash: hashOpaco(refresh) } })
+  if (!sessao || sessao.expiraEm < new Date()) return null
+  const usuario = await db.usuarios.findFirst({ where: { id: sessao.usuarioId } })
   if (!usuario) return null
-  // Invalida o refresh anterior.
-  await silenciar(db.orm.public.Sessoes.where({ tokenHash: hashOpaco(refresh) }).deleteAll())
+  // Invalida o refresh anterior; concorrência perde (sem sessão dupla).
+  const apagadas = await db.sessoes.deleteMany({ where: { tokenHash: hashOpaco(refresh) } })
+  if (apagadas.count !== 1) return null
   await iniciarSessao(usuario.id, req)
   return mapearUsuario(usuario)
 }
@@ -121,14 +124,14 @@ export async function renovarSessao(req: NextRequest): Promise<SessaoUsuario | n
 export function mapearUsuario(linha: {
   id: string
   email: string
-  emailVerificadoEm: string | null
-  criadoEm: string
+  emailVerificadoEm: Date | null
+  criadoEm: Date
 }): SessaoUsuario {
   return {
     id: linha.id,
     email: linha.email,
-    emailVerificadoEm: linha.emailVerificadoEm,
-    criadoEm: linha.criadoEm,
+    emailVerificadoEm: linha.emailVerificadoEm?.toISOString() ?? null,
+    criadoEm: linha.criadoEm.toISOString(),
   }
 }
 
@@ -138,8 +141,8 @@ export async function sessaoRequisicao(req: NextRequest): Promise<SessaoUsuario 
   if (acesso) {
     const id = await lerAcesso(acesso)
     if (id) {
-      const db = await banco()
-      const usuario = await db.orm.public.Usuarios.where({ id }).first()
+      const db = banco()
+      const usuario = await db.usuarios.findFirst({ where: { id } })
       if (usuario) return mapearUsuario(usuario)
     }
   }
@@ -152,7 +155,9 @@ export function gerarTokenEmail(): { token: string; hash: string } {
   return { token, hash: hashOpaco(token) }
 }
 
-/** Comparação em tempo constante entre token e hash. */
+/** Confere o token contra o hash em tempo constante. */
 export function confereTokenEmail(token: string, hash: string): boolean {
-  return hashOpaco(token) === hash
+  const esperado = Buffer.from(hashOpaco(token))
+  const recebido = Buffer.from(hash)
+  return esperado.length === recebido.length && timingSafeEqual(esperado, recebido)
 }

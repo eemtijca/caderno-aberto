@@ -26,7 +26,7 @@ interface SessaoValor {
   cadastrar: (nome: string, email: string, senha: string) => Promise<"entrar" | "confirmar">
   sair: () => Promise<void>
   atualizarPerfil: (dados: { nome?: string; escola?: string }) => Promise<void>
-  trocarSenha: (novaSenha: string) => Promise<void>
+  trocarSenha: (senhaAtual: string, novaSenha: string) => Promise<void>
   trocarEmail: (novoEmail: string) => Promise<void>
   pedirRedefinicao: (email: string) => Promise<void>
   /** Conclusão exige token válido prévio. */
@@ -173,11 +173,11 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
       await carregarConta()
     },
 
-    async trocarSenha(novaSenha) {
+    async trocarSenha(senhaAtual, novaSenha) {
       const r = await fetch("/api/auth/trocar-senha", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nova: novaSenha }),
+        body: JSON.stringify({ atual: senhaAtual, nova: novaSenha }),
       })
       if (!r.ok) throw new Error(await lerErro(r, "Falha ao alterar a senha."))
     },

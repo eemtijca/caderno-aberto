@@ -439,13 +439,13 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
         await sessao.entrar(email.trim(), senha)
         navegar("/")
       } else if (modo === "cadastro") {
-        if (senha.length < 6) throw new Error("A senha deve ter pelo menos 6 caracteres.")
+        if (senha.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.")
         if (senha !== senha2) throw new Error("As senhas não conferem.")
         await sessao.cadastrar(nome.trim(), email.trim(), senha)
         setSucesso("Conta criada. Confirme o e-mail para ativar o acesso.")
       } else {
         if (sessao.modoRecuperacao) {
-          if (senha.length < 6) throw new Error("A senha deve ter pelo menos 6 caracteres.")
+          if (senha.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.")
           if (senha !== senha2) throw new Error("As senhas não conferem.")
           await sessao.concluirRedefinicao(senha)
           setSucesso("Senha redefinida. O acesso foi restabelecido.")
@@ -580,7 +580,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                       </div>
                     ) : (
                       <p className="text-muted-foreground text-[0.72rem]">
-                        Mínimo de 6 caracteres. Combine letras e números para uma senha mais forte.
+                        Mínimo de 8 caracteres. Combine letras e números para uma senha mais forte.
                       </p>
                     )}
                   </>
