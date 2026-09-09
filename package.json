@@ -12,13 +12,14 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "tsc": "tsc --noEmit",
-    "test:api": "node tests/api/isolamento.test.mjs",
-    "test:contratos": "node tests/api/contratos.test.mjs",
-    "test:unit": "node tests/unit/rodar.mjs",
-    "postinstall": "node scripts/copy-tikzjax.mjs",
+    "test": "vitest run",
+    "test:api": "vitest run tests/api/isolamento.test.ts",
+    "test:contratos": "vitest run tests/api/contratos.test.ts",
+    "test:unit": "vitest run tests/unit/notas.test.ts",
+    "postinstall": "node scripts/copy-tikzjax.mjs && prisma generate",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "contract:emit": "prisma contract emit"
+    "contract:emit": "prisma generate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",
@@ -26,7 +27,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.9.1",
-    "@prisma/orm-postgres": "^8.0.0-rc.8",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "@radix-ui/react-accordion": "^1.2.20",
     "@radix-ui/react-alert-dialog": "^1.1.23",
     "@radix-ui/react-aspect-ratio": "^1.1.15",
@@ -94,7 +96,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "@prisma/cli-engine": "^0.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^26.4.1",
     "@types/nodemailer": "^8.0.1",
@@ -107,10 +108,11 @@
     "pg": "^8.23.0",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
-    "prisma": "^8.0.0-rc.13",
+    "prisma": "^7.10.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0"
   },
   "allowScripts": {
     "@embedded-postgres/linux-x64@18.4.0-beta.17": true,
