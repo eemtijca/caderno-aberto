@@ -18,7 +18,8 @@ export function Matematica({ latex, bloco = false, className }: PropsMatematica)
         displayMode: bloco,
         throwOnError: false,
         strict: false,
-        trust: true,
+        // Só \htmlClass (destaque de resultado); links e HTML vetados.
+        trust: (ctx) => ctx.command === "\\htmlClass",
         macros: MACROS_KATEX,
         output: "htmlAndMathml",
       })

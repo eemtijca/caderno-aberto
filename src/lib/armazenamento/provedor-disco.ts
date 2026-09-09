@@ -19,6 +19,33 @@ function absoluto(caminho: string): string {
   return path.join(UPLOAD_DIR, normalizado)
 }
 
+/** Extensões de imagem aceitas no upload e no backup. */
+export const EXTENSOES_IMAGEM = ["png", "jpg", "jpeg", "webp", "gif", "svg"]
+
+function comecaCom(bytes: Buffer, cabeca: number[]): boolean {
+  return cabeca.every((b, i) => bytes[i] === b)
+}
+
+/** Confere os bytes contra o tipo declarado; SVG sem scripts. */
+export function imagemValida(mime: string, bytes: Buffer): boolean {
+  if (mime === "image/png") return comecaCom(bytes, [0x89, 0x50, 0x4e, 0x47])
+  if (mime === "image/jpeg") return comecaCom(bytes, [0xff, 0xd8, 0xff])
+  if (mime === "image/gif") {
+    const marca = bytes.subarray(0, 6).toString("ascii")
+    return marca === "GIF87a" || marca === "GIF89a"
+  }
+  if (mime === "image/webp") {
+    return (
+      bytes.subarray(0, 4).toString("ascii") === "RIFF" &&
+      bytes.subarray(8, 12).toString("ascii") === "WEBP"
+    )
+  }
+  const texto = bytes.subarray(0, 4096).toString("utf8").trimStart().toLowerCase()
+  if (!(texto.startsWith("<svg") || texto.startsWith("<?xml"))) return false
+  const inteiro = bytes.toString("utf8").toLowerCase()
+  return !inteiro.includes("<script") && !/on\w+\s*=/.test(inteiro)
+}
+
 /** MIME pela extensão; desconhecidas viram octet-stream. */
 export function mimePorExtensao(caminho: string): string {
   const ext = caminho.split(".").pop()?.toLowerCase() ?? ""

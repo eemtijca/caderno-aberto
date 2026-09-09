@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
 import { caminhoDoProfessor, obterArmazenamento } from "@/lib/armazenamento"
-import { mimePorExtensao } from "@/lib/armazenamento/provedor-disco"
+import { imagemValida, mimePorExtensao } from "@/lib/armazenamento/provedor-disco"
 import { gerarToken } from "@/lib/api/token"
 import sharp from "sharp"
 
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
   const bytes = Buffer.from(await arquivo.arrayBuffer())
   if (bytes.length === 0) return erroApi("Imagem vazia.")
   if (bytes.length > MAX_BYTES) return erroApi("Imagem muito grande (máx. 6 MB).")
+  if (!imagemValida(mime, bytes)) return erroApi("Arquivo inválido para o tipo.")
 
   const ext = mime.split("/")[1].replace("jpeg", "jpg").replace("svg+xml", "svg")
   const caminho = `${usuario.id}/${gerarToken(14)}.${ext}`
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
     req.nextUrl.searchParams.get("png") === "1" && (ext === "webp" || ext === "svg")
   if (converterPng) {
     try {
-      const png = await sharp(arquivo.bytes).png().toBuffer()
+      const png = await sharp(arquivo.bytes, { limitInputPixels: 25_000_000 }).png().toBuffer()
       return new NextResponse(png, {
         headers: {
           "Content-Type": "image/png",
@@ -71,6 +72,9 @@ export async function GET(req: NextRequest) {
     headers: {
       "Content-Type": mimePorExtensao(caminho),
       "Cache-Control": "private, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
+      // SVG abre isolado mesmo em navegação direta.
+      ...(ext === "svg" ? { "Content-Security-Policy": "sandbox" } : {}),
     },
   })
 }
