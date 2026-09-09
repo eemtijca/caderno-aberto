@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   if (confirmacao !== "EXCLUIR") return erroApi("Digite EXCLUIR para confirmar.")
 
   const db = await banco()
-  const linha = await db.orm.public.Usuarios.where({ id: usuario.id }).first()
+  const linha = await db.usuarios.findFirst({ where: { id: usuario.id } })
   if (!linha || !(await confereSenha(senha, linha.senhaHash))) {
     return erroApi("Senha incorreta.", 403)
   }
@@ -25,14 +25,22 @@ export async function POST(req: NextRequest) {
   const agora = new Date()
   const expira = new Date(agora.getTime() + 24 * 60 * 60 * 1000)
 
-  await db.transaction(async (tx: any) => {
-    await tx.orm.public.Profiles.where({ id: usuario.id }).update({
-      exclusaoSolicitadaEm: agora.toISOString(),
-      expiraEm: expira.toISOString(),
+  await db.$transaction(async (tx) => {
+    await tx.profiles.update({
+      where: { id: usuario.id },
+      data: {
+        exclusaoSolicitadaEm: agora.toISOString(),
+        expiraEm: expira.toISOString(),
+      },
     })
-    const links = await tx.orm.public.Links.where({ professorId: usuario.id }).all()
+    const links = await tx.links.findMany({ where: { professorId: usuario.id } })
     for (const link of links) {
-      await tx.orm.public.Links.where({ id: link.id }).update({ ativo: false })
+      // Só pausa os ativos; os já pausados continuam pausados na restauração.
+      if (link.ativo)
+        await tx.links.update({
+          where: { id: link.id },
+          data: { ativo: false, pausadoNaExclusao: true },
+        })
     }
   })
 
