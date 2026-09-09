@@ -85,17 +85,21 @@ export async function POST(req: NextRequest) {
 
   // disciplina: cria se não existir (do próprio professor)
   const nomeDisc = dados.disciplina.trim() || "Sem disciplina"
-  const candidatas = (await db.orm.public.Disciplinas.where({
-    professorId: usuario.id,
-  }).all()) as unknown as DisciplinaLinha[]
+  const candidatas = (await db.disciplinas.findMany({
+    where: {
+      professorId: usuario.id,
+    },
+  })) as unknown as DisciplinaLinha[]
   let disciplina = candidatas.find((d) => d.nome.toLowerCase() === nomeDisc.toLowerCase()) ?? null
   if (!disciplina) {
     try {
-      disciplina = (await db.orm.public.Disciplinas.create({
-        professorId: usuario.id,
-        nome: nomeDisc,
-        cor: "verde",
-        icone: "BookOpen",
+      disciplina = (await db.disciplinas.create({
+        data: {
+          professorId: usuario.id,
+          nome: nomeDisc,
+          cor: "verde",
+          icone: "BookOpen",
+        },
       })) as unknown as DisciplinaLinha
     } catch {
       return erroApi("Falha ao criar a disciplina.")
@@ -103,9 +107,11 @@ export async function POST(req: NextRequest) {
   }
 
   // turmas: cria as que faltarem no ano letivo da nota
-  const turmasDoAno = (await db.orm.public.Turmas.where({
-    professorId: usuario.id,
-  }).all()) as unknown as TurmaLinha[]
+  const turmasDoAno = (await db.turmas.findMany({
+    where: {
+      professorId: usuario.id,
+    },
+  })) as unknown as TurmaLinha[]
   const porNome = new Map(
     turmasDoAno
       .filter((t) => t.anoLetivo === dados.anoLetivo)
@@ -126,11 +132,13 @@ export async function POST(req: NextRequest) {
             ? "3º ano"
             : "Outro"
       try {
-        turma = (await db.orm.public.Turmas.create({
-          professorId: usuario.id,
-          nome: nomeUp,
-          serie,
-          anoLetivo: dados.anoLetivo,
+        turma = (await db.turmas.create({
+          data: {
+            professorId: usuario.id,
+            nome: nomeUp,
+            serie,
+            anoLetivo: dados.anoLetivo,
+          },
         })) as unknown as TurmaLinha
         porNome.set(nomeUp, turma)
       } catch {
@@ -141,28 +149,32 @@ export async function POST(req: NextRequest) {
   }
 
   const blocos = normalizarBlocos(dados.blocos)
-  const linha = (await db.orm.public.Notas.create({
-    professorId: usuario.id,
-    titulo: dados.titulo.trim(),
-    ...camposDenormalizados(disciplina, turmasFinais),
-    anoLetivo: dados.anoLetivo,
-    mes: dados.mes,
-    sobre: dados.sobre,
-    habilidades: dados.habilidades,
-    status: dados.status,
-    blocos: paraJson(blocos),
-    aparencia: paraJson(dados.aparencia),
-    busca: normalizar(
-      textoDeBusca({
-        titulo: dados.titulo,
+  const linha = (await db.notas
+    .create({
+      data: {
+        professorId: usuario.id,
+        titulo: dados.titulo.trim(),
+        ...camposDenormalizados(disciplina, turmasFinais),
+        anoLetivo: dados.anoLetivo,
+        mes: dados.mes,
         sobre: dados.sobre,
         habilidades: dados.habilidades,
-        blocos,
-        disciplina: { nome: disciplina.nome },
-        turmas: turmasFinais.map((t) => ({ nome: t.nome, serie: t.serie })),
-      }),
-    ),
-  }).catch(() => null)) as unknown as Parameters<typeof linhaParaNota>[0] | null
+        status: dados.status,
+        blocos: paraJson(blocos),
+        aparencia: paraJson(dados.aparencia),
+        busca: normalizar(
+          textoDeBusca({
+            titulo: dados.titulo,
+            sobre: dados.sobre,
+            habilidades: dados.habilidades,
+            blocos,
+            disciplina: { nome: disciplina.nome },
+            turmas: turmasFinais.map((t) => ({ nome: t.nome, serie: t.serie })),
+          }),
+        ),
+      },
+    })
+    .catch(() => null)) as unknown as Parameters<typeof linhaParaNota>[0] | null
 
   if (!linha) return erroApi("Falha ao importar a nota.")
 

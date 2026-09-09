@@ -52,9 +52,12 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   if (Object.keys(dados).length === 0) return erroApi("Nada para atualizar.")
 
   const db = await banco()
-  const link = (await db.orm.public.Links.where({ id, professorId: usuario.id }).update(
-    dados,
-  )) as unknown as LinkLinha | null
+  const existe = await db.links.findFirst({ where: { id, professorId: usuario.id } })
+  if (!existe) return erroApi("Link não encontrado.", 404)
+  const link = (await db.links.update({
+    where: { id },
+    data: dados,
+  })) as unknown as LinkLinha | null
 
   if (!link) return erroApi("Link não encontrado.", 404)
   return json({ link: paraResposta(link) })
@@ -67,6 +70,6 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params
 
   const db = await banco()
-  await db.orm.public.Links.where({ id, professorId: usuario.id }).deleteAll()
+  await db.links.deleteMany({ where: { id, professorId: usuario.id } })
   return json({ ok: true })
 }

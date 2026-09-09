@@ -11,31 +11,31 @@ export interface LinkPublico {
 
 /** Indica exclusão pendente para ocultar da vista pública. */
 async function professorExcluido(professorId: string): Promise<boolean> {
-  const db = await banco()
-  const perfil = await db.orm.public.Profiles.where({ id: professorId }).first()
+  const db = banco()
+  const perfil = await db.profiles.findFirst({ where: { id: professorId } })
   return Boolean(perfil?.exclusaoSolicitadaEm)
 }
 
 /** Incrementa o contador de acessos sem falhar a leitura. */
 export async function registrarAcesso(linkId: string, acessos: number): Promise<void> {
-  const db = await banco()
-  await db.orm.public.Links.where({ id: linkId })
-    .update({ acessos: acessos + 1 })
+  const db = banco()
+  await db.links
+    .update({ where: { id: linkId }, data: { acessos: acessos + 1 } })
     .catch(() => undefined)
 }
 
 /** Resolve o token no link + notas visíveis. Null = indisponível. */
 export async function resolverLinkPublico(token: string): Promise<LinkPublico | null> {
   if (!token || token.length > 120) return null
-  const db = await banco()
-  const link = (await db.orm.public.Links.where({ token }).first()) as unknown as LinkLinha | null
+  const db = banco()
+  const link = (await db.links.findFirst({ where: { token } })) as LinkLinha | null
   if (!link || !link.ativo) return null
-  if (link.expiraEm && new Date(link.expiraEm) < new Date()) return null
+  if (link.expiraEm && link.expiraEm < new Date()) return null
   if (await professorExcluido(link.professorId)) return null
 
-  const todas = (await db.orm.public.Notas.where({
-    professorId: link.professorId,
-  }).all()) as unknown as NotaLinha[]
+  const todas = (await db.notas.findMany({
+    where: { professorId: link.professorId, status: "publicada" },
+  })) as unknown as NotaLinha[]
 
   let notas = todas.filter((n) => {
     if (n.status !== "publicada") return false

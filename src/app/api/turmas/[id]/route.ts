@@ -37,9 +37,12 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
   const db = await banco()
   try {
-    const turma = (await db.orm.public.Turmas.where({ id, professorId: usuario.id }).update(
-      dados,
-    )) as unknown as TurmaLinha | null
+    const existe = await db.turmas.findFirst({ where: { id, professorId: usuario.id } })
+    if (!existe) return erroApi("Turma não encontrada.", 404)
+    const turma = (await db.turmas.update({
+      where: { id },
+      data: dados,
+    })) as unknown as TurmaLinha | null
     if (!turma) return erroApi("Turma não encontrada.", 404)
     return json({ turma })
   } catch (erro) {
@@ -55,6 +58,6 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params
 
   const db = await banco()
-  await db.orm.public.Turmas.where({ id, professorId: usuario.id }).deleteAll()
+  await db.turmas.deleteMany({ where: { id, professorId: usuario.id } })
   return json({ ok: true })
 }

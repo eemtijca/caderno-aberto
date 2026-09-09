@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest) {
   if (Object.keys(dados).length === 0) return erroApi("Nada para atualizar.")
 
   const db = await banco()
-  const perfil = await db.orm.public.Profiles.where({ id: usuario.id }).update(dados)
+  const perfil = await db.profiles.update({ where: { id: usuario.id }, data: dados })
   if (!perfil) return erroApi("Falha ao salvar o perfil.")
   return json({ perfil: { nome: perfil.nome, escola: perfil.escola, email: perfil.email } })
 }

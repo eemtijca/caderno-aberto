@@ -1,4 +1,4 @@
-// Linhas do banco. Espelham src/prisma/contract.prisma.
+// Linhas do banco. Espelham prisma/schema.prisma.
 
 import type { AparenciaNota } from "@/lib/notas/tipos"
 
@@ -6,9 +6,9 @@ export type UsuarioLinha = {
   id: string
   email: string
   senhaHash: string
-  emailVerificadoEm: string | null
-  criadoEm: string
-  atualizadoEm: string
+  emailVerificadoEm: Date | null
+  criadoEm: Date
+  atualizadoEm: Date
 }
 
 export type PerfilLinha = {
@@ -17,10 +17,10 @@ export type PerfilLinha = {
   email: string
   escola: string
   preferencias: Record<string, unknown>
-  criadoEm: string
-  atualizadoEm: string
-  exclusaoSolicitadaEm?: string | null
-  expiraEm?: string | null
+  criadoEm: Date
+  atualizadoEm: Date
+  exclusaoSolicitadaEm?: Date | null
+  expiraEm?: Date | null
 }
 
 export type DisciplinaLinha = {
@@ -30,8 +30,8 @@ export type DisciplinaLinha = {
   cor: string
   icone: string
   ordem: number
-  criadoEm: string
-  atualizadoEm: string
+  criadoEm: Date
+  atualizadoEm: Date
 }
 
 export type TurmaLinha = {
@@ -40,8 +40,8 @@ export type TurmaLinha = {
   nome: string
   serie: string
   anoLetivo: number
-  criadoEm: string
-  atualizadoEm: string
+  criadoEm: Date
+  atualizadoEm: Date
 }
 
 export type NotaLinha = {
@@ -62,8 +62,8 @@ export type NotaLinha = {
   /** Aparência da leitura (fonte/escala/entrelinha). Vazio = padrão do app. */
   aparencia: AparenciaNota
   busca: string
-  criadoEm: string
-  atualizadoEm: string
+  criadoEm: Date
+  atualizadoEm: Date
 }
 
 export type LinkLinha = {
@@ -77,18 +77,30 @@ export type LinkLinha = {
   professorNome: string
   nome: string
   ativo: boolean
-  expiraEm: string | null
+  pausadoNaExclusao: boolean
+  expiraEm: Date | null
   acessos: number
-  criadoEm: string
+  criadoEm: Date
 }
 
 export type SessaoLinha = {
   id: string
   usuarioId: string
   tokenHash: string
-  criadoEm: string
-  expiraEm: string
-  ultimoUsoEm: string
+  criadoEm: Date
+  expiraEm: Date
+  ultimoUsoEm: Date
   ip: string
   agente: string
+}
+
+export type TokenVerificacaoLinha = {
+  id: string
+  usuarioId: string
+  tipo: string
+  tokenHash: string
+  novoEmail: string | null
+  expiraEm: Date
+  usadoEm: Date | null
+  criadoEm: Date
 }

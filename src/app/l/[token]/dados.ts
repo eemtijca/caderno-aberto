@@ -61,7 +61,7 @@ export const buscarDadosOg = cache(async (token: string): Promise<DadosOg | null
       tipo: link.tipo,
       nome: link.nome,
       professorNome: link.professorNome,
-      expiraEm: link.expiraEm,
+      expiraEm: link.expiraEm?.toISOString() ?? null,
     },
     nota: primeira
       ? {

@@ -17,7 +17,7 @@ type Ctx = { params: Promise<{ id: string }> }
 
 async function buscarNota(id: string, professorId: string): Promise<NotaLinha | null> {
   const db = await banco()
-  const linha = await db.orm.public.Notas.where({ id, professorId }).first()
+  const linha = await db.notas.findFirst({ where: { id, professorId } })
   return (linha as unknown as NotaLinha | null) ?? null
 }
 
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
   const db = await banco()
   const disciplina = linha.disciplinaId
-    ? await db.orm.public.Disciplinas.where({ id: linha.disciplinaId }).first()
+    ? await db.disciplinas.findFirst({ where: { id: linha.disciplinaId } })
     : null
   const mapaTurmas = await mapaTurmasProfessor(usuario.id)
   return json({
@@ -64,12 +64,12 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
   let disciplina: DisciplinaLinha | null = null
   if (atual.disciplinaId) {
-    const d = await db.orm.public.Disciplinas.where({ id: atual.disciplinaId }).first()
+    const d = await db.disciplinas.findFirst({ where: { id: atual.disciplinaId } })
     disciplina = (d as unknown as DisciplinaLinha | null) ?? null
   }
   let turmas: TurmaLinha[] = []
   if (atual.turmasIds.length > 0) {
-    const todas = await db.orm.public.Turmas.where({ professorId: usuario.id }).all()
+    const todas = await db.turmas.findMany({ where: { professorId: usuario.id } })
     const porId = new Map(todas.map((t) => [t.id, t]))
     turmas = atual.turmasIds
       .map((tid) => porId.get(tid))
@@ -78,10 +78,12 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
   if (typeof corpo.disciplinaId === "string") {
     if (corpo.disciplinaId) {
-      const d = await db.orm.public.Disciplinas.where({
-        id: corpo.disciplinaId,
-        professorId: usuario.id,
-      }).first()
+      const d = await db.disciplinas.findFirst({
+        where: {
+          id: corpo.disciplinaId,
+          professorId: usuario.id,
+        },
+      })
       if (!d) return erroApi("Disciplina não encontrada.", 404)
       disciplina = d as unknown as DisciplinaLinha
     } else {
@@ -91,7 +93,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
   if (Array.isArray(corpo.turmasIds)) {
     const ids = (corpo.turmasIds as unknown[]).filter((t): t is string => typeof t === "string")
-    const todas = await db.orm.public.Turmas.where({ professorId: usuario.id }).all()
+    const todas = await db.turmas.findMany({ where: { professorId: usuario.id } })
     const porId = new Map(todas.map((t) => [t.id, t]))
     turmas = ids
       .map((tid) => porId.get(tid))
@@ -135,9 +137,10 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   )
 
   // Carga validada campo a campo acima.
-  const linha = (await db.orm.public.Notas.where({ id, professorId: usuario.id }).update(
-    dados as never,
-  )) as unknown as NotaLinha | null
+  const linha = (await db.notas.update({
+    where: { id },
+    data: dados as never,
+  })) as unknown as NotaLinha | null
 
   if (!linha) return erroApi("Falha ao salvar a nota.")
 
@@ -152,6 +155,6 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params
 
   const db = await banco()
-  await db.orm.public.Notas.where({ id, professorId: usuario.id }).deleteAll()
+  await db.notas.deleteMany({ where: { id, professorId: usuario.id } })
   return json({ ok: true })
 }

@@ -15,34 +15,40 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params
 
   const db = await banco()
-  const original = (await db.orm.public.Notas.where({
-    id,
-    professorId: usuario.id,
-  }).first()) as unknown as NotaLinha | null
+  const original = (await db.notas.findFirst({
+    where: {
+      id,
+      professorId: usuario.id,
+    },
+  })) as unknown as NotaLinha | null
   if (!original) return erroApi("Nota não encontrada.", 404)
 
   const disciplina = original.disciplinaId
-    ? ((await db.orm.public.Disciplinas.where({
-        id: original.disciplinaId,
-      }).first()) as unknown as DisciplinaLinha | null)
+    ? ((await db.disciplinas.findFirst({
+        where: {
+          id: original.disciplinaId,
+        },
+      })) as unknown as DisciplinaLinha | null)
     : null
 
-  const linha = (await db.orm.public.Notas.create({
-    professorId: original.professorId,
-    titulo: `${original.titulo} (cópia)`,
-    disciplinaId: original.disciplinaId,
-    disciplinaNome: original.disciplinaNome,
-    disciplinaCor: original.disciplinaCor,
-    turmasIds: [...original.turmasIds],
-    turmasNomes: [...original.turmasNomes],
-    anoLetivo: original.anoLetivo,
-    mes: original.mes,
-    sobre: original.sobre,
-    habilidades: original.habilidades,
-    status: "rascunho",
-    blocos: paraJson(original.blocos),
-    aparencia: paraJson(original.aparencia ?? {}),
-    busca: original.busca,
+  const linha = (await db.notas.create({
+    data: {
+      professorId: original.professorId,
+      titulo: `${original.titulo} (cópia)`,
+      disciplinaId: original.disciplinaId,
+      disciplinaNome: original.disciplinaNome,
+      disciplinaCor: original.disciplinaCor,
+      turmasIds: [...original.turmasIds],
+      turmasNomes: [...original.turmasNomes],
+      anoLetivo: original.anoLetivo,
+      mes: original.mes,
+      sobre: original.sobre,
+      habilidades: original.habilidades,
+      status: "rascunho",
+      blocos: paraJson(original.blocos),
+      aparencia: paraJson(original.aparencia ?? {}),
+      busca: original.busca,
+    },
   })) as unknown as NotaLinha
 
   if (!linha) return erroApi("Falha ao duplicar a nota.")

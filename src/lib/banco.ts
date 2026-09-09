@@ -1,22 +1,21 @@
 // Cliente Prisma compartilhado. Uma ligação por processo.
-import { db as cliente } from "@/prisma/db"
+import { PrismaClient } from "../../generated/prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { DATABASE_URL } from "./ambiente"
 
 const globalComBanco = globalThis as unknown as {
-  conectado?: Promise<unknown>
+  prisma?: PrismaClient
 }
 
-async function garantirLigacao(): Promise<void> {
-  if (!globalComBanco.conectado) {
-    globalComBanco.conectado = cliente.connect({ url: process.env.DATABASE_URL! })
-  }
-  await globalComBanco.conectado
+function criarCliente(): PrismaClient {
+  const adaptador = new PrismaPg({ connectionString: DATABASE_URL })
+  return new PrismaClient({ adapter: adaptador })
 }
 
-// As rotas obtêm o cliente pronto via banco().
-/** Cliente pronto. Conecta uma vez por processo. */
-export async function banco() {
-  await garantirLigacao()
-  return cliente
+/** Cliente pronto. Reaproveita a ligação por processo. */
+export function banco(): PrismaClient {
+  globalComBanco.prisma ??= criarCliente()
+  return globalComBanco.prisma
 }
 
-export type Banco = typeof cliente
+export type Banco = PrismaClient

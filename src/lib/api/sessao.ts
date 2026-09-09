@@ -18,13 +18,13 @@ export async function sessaoProfessor(req?: NextRequest): Promise<SessaoProfesso
   const usuario = await sessaoRequisicao(requisicao).catch(() => null)
   if (!usuario) return null
 
-  const db = await banco()
-  const perfil = await db.orm.public.Profiles.where({ id: usuario.id }).first()
+  const db = banco()
+  const perfil = (await db.profiles.findFirst({ where: { id: usuario.id } })) as PerfilLinha | null
 
   // Contas com carência vencida não autenticam.
-  if (perfil?.expiraEm && new Date(perfil.expiraEm) < new Date()) return null
+  if (perfil?.expiraEm && perfil.expiraEm < new Date()) return null
 
-  return { usuario, perfil: (perfil as unknown as PerfilLinha | null) ?? null }
+  return { usuario, perfil }
 }
 
 export function json(dados: unknown, status = 200): NextResponse {

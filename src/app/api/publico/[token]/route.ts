@@ -76,7 +76,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     habilidades: linha.habilidades,
     blocos: reescreverImagens(normalizarBlocos(linha.blocos) as Bloco[], token),
     aparencia: normalizarAparencia(linha.aparencia),
-    atualizadoEm: linha.atualizadoEm,
+    atualizadoEm: linha.atualizadoEm.toISOString(),
   }))
 
   return json({
@@ -84,7 +84,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       tipo: link.tipo,
       nome: link.nome,
       professorNome: link.professorNome,
-      expiraEm: link.expiraEm,
+      expiraEm: link.expiraEm?.toISOString() ?? null,
     },
     notas,
   })

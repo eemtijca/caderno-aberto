@@ -32,13 +32,15 @@ export async function GET(req: NextRequest) {
   const { usuario } = sessao
 
   const db = await banco()
-  const links = (await db.orm.public.Links.where({
-    professorId: usuario.id,
-  }).all()) as unknown as LinkLinha[]
+  const links = (await db.links.findMany({
+    where: {
+      professorId: usuario.id,
+    },
+  })) as unknown as LinkLinha[]
   links.sort((a, b) => (a.criadoEm < b.criadoEm ? 1 : -1))
-  const notas = await db.orm.public.Notas.where({ professorId: usuario.id }).all()
-  const turmas = await db.orm.public.Turmas.where({ professorId: usuario.id }).all()
-  const disciplinas = await db.orm.public.Disciplinas.where({ professorId: usuario.id }).all()
+  const notas = await db.notas.findMany({ where: { professorId: usuario.id } })
+  const turmas = await db.turmas.findMany({ where: { professorId: usuario.id } })
+  const disciplinas = await db.disciplinas.findMany({ where: { professorId: usuario.id } })
 
   const notaPorId = new Map(notas.map((n) => [n.id, n]))
   const turmaPorId = new Map(turmas.map((t) => [t.id, t]))
@@ -85,21 +87,23 @@ export async function POST(req: NextRequest) {
   const db = await banco()
   const alvo =
     tipo === "nota"
-      ? await db.orm.public.Notas.where({ id: alvoId, professorId: usuario.id }).first()
+      ? await db.notas.findFirst({ where: { id: alvoId, professorId: usuario.id } })
       : tipo === "turma"
-        ? await db.orm.public.Turmas.where({ id: alvoId, professorId: usuario.id }).first()
-        : await db.orm.public.Disciplinas.where({ id: alvoId, professorId: usuario.id }).first()
+        ? await db.turmas.findFirst({ where: { id: alvoId, professorId: usuario.id } })
+        : await db.disciplinas.findFirst({ where: { id: alvoId, professorId: usuario.id } })
   if (!alvo) return erroApi("Destino não encontrado.", 404)
 
-  const link = (await db.orm.public.Links.create({
-    professorId: usuario.id,
-    tipo,
-    token: gerarToken(),
-    professorNome: perfil?.nome ?? "",
-    nome: typeof corpo?.nome === "string" ? corpo.nome.trim().slice(0, 120) : "",
-    notaId: tipo === "nota" ? alvoId : null,
-    turmaId: tipo === "turma" ? alvoId : null,
-    disciplinaId: tipo === "disciplina" ? alvoId : null,
+  const link = (await db.links.create({
+    data: {
+      professorId: usuario.id,
+      tipo,
+      token: gerarToken(),
+      professorNome: perfil?.nome ?? "",
+      nome: typeof corpo?.nome === "string" ? corpo.nome.trim().slice(0, 120) : "",
+      notaId: tipo === "nota" ? alvoId : null,
+      turmaId: tipo === "turma" ? alvoId : null,
+      disciplinaId: tipo === "disciplina" ? alvoId : null,
+    },
   })) as unknown as LinkLinha
 
   if (!link) return erroApi("Falha ao criar o link.")

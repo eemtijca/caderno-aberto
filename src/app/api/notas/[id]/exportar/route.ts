@@ -18,16 +18,20 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   const formato = (req.nextUrl.searchParams.get("formato") ?? "json").toLowerCase()
 
   const db = await banco()
-  const linha = (await db.orm.public.Notas.where({
-    id,
-    professorId: usuario.id,
-  }).first()) as unknown as NotaLinha | null
+  const linha = (await db.notas.findFirst({
+    where: {
+      id,
+      professorId: usuario.id,
+    },
+  })) as unknown as NotaLinha | null
   if (!linha) return erroApi("Nota não encontrada.", 404)
 
   const disciplina = linha.disciplinaId
-    ? ((await db.orm.public.Disciplinas.where({
-        id: linha.disciplinaId,
-      }).first()) as unknown as DisciplinaLinha | null)
+    ? ((await db.disciplinas.findFirst({
+        where: {
+          id: linha.disciplinaId,
+        },
+      })) as unknown as DisciplinaLinha | null)
     : null
   const mapaTurmas = await mapaTurmasProfessor(linha.professorId)
   const nota = linhaParaNota({ ...linha, disciplina }, mapaTurmas)

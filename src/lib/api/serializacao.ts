@@ -56,16 +56,16 @@ export function linhaParaNota(
     status: linha.status,
     blocos: normalizarBlocos(linha.blocos) as Bloco[],
     aparencia: normalizarAparencia(linha.aparencia),
-    criadoEm: linha.criadoEm,
-    atualizadoEm: linha.atualizadoEm,
+    criadoEm: linha.criadoEm.toISOString(),
+    atualizadoEm: linha.atualizadoEm.toISOString(),
     turmas,
   }
 }
 
 /** Turmas do professor indexadas por id. */
 export async function mapaTurmasProfessor(professorId: string): Promise<Map<string, TurmaLinha>> {
-  const db = await banco()
-  const turmas = await db.orm.public.Turmas.where({ professorId }).all()
+  const db = banco()
+  const turmas = await db.turmas.findMany({ where: { professorId } })
   return new Map((turmas as unknown as TurmaLinha[]).map((t) => [t.id, t]))
 }
 

@@ -1,0 +1,168 @@
+// Esquema do banco. Fonte da verdade para o Prisma Client.
+// As políticas RLS e os gatilhos vivem nas migrações SQL.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Usuarios {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String
+  senhaHash         String              @default("") @map("senha_hash")
+  emailVerificadoEm DateTime?           @map("email_verificado_em") @db.Timestamptz
+  criadoEm          DateTime            @default(now()) @map("criado_em") @db.Timestamptz
+  atualizadoEm      DateTime            @default(now()) @map("atualizado_em") @db.Timestamptz
+  perfil            Profiles?
+  sessoes           Sessoes[]
+  tokens            TokensVerificacao[]
+
+  @@map("usuarios")
+}
+
+model Profiles {
+  id                   String       @id @db.Uuid
+  nome                 String       @default("")
+  email                String       @default("")
+  escola               String       @default("")
+  preferencias         Json         @default("{}") @db.JsonB
+  criadoEm             DateTime     @default(now()) @map("criado_em") @db.Timestamptz
+  atualizadoEm         DateTime     @default(now()) @map("atualizado_em") @db.Timestamptz
+  exclusaoSolicitadaEm DateTime?    @map("exclusao_solicitada_em") @db.Timestamptz
+  expiraEm             DateTime?    @map("expira_em") @db.Timestamptz
+  usuario              Usuarios     @relation(fields: [id], references: [id], onDelete: Cascade)
+  disciplinas          Disciplinas[]
+  turmas               Turmas[]
+  notas                Notas[]
+  links                Links[]
+
+  @@map("profiles")
+}
+
+model Disciplinas {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professorId String    @map("professor_id") @db.Uuid
+  nome        String
+  cor         String    @default("verde")
+  icone       String    @default("BookOpen")
+  ordem       Int       @default(0)
+  criadoEm    DateTime  @default(now()) @map("criado_em") @db.Timestamptz
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz
+  professor   Profiles  @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  notas       Notas[]
+  links       Links[]
+
+  @@unique([professorId, nome], map: "disciplinas_professor_nome_unico")
+  @@index([professorId], map: "disciplinas_professor_idx")
+  @@map("disciplinas")
+}
+
+model Turmas {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professorId String    @map("professor_id") @db.Uuid
+  nome        String
+  serie       String    @default("Outro")
+  anoLetivo   Int       @map("ano_letivo")
+  criadoEm    DateTime  @default(now()) @map("criado_em") @db.Timestamptz
+  atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz
+  professor   Profiles  @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  links       Links[]
+
+  @@unique([professorId, nome, anoLetivo], map: "turmas_professor_ano_unico")
+  @@index([professorId, anoLetivo], map: "turmas_professor_idx")
+  @@map("turmas")
+}
+
+model Notas {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professorId    String       @map("professor_id") @db.Uuid
+  titulo         String       @default("Sem título")
+  disciplinaId   String?      @map("disciplina_id") @db.Uuid
+  disciplinaNome String       @default("") @map("disciplina_nome")
+  disciplinaCor  String       @default("verde") @map("disciplina_cor")
+  turmasIds      String[]     @default([]) @map("turmas_ids")
+  turmasNomes    String[]     @default([]) @map("turmas_nomes")
+  anoLetivo      Int          @map("ano_letivo")
+  mes            Int
+  sobre          String       @default("")
+  habilidades    String       @default("")
+  status         String       @default("rascunho")
+  blocos         Json         @default("[]") @db.JsonB
+  aparencia      Json         @default("{}") @db.JsonB
+  busca          String       @default("")
+  criadoEm       DateTime     @default(now()) @map("criado_em") @db.Timestamptz
+  atualizadoEm   DateTime     @default(now()) @map("atualizado_em") @db.Timestamptz
+  disciplina     Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: SetNull)
+  professor      Profiles     @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  links          Links[]
+
+  @@index([professorId, anoLetivo, mes], map: "notas_professor_ano_mes_idx")
+  @@index([professorId, atualizadoEm], map: "notas_professor_atualizado_idx")
+  @@index([professorId, disciplinaId], map: "notas_professor_disciplina_idx")
+  @@index([professorId, status], map: "notas_professor_status_idx")
+  @@map("notas")
+}
+
+model Links {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professorId      String       @map("professor_id") @db.Uuid
+  tipo             String
+  notaId           String?      @map("nota_id") @db.Uuid
+  turmaId          String?      @map("turma_id") @db.Uuid
+  disciplinaId     String?      @map("disciplina_id") @db.Uuid
+  token            String       @unique(map: "links_token_key")
+  professorNome    String       @default("") @map("professor_nome")
+  nome             String       @default("")
+  ativo            Boolean      @default(true)
+  pausadoNaExclusao Boolean     @default(false) @map("pausado_na_exclusao")
+  expiraEm         DateTime?    @map("expira_em") @db.Timestamptz
+  acessos          Int          @default(0)
+  criadoEm         DateTime     @default(now()) @map("criado_em") @db.Timestamptz
+  professor        Profiles     @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  nota             Notas?       @relation(fields: [notaId], references: [id], onDelete: Cascade)
+  turma            Turmas?      @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  disciplina       Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: Cascade)
+
+  @@index([professorId], map: "links_professor_idx")
+  @@index([notaId], map: "links_nota_idx")
+  @@index([turmaId], map: "links_turma_idx")
+  @@index([disciplinaId], map: "links_disciplina_idx")
+  @@index([token], map: "links_token_idx")
+  @@map("links")
+}
+
+model Sessoes {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId  String   @map("usuario_id") @db.Uuid
+  tokenHash  String   @unique(map: "sessoes_token_hash_key") @map("token_hash")
+  criadoEm   DateTime @default(now()) @map("criado_em") @db.Timestamptz
+  expiraEm   DateTime @map("expira_em") @db.Timestamptz
+  ultimoUsoEm DateTime @default(now()) @map("ultimo_uso_em") @db.Timestamptz
+  ip         String   @default("")
+  agente     String   @default("")
+  usuario    Usuarios @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId], map: "sessoes_usuario_idx")
+  @@index([expiraEm], map: "sessoes_expira_idx")
+  @@map("sessoes")
+}
+
+model TokensVerificacao {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId String    @map("usuario_id") @db.Uuid
+  tipo      String
+  tokenHash String    @unique(map: "tokens_verificacao_token_hash_key") @map("token_hash")
+  novoEmail String?   @map("novo_email")
+  expiraEm  DateTime  @map("expira_em") @db.Timestamptz
+  usadoEm   DateTime? @map("usado_em") @db.Timestamptz
+  criadoEm  DateTime  @default(now()) @map("criado_em") @db.Timestamptz
+  usuario   Usuarios  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId], map: "tokens_usuario_idx")
+  @@index([expiraEm], map: "tokens_expira_idx")
+  @@map("tokens_verificacao")
+}

@@ -23,11 +23,13 @@ export async function GET(req: NextRequest) {
   const { usuario } = sessao
 
   const db = await banco()
-  const disciplinas = (await db.orm.public.Disciplinas.where({
-    professorId: usuario.id,
-  }).all()) as unknown as DisciplinaLinha[]
+  const disciplinas = (await db.disciplinas.findMany({
+    where: {
+      professorId: usuario.id,
+    },
+  })) as unknown as DisciplinaLinha[]
   disciplinas.sort((a, b) => a.ordem - b.ordem)
-  const notas = await db.orm.public.Notas.where({ professorId: usuario.id }).all()
+  const notas = await db.notas.findMany({ where: { professorId: usuario.id } })
 
   // Contagem por disciplina via mapa em memória.
   const contagem = new Map<string, number>()
@@ -54,11 +56,13 @@ export async function POST(req: NextRequest) {
 
   const db = await banco()
   try {
-    const disciplina = (await db.orm.public.Disciplinas.create({
-      professorId: usuario.id,
-      nome,
-      cor: typeof corpo?.cor === "string" ? corpo.cor : "verde",
-      icone: typeof corpo?.icone === "string" ? corpo.icone : "BookOpen",
+    const disciplina = (await db.disciplinas.create({
+      data: {
+        professorId: usuario.id,
+        nome,
+        cor: typeof corpo?.cor === "string" ? corpo.cor : "verde",
+        icone: typeof corpo?.icone === "string" ? corpo.icone : "BookOpen",
+      },
     })) as unknown as DisciplinaLinha
     return json({ disciplina: paraResposta(disciplina) }, 201)
   } catch (erro) {

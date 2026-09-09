@@ -25,13 +25,15 @@ export async function GET(req: NextRequest) {
   const ano = Number(req.nextUrl.searchParams.get("ano")) || undefined
 
   const db = await banco()
-  const todas = (await db.orm.public.Turmas.where({
-    professorId: usuario.id,
-  }).all()) as unknown as TurmaLinha[]
+  const todas = (await db.turmas.findMany({
+    where: {
+      professorId: usuario.id,
+    },
+  })) as unknown as TurmaLinha[]
   const turmas = todas
     .filter((t) => !ano || t.anoLetivo === ano)
     .sort((a, b) => b.anoLetivo - a.anoLetivo || a.nome.localeCompare(b.nome, "pt-BR"))
-  const notas = await db.orm.public.Notas.where({ professorId: usuario.id }).all()
+  const notas = await db.notas.findMany({ where: { professorId: usuario.id } })
 
   const contagem = new Map<string, number>()
   for (const n of notas) {
@@ -65,11 +67,13 @@ export async function POST(req: NextRequest) {
 
   const db = await banco()
   try {
-    const turma = (await db.orm.public.Turmas.create({
-      professorId: usuario.id,
-      nome,
-      serie,
-      anoLetivo: Number(corpo?.anoLetivo) || new Date().getFullYear(),
+    const turma = (await db.turmas.create({
+      data: {
+        professorId: usuario.id,
+        nome,
+        serie,
+        anoLetivo: Number(corpo?.anoLetivo) || new Date().getFullYear(),
+      },
     })) as unknown as TurmaLinha
     return json({ turma: paraResposta(turma, 0) }, 201)
   } catch (erro) {
