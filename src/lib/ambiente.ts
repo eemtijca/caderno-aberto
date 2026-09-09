@@ -16,7 +16,11 @@ const esquema = z.object({
   STORAGE_S3_ACCESS_KEY: z.string().optional(),
   STORAGE_S3_SECRET_KEY: z.string().optional(),
   CRON_SECRET: z.string().optional(),
-  APP_URL: z.string().url("APP_URL precisa ser uma URL válida.").optional(),
+  // Vazia conta como ausente (Compose e shells entregam "" sem valor).
+  APP_URL: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().url("APP_URL precisa ser uma URL válida.").optional(),
+  ),
   ALLOW_TEST_OUTBOX: z.enum(["0", "1"]).default("0"),
   TESTES_CI: z.enum(["0", "1"]).default("0"),
   AUTH_LIMITE_TENTATIVAS: z.coerce.number().int().positive().default(30),

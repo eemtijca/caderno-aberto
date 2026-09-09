@@ -81,7 +81,7 @@ export default defineConfig({
       TESTES_CI: "1",
       AUTH_LIMITE_TENTATIVAS: "1000",
       AUTH_LIMITE_EMAIL: "1000",
-      UPLOAD_DIR: process.env.UPLOAD_DIR || "/tmp/opencode-imagens",
+      UPLOAD_DIR: process.env.UPLOAD_DIR || "./.tmp/imagens-teste",
     },
   },
 })

@@ -20,6 +20,7 @@ coverage/
 # dados locais de teste
 tools/
 tests/shim/dados/
+.tmp/
 
 # artefactos locais de base de dados
 pgdata/
