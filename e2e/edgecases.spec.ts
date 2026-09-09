@@ -41,7 +41,7 @@ test.describe("Edge cases", () => {
     await page.getByRole("checkbox").check()
     await page.getByRole("button", { name: "Continuar" }).click()
     await page.getByPlaceholder("EXCLUIR").fill("ERRADO")
-    await page.getByLabel("Senha atual").fill("senha123")
+    await page.locator("#senha-excluir").fill("senha123")
     await expect(page.getByRole("button", { name: "Confirmar exclusão" })).toBeDisabled()
   })
 

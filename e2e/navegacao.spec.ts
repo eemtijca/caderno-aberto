@@ -1,7 +1,7 @@
-import { test, expect } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 import { confirmarEEntrar } from "./helpers/auth"
 
-async function criarEConfirmar(page, baseURL) {
+async function criarEConfirmar(page: Page, baseURL: string | undefined) {
   const email = `nav_${Date.now()}_${Math.random().toString(36).slice(2, 5)}@exemplo.br`
   await page.goto("/#/cadastro")
   await page.getByLabel("Seu nome").fill("Prof Nav")

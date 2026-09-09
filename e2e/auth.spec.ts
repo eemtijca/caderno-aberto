@@ -18,7 +18,7 @@ test.describe("Autenticação", () => {
     await page.getByLabel("E-mail").fill(email)
     await page.getByLabel("Senha", { exact: true }).fill(senha)
     await page.getByRole("button", { name: "Entrar" }).click()
-    await expect(page.getByText(/Confirme o e-mail/i)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/E-mail ou senha incorretos/i)).toBeVisible({ timeout: 10000 })
     const mail = await buscarEmail(email, "Confirme", 20000)
     expect(mail.href).toContain("/api/auth/verificar?token=")
     const link = corrigirRedirect(mail.href, baseURL!)
@@ -48,7 +48,7 @@ test.describe("Autenticação", () => {
     await page.getByLabel("Senha", { exact: true }).fill("123")
     await page.getByLabel("Confirmar senha").fill("321")
     await page.getByRole("button", { name: "Criar conta" }).click()
-    await expect(page.getByText(/6 caracteres|não conferem/i)).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText(/8 caracteres|não conferem/i)).toBeVisible({ timeout: 5000 })
   })
 
   test("login pós cadastro vai para início não conta", async ({ page, baseURL }) => {

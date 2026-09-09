@@ -1,7 +1,7 @@
-import { test, expect } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 import { confirmarEEntrar } from "./helpers/auth"
 
-async function loginNovo(page, baseURL) {
+async function loginNovo(page: Page, baseURL: string | undefined) {
   const email = `conta_${Date.now()}_${Math.random().toString(36).slice(2, 4)}@exemplo.br`
   await page.goto("/#/cadastro")
   await page.getByLabel("Seu nome").fill("Prof Conta")
@@ -29,11 +29,15 @@ test.describe("Conta", () => {
     await expect(svg).toBeVisible()
   })
 
-  test("trocar senha validação mínimo 6", async ({ page, baseURL }) => {
+  test("trocar senha exige atual e mínimo 8", async ({ page, baseURL }) => {
     await loginNovo(page, baseURL)
     await page.goto("/#/conta")
-    const novaSenha = page.getByPlaceholder("Nova senha")
-    await expect(novaSenha.first()).toBeVisible({ timeout: 5000 })
+    await expect(page.getByLabel("Senha atual para trocar a senha")).toBeVisible({ timeout: 5000 })
+    await page.getByLabel("Senha atual para trocar a senha").fill("senha123")
+    await page.getByLabel("Nova senha", { exact: true }).fill("senhaNova123")
+    await page.getByLabel("Repetir nova senha").fill("senhaNova123")
+    await page.getByRole("button", { name: "Alterar senha" }).click()
+    await expect(page.getByText("Senha alterada")).toBeVisible({ timeout: 5000 })
   })
 
   test("backup baixar e importar", async ({ page, baseURL }) => {
@@ -58,7 +62,7 @@ test.describe("Conta", () => {
     await expect(confirmar).toBeDisabled()
     await page.getByPlaceholder("EXCLUIR").fill("EXCLUIR")
     await expect(confirmar).toBeDisabled()
-    await page.getByLabel("Senha atual").fill("senha_errada")
+    await page.locator("#senha-excluir").fill("senha_errada")
     await expect(confirmar).toBeEnabled()
     await confirmar.click()
     await expect(page.getByText(/Senha incorreta/i)).toBeVisible({ timeout: 5000 })
@@ -66,7 +70,7 @@ test.describe("Conta", () => {
     await page.getByRole("button", { name: "Continuar" }).click()
     await expect(page.getByText("Confirmação final")).toBeVisible()
     await page.getByPlaceholder("EXCLUIR").fill("EXCLUIR")
-    await page.getByLabel("Senha atual").fill("senha123")
+    await page.locator("#senha-excluir").fill("senha123")
     await page.getByRole("button", { name: "Confirmar exclusão" }).click()
     await expect(page.getByText(/Solicitação registrada/i)).toBeVisible({ timeout: 8000 })
     await expect(page.getByText(/Restaurar conta|Exclusão solicitada/i).first()).toBeVisible({
@@ -81,7 +85,7 @@ test.describe("Conta", () => {
     await page.getByRole("checkbox").check()
     await page.getByRole("button", { name: "Continuar" }).click()
     await page.getByPlaceholder("EXCLUIR").fill("EXCLUIR")
-    await page.getByLabel("Senha atual").fill("senha123")
+    await page.locator("#senha-excluir").fill("senha123")
     await page.getByRole("button", { name: "Confirmar exclusão" }).click()
     await expect(page.getByText(/Solicitação registrada/i)).toBeVisible({ timeout: 5000 })
     await page.goto("/#/")
@@ -97,7 +101,7 @@ test.describe("Conta", () => {
     await page.getByRole("checkbox").check()
     await page.getByRole("button", { name: "Continuar" }).click()
     await page.getByPlaceholder("EXCLUIR").fill("excluir")
-    await page.getByLabel("Senha atual").fill("senha123")
+    await page.locator("#senha-excluir").fill("senha123")
     await expect(page.getByRole("button", { name: "Confirmar exclusão" })).toBeDisabled()
   })
 })

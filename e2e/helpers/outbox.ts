@@ -1,5 +1,5 @@
 // Leitura da caixa de e-mails em memória para testes.
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000"
+const BASE = process.env.TEST_BASE_URL || "http://127.0.0.1:3000"
 
 interface EmailOutbox {
   para: string[]
