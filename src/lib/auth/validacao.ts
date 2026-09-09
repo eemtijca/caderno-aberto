@@ -1,4 +1,5 @@
 // Validação e normalização de e-mail e nome.
+import { APP_URL } from "@/lib/ambiente"
 
 /** Normaliza o e-mail (minúsculas, sem espaços) ou responde null. */
 export function normalizarEmail(valor: unknown): string | null {
@@ -16,8 +17,9 @@ export function normalizarNome(valor: unknown): string | null {
   return nome.length >= 2 ? nome : null
 }
 
-/** Origem pública da aplicação para compor links. Prioriza os cabeçalhos de host. */
+/** Origem pública da aplicação para compor links. Usa APP_URL quando definida. */
 export function origemApp(req: Request): string {
+  if (APP_URL) return APP_URL.replace(/\/$/, "")
   const host =
     req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ??
     req.headers.get("host") ??

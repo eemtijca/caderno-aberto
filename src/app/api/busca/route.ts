@@ -16,15 +16,16 @@ export async function GET(req: NextRequest) {
   const { usuario } = sessao
 
   const alvo = normalizar(q)
-  const db = await banco()
-  const linhas = (await db.orm.public.Notas.where((n: any) =>
-    n.busca.ilike(`%${alvo}%`),
-  ).all()) as unknown as NotaLinha[]
+  // Busca textual já isolada por professor no banco.
+  const like = alvo.replace(/[%_\\]/g, (c) => `\\${c}`)
+  const db = banco()
+  const linhas = (await db.notas.findMany({
+    where: { professorId: usuario.id, busca: { contains: like } },
+    orderBy: { atualizadoEm: "desc" },
+    take: 40,
+  })) as unknown as NotaLinha[]
 
   const resultados = linhas
-    .filter((linha) => linha.professorId === usuario.id)
-    .sort((a, b) => (a.atualizadoEm < b.atualizadoEm ? 1 : -1))
-    .slice(0, 40)
     .map((linha) => {
       const blocos = (linha.blocos ?? []) as Bloco[]
       const campos: { campo: string; texto: string }[] = [

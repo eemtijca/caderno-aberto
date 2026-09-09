@@ -16,6 +16,11 @@ const esquema = z.object({
   STORAGE_S3_ACCESS_KEY: z.string().optional(),
   STORAGE_S3_SECRET_KEY: z.string().optional(),
   CRON_SECRET: z.string().optional(),
+  APP_URL: z.string().url("APP_URL precisa ser uma URL válida.").optional(),
+  ALLOW_TEST_OUTBOX: z.enum(["0", "1"]).default("0"),
+  TESTES_CI: z.enum(["0", "1"]).default("0"),
+  AUTH_LIMITE_TENTATIVAS: z.coerce.number().int().positive().default(30),
+  AUTH_LIMITE_EMAIL: z.coerce.number().int().positive().default(10),
 })
 
 const parsed = esquema.safeParse(process.env)
@@ -43,6 +48,11 @@ const env = parsed.success
       STORAGE_S3_ACCESS_KEY: undefined,
       STORAGE_S3_SECRET_KEY: undefined,
       CRON_SECRET: undefined,
+      APP_URL: undefined,
+      ALLOW_TEST_OUTBOX: "0" as const,
+      TESTES_CI: "0" as const,
+      AUTH_LIMITE_TENTATIVAS: 30,
+      AUTH_LIMITE_EMAIL: 10,
     }
 
 if (env.EMAIL_DRIVER === "resend" && !env.RESEND_API_KEY) {
@@ -66,6 +76,16 @@ if (env.STORAGE_DRIVER === "s3") {
   }
 }
 
+// Em produção, a purga e a caixa de teste exigem configuração explícita.
+const emProducao =
+  process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== "phase-production-build"
+if (emProducao && !env.CRON_SECRET) {
+  throw new Error("CRON_SECRET é obrigatório em produção.")
+}
+if (emProducao && env.ALLOW_TEST_OUTBOX === "1" && env.TESTES_CI !== "1") {
+  throw new Error("ALLOW_TEST_OUTBOX=1 é proibido em produção (só com TESTES_CI=1).")
+}
+
 export const DATABASE_URL = env.DATABASE_URL
 export const AUTH_SECRET = env.AUTH_SECRET
 export const EMAIL_DRIVER = env.EMAIL_DRIVER
@@ -80,3 +100,7 @@ export const STORAGE_S3_BUCKET = env.STORAGE_S3_BUCKET ?? ""
 export const STORAGE_S3_ACCESS_KEY = env.STORAGE_S3_ACCESS_KEY ?? ""
 export const STORAGE_S3_SECRET_KEY = env.STORAGE_S3_SECRET_KEY ?? ""
 export const CRON_SECRET = env.CRON_SECRET ?? ""
+export const APP_URL = env.APP_URL ?? ""
+export const PERMITE_OUTBOX_TESTE = env.ALLOW_TEST_OUTBOX === "1"
+export const LIMITE_TENTATIVAS_LOGIN = env.AUTH_LIMITE_TENTATIVAS
+export const LIMITE_ENVIOS_EMAIL = env.AUTH_LIMITE_EMAIL

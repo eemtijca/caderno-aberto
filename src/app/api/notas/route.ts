@@ -52,15 +52,17 @@ export async function GET(req: NextRequest) {
 
 async function notasDoProfessor(professorId: string): Promise<NotaLinha[]> {
   const db = await banco()
-  return (await db.orm.public.Notas.where({ professorId }).all()) as unknown as NotaLinha[]
+  return (await db.notas.findMany({ where: { professorId } })) as unknown as NotaLinha[]
 }
 
 async function filtrarBusca(professorId: string, q: string): Promise<NotaLinha[]> {
-  const db = await banco()
-  const linhas = (await db.orm.public.Notas.where((n: any) =>
-    n.busca.ilike(`%${q}%`),
-  ).all()) as unknown as NotaLinha[]
-  return linhas.filter((l) => l.professorId === professorId)
+  const db = banco()
+  // Busca textual já isolada por professor no banco.
+  const like = q.replace(/[%_\\]/g, (c) => `\\${c}`)
+  const linhas = await db.notas.findMany({
+    where: { professorId, busca: { contains: like } },
+  })
+  return linhas as unknown as NotaLinha[]
 }
 
 function comDisciplinaLinha(linha: NotaLinha) {
@@ -81,10 +83,12 @@ export async function POST(req: NextRequest) {
   if (!disciplinaId) return erroApi("Selecione a disciplina.")
 
   const db = await banco()
-  const disciplina = await db.orm.public.Disciplinas.where({
-    id: disciplinaId,
-    professorId: usuario.id,
-  }).first()
+  const disciplina = await db.disciplinas.findFirst({
+    where: {
+      id: disciplinaId,
+      professorId: usuario.id,
+    },
+  })
   if (!disciplina) return erroApi("Disciplina não encontrada.", 404)
 
   const anoLetivo = Number(corpo.anoLetivo) || new Date().getFullYear()
@@ -95,7 +99,7 @@ export async function POST(req: NextRequest) {
     ? corpo.turmasIds.filter((t: unknown) => typeof t === "string")
     : []
   // Restringe às turmas do professor.
-  const turmasDoProfessor = await db.orm.public.Turmas.where({ professorId: usuario.id }).all()
+  const turmasDoProfessor = await db.turmas.findMany({ where: { professorId: usuario.id } })
   const porId = new Map(turmasDoProfessor.map((t) => [t.id, t]))
   const turmasFinais = turmasIds
     .map((id) => porId.get(id))
@@ -110,29 +114,31 @@ export async function POST(req: NextRequest) {
   const sobre: string = typeof corpo.sobre === "string" ? corpo.sobre : ""
   const habilidades: string = typeof corpo.habilidades === "string" ? corpo.habilidades : ""
 
-  const linha = (await db.orm.public.Notas.create({
-    professorId: usuario.id,
-    titulo,
-    ...camposDenormalizados(
-      disciplina as unknown as Parameters<typeof camposDenormalizados>[0],
-      turmasFinais as unknown as Parameters<typeof camposDenormalizados>[1],
-    ),
-    anoLetivo,
-    mes,
-    sobre,
-    habilidades,
-    status: corpo.status === "publicada" ? "publicada" : "rascunho",
-    blocos: paraJson(blocos),
-    busca: normalizar(
-      textoDeBusca({
-        titulo,
-        sobre,
-        habilidades,
-        blocos,
-        disciplina: { nome: disciplina.nome },
-        turmas: turmasFinais.map((t) => ({ nome: t.nome, serie: t.serie })),
-      }),
-    ),
+  const linha = (await db.notas.create({
+    data: {
+      professorId: usuario.id,
+      titulo,
+      ...camposDenormalizados(
+        disciplina as unknown as Parameters<typeof camposDenormalizados>[0],
+        turmasFinais as unknown as Parameters<typeof camposDenormalizados>[1],
+      ),
+      anoLetivo,
+      mes,
+      sobre,
+      habilidades,
+      status: corpo.status === "publicada" ? "publicada" : "rascunho",
+      blocos: paraJson(blocos),
+      busca: normalizar(
+        textoDeBusca({
+          titulo,
+          sobre,
+          habilidades,
+          blocos,
+          disciplina: { nome: disciplina.nome },
+          turmas: turmasFinais.map((t) => ({ nome: t.nome, serie: t.serie })),
+        }),
+      ),
+    },
   })) as unknown as NotaLinha
 
   const mapaTurmas = await mapaTurmasProfessor(usuario.id)
