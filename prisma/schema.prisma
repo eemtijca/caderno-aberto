@@ -166,3 +166,12 @@ model TokensVerificacao {
   @@index([expiraEm], map: "tokens_expira_idx")
   @@map("tokens_verificacao")
 }
+
+model TentativasLimite {
+  chave  String   @map("chave")
+  feitaEm DateTime @default(now()) @map("feita_em") @db.Timestamptz
+
+  @@id([chave, feitaEm], map: "tentativas_limite_pkey")
+  @@index([feitaEm], map: "tentativas_limite_feita_idx")
+  @@map("tentativas_limite")
+}
