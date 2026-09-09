@@ -16,7 +16,6 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U caderno -d caderno"]
       interval: 5s
@@ -35,6 +34,8 @@ services:
     environment:
       DATABASE_URL: postgresql://caderno:caderno@db:5432/caderno
       AUTH_SECRET: ${AUTH_SECRET:?Defina AUTH_SECRET no .env}
+      CRON_SECRET: ${CRON_SECRET:?Defina CRON_SECRET no .env}
+      APP_URL: ${APP_URL:-}
       EMAIL_DRIVER: ${EMAIL_DRIVER:-log}
       EMAIL_FROM: ${EMAIL_FROM:-Caderno Aberto <contato@exemplo.br>}
       RESEND_API_KEY: ${RESEND_API_KEY:-}

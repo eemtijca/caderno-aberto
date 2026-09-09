@@ -1,5 +1,5 @@
 // Reposição total do banco de desenvolvimento: apaga todos os dados
-// (incluindo auth.users e objetos do Storage) e reaplica as migrações.
+// e o registo de migrações. As migrações reaplicam na partida.
 // Uso: DATABASE_URL=postgresql://... node docker/postgres/repor.mjs
 // Nunca apontar para produção: o workflow db-reset.yml trava o destino.
 import pg from "pg"
@@ -31,20 +31,6 @@ const FUNCOES_APP = [
 
 const cliente = new pg.Client({ connectionString: url })
 
-// Executa o passo, pulando quando o objeto nem existe (ex.: banco novo
-// sem os schemas gerenciados do Supabase).
-async function ignorarAusente(passo) {
-  try {
-    await passo()
-  } catch (erro) {
-    if (erro.code === "42P01") {
-      console.log(`[repor] Ausente, pulando: ${erro.message.split("\n")[0]}`)
-      return
-    }
-    throw erro
-  }
-}
-
 try {
   await cliente.connect()
 } catch (erro) {
@@ -53,17 +39,11 @@ try {
 }
 
 try {
-  console.log("[repor] Apagando objetos do Storage...")
-  await ignorarAusente(() => cliente.query(`delete from storage.objects`))
-
-  console.log("[repor] Apagando usuários do Auth...")
-  await ignorarAusente(() => cliente.query(`delete from auth.users`))
-
   console.log("[repor] Derrubando tabelas do app...")
   for (const tabela of TABELAS_APP) {
     await cliente.query(`drop table if exists public.${tabela} cascade`)
   }
-  await cliente.query(`drop table if exists public.migracoes_aplicadas cascade`)
+  await cliente.query(`drop table if exists public._prisma_migrations cascade`)
 
   console.log("[repor] Derrubando funções do app...")
   for (const funcao of FUNCOES_APP) {

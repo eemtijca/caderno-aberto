@@ -3,7 +3,10 @@
 # Aguarda o banco, aplica as migrações e inicia o servidor.
 set -eu
 
-echo "[entrada] Aguardando o banco em $DATABASE_URL..."
+echo "[entrada] Aguardando o banco..."
+# O endereço é mascarado para não expor a senha nos logs.
+mascarado=$(echo "$DATABASE_URL" | sed -E 's#(://[^:]+:)[^@]+@#\1***@#')
+echo "[entrada] Destino: $mascarado"
 for i in $(seq 1 60); do
   if node ./docker/app/migrar.mjs; then
     break

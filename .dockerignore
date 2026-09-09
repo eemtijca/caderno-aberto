@@ -4,14 +4,16 @@ out/
 dist/
 .git/
 .github/
-supabase/
+.agents/
 tests/
 e2e/
 playwright-report/
 test-results/
+generated/
 .env*
 !.env.example
 *.log
 .DS_Store
 pgdata/
 uploads/
+*.tsbuildinfo

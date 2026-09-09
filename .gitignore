@@ -1,5 +1,6 @@
 # dependências / build
 node_modules/
+generated/
 .next/
 out/
 build/
@@ -13,14 +14,16 @@ build/
 *.log
 dev.log
 server.log
+coverage/
+.vercel/
 
 # dados locais de teste
 tools/
 tests/shim/dados/
 
 # artefactos locais de base de dados
-supabase/.temp/
-supabase/.branches/
+pgdata/
+uploads/
 
 # sistema
 .DS_Store

@@ -16,5 +16,7 @@ services:
       - "3000:3000"
     environment:
       AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
+      CRON_SECRET: segredo-cron-dummy-de-32-bytes-para-ci00
       EMAIL_DRIVER: log
       ALLOW_TEST_OUTBOX: "1"
+      TESTES_CI: "1"
