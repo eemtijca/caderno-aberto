@@ -51,7 +51,7 @@ O professor cria uma conta, utiliza um editor visual de blocos (caixas COPIAR, e
 ### Conta
 
 - Perfil com nome e escola (exibidos nas notas e impressos) e e-mail.
-- Segurança com troca de senha (mínimo 6 caracteres, com confirmação) e troca de e-mail com confirmação por link no novo endereço.
+- Segurança com troca de senha (mínimo 8 caracteres, com confirmação e senha atual) e troca de e-mail com confirmação por link no novo endereço.
 - Disciplinas com nome, cor e ícone gráfico, contador de notas e renomeação; excluir preserva as notas (só desvincula).
 - Turmas com nome, série e ano letivo, agrupadas por ano; excluir preserva as notas.
 - Backup completo em um único arquivo JSON (disciplinas, turmas, notas, links e imagens em base64), com restauração substitutiva e importação de nota única (`.md` ou `.json`).
@@ -82,9 +82,9 @@ O professor cria uma conta, utiliza um editor visual de blocos (caixas COPIAR, e
 ## Stack
 
 - Next.js 16 (App Router) com TypeScript e Node 24.
-- PostgreSQL 15 ou superior com Prisma ORM v8 (contrato em `src/prisma/contract.prisma`).
+- PostgreSQL 15 ou superior com Prisma ORM v7 (`prisma/schema.prisma`).
 - Autenticação própria (scrypt + JWT em cookies HttpOnly); e-mails via Resend, SMTP genérico ou log local.
-- Imagens atrás de interface agnóstica: disco local (`disk`, volume Docker) ou API S3-compatível (`s3`: Supabase Storage, MinIO, R2).
+- Imagens atrás de interface agnóstica: disco local (`disk`, volume Docker) ou API S3-compatível (`s3`: MinIO, R2 ou similar).
 - Tailwind CSS 4 com shadcn/ui.
 - KaTeX com mhchem.
 - dnd-kit (editor) e TanStack Query.
@@ -95,51 +95,27 @@ Paleta: verde institucional #008241.
 
 ### Pré-requisitos
 
-Node 24, Docker com Compose (para o modo recomendado) ou Supabase CLI com Docker (para o modo Supabase local).
+Node 24, Docker com Compose (para o modo recomendado) ou PostgreSQL 15+ próprio.
 
 ### Com Docker Compose (recomendado)
 
 ```bash
 cp .env.example .env
-# Gere um segredo: openssl rand -base64 32  (cole em AUTH_SECRET no .env)
+# Gere os segredos: openssl rand -base64 32  (cole em AUTH_SECRET e CRON_SECRET no .env)
 docker compose up --build
 ```
 
-O Compose sobe o PostgreSQL 17 (`db:5432`, volume `pgdata`), aplica as migrações na partida (`docker/postgres/migracoes/`) e inicia o app em http://localhost:3000. Com `STORAGE_DRIVER=disk` (padrão), as imagens ficam no volume `uploads`.
-
-### Com Supabase local (banco + Storage S3)
-
-```bash
-supabase start
-PGPASSWORD=postgres createdb -h 127.0.0.1 -p 54322 -U postgres cadernoaberto
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/cadernoaberto node docker/app/migrar.mjs
-```
-
-Sem o cliente `postgresql-client`, crie o banco com `psql -h 127.0.0.1 -p 54322 -U postgres -c "CREATE DATABASE cadernoaberto;"` (com `PGPASSWORD=postgres` no ambiente).
-
-Crie o bucket `imagens` uma vez por instância (privado, limite 6 MB, tipos de imagem):
-
-```sql
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('imagens', 'imagens', false, 6291456,
-  '{image/png,image/jpeg,image/webp,image/gif,image/svg+xml}');
-```
-
-No `.env`, aponte `DATABASE_URL` para o banco acima e, para imagens no Storage, defina `STORAGE_DRIVER=s3` com `STORAGE_S3_ENDPOINT=http://127.0.0.1:54321/storage/v1/s3`, `STORAGE_S3_REGION=local`, `STORAGE_S3_BUCKET=imagens` e as chaves do protocolo S3 do serviço Storage (variáveis `S3_PROTOCOL_ACCESS_KEY_ID` e `S3_PROTOCOL_ACCESS_KEY_SECRET` do contêiner `storage`). Depois suba o app:
-
-```bash
-npm run dev
-```
+O Compose sobe o PostgreSQL 17 (`db:5432`, volume `pgdata`), aplica as migrações na partida (`prisma/migrations/`) e inicia o app em http://localhost:3000. Com `STORAGE_DRIVER=disk` (padrão), as imagens ficam no volume `uploads`.
 
 ### Sem Docker (PostgreSQL próprio)
 
 ```bash
 npm install
 cp .env.example .env
-# Preencha DATABASE_URL (qualquer PostgreSQL 15+, incluindo o banco
-# direto de um projeto Supabase) e AUTH_SECRET no .env
+# Preencha DATABASE_URL (qualquer PostgreSQL 15+), AUTH_SECRET,
+# CRON_SECRET e APP_URL no .env
 # Sem volume Docker, defina STORAGE_DRIVER=disk com UPLOAD_DIR local
-node docker/app/migrar.mjs
+npx prisma migrate deploy
 npm run dev
 ```
 
@@ -156,11 +132,11 @@ npm run test:contratos
 npm run test:e2e
 ```
 
-Os comandos correspondem a:
+Os comandos correspondem a (detalhes em `tests/README.md`):
 
-- `test:unit`: testes puros de geração LaTeX/Markdown (autocontenção, round-trip, aparência), também grava `.tex` de exemplo em `tests/tex/` para compilação manual com `tectonic`.
-- `test:api`: 6 testes de isolamento do backstop RLS (papel restrito `app_teste`, sem contexto, A/B, escrita cruzada). Exige `DATABASE_URL` com as migrações aplicadas.
-- `test:contratos`: 40 verificações HTTP de ponta a ponta da API (conta, CRUD, links públicos, imagens, backup). Exige o app no ar (`TEST_BASE_URL`, padrão http://127.0.0.1:3000).
+- `test:unit`: bibliotecas puras de geração LaTeX/Markdown (autocontenção, round-trip, aparência), também grava `.tex` de exemplo em `tests/tex/` para compilação manual com `tectonic`.
+- `test:api`: isolamento do backstop RLS (papel restrito `app_teste`, sem contexto, A/B, escrita cruzada). Exige `DATABASE_URL` com as migrações aplicadas.
+- `test:contratos`: verificações HTTP de ponta a ponta da API (conta, CRUD, links públicos, imagens, backup). Exige o app no ar (`TEST_BASE_URL`, padrão http://127.0.0.1:3000) com `ALLOW_TEST_OUTBOX=1`.
 - `test:e2e`: suíte Playwright em 3 navegadores, headless, cobrindo autenticação com confirmação e reenvio, notas com disciplina inline, links, conta com carência, ícones e casos extremos. Os e-mails de teste são lidos em `/api/teste/outbox` (provedor `log`). A interface interativa (`test:e2e:ui`) abre o executor visual.
 
 Verificações de qualidade: `npm run lint`, `npm run tsc`, `npm run build`.
@@ -171,34 +147,36 @@ Quatro workflows em `.github/workflows/` rodam a cada push em `main` e pull requ
 
 - **quality**: `npm run format:check`, `npm run lint`, `npm run tsc` e `test:unit`.
 - **build**: `npm run build` com `DATABASE_URL`/`AUTH_SECRET` fictícios e `EMAIL_DRIVER=log`.
-- **test-db**: service `postgres:17`, migrações, `test:api` (isolamento RLS) e `test:contratos` (sobe o app e testa a API).
+- **test-db**: sobe o Compose, aplica migrações, `test:api` (isolamento RLS) e `test:contratos` (testa a API no ar).
 - **db-reset**: só manual (`workflow_dispatch`), restrito ao environment `production` (detalhes abaixo).
 
 Os testes E2E (Playwright) não fazem parte do CI e devem ser executados localmente com o app no ar.
 
 ## Reset do banco real (antes de haver usuários reais)
 
-Apaga **todos** os dados do banco (tabelas do app, `auth.users` e objetos do Storage) **sem volta** — não há backup — e reaplica as migrações do zero. Vale somente enquanto não há usuários reais; ao liberá-los, desabilite este workflow no GitHub UI (Actions → Reset do Banco Real → Disable workflow).
+Apaga **todos** os dados do banco **sem volta** — não há backup — e reaplica as migrações do zero. Vale somente enquanto não há usuários reais; ao liberá-los, desabilite este workflow no GitHub UI (Actions → Reset do Banco Real → Disable workflow).
 
 Pré-requisitos no GitHub (Settings → Environments → `production`, com revisor obrigatório):
 
-| Secret | Valor |
-|---|---|
-| `DATABASE_URL_PROD` | Conexão **direta** `:5432` do projeto Supabase real (`postgresql://postgres:[senha]@db.[REF].supabase.co:5432/postgres`). Nunca pooler `:6543`, nunca outra base. |
+| Secret              | Valor                                                                                                                        |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL_PROD` | Conexão **direta** `:5432` do PostgreSQL de produção (`postgresql://usuario:[senha]@host:5432/banco`). Nunca pooler `:6543`. |
 
-Para disparar: Actions → "Reset do Banco Real" → Run workflow → digite exatamente `APAGAR-BANCO-REAL`. O workflow trava se o host da URL não for `*.supabase.co`, executa `docker/postgres/repor.mjs` + `docker/app/migrar.mjs` e verifica o estado final (3 migrações aplicadas, zero usuários, isolamento). Segredos trafegam só via bloco `env:` (nunca em `echo` ou argumento de comando) e forks não os recebem em dispatch manual.
+Para disparar: Actions → "Reset do Banco Real" → Run workflow → digite exatamente `APAGAR-BANCO-REAL`. O workflow recusa destino local, executa `docker/postgres/repor.mjs` + migrações e verifica o estado final (migrações aplicadas, zero usuários). Segredos trafegam só via bloco `env:` (nunca em `echo` ou argumento de comando) e forks não os recebem em dispatch manual.
 
 ## Deploy
 
-1. Banco: PostgreSQL 15 ou superior (Compose, gerenciado ou o banco direto de um projeto Supabase). As migrações aplicam sozinhas na partida do contêiner (`docker/app/migrar.mjs`); fora do Compose, rode o migrador com a `DATABASE_URL` de produção antes de publicar.
-2. Aplicativo na Vercel: comando de build `npm run build` e as variáveis do `.env.example` (`DATABASE_URL` do pooler de sessão com `?sslmode=require`, `AUTH_SECRET` com 32 ou mais bytes aleatórios, `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, `STORAGE_DRIVER=s3` com as 5 variáveis `STORAGE_S3_*` e `CRON_SECRET` com segredo aleatório). O disco é efêmero na Vercel: imagens exigem `s3`, nunca `disk`.
+1. Banco: PostgreSQL 15 ou superior (Compose ou gerenciado). As migrações aplicam na partida do contêiner e no build da Vercel (`prisma migrate deploy`); fora desses, rode com a `DATABASE_URL` de produção antes de publicar.
+2. Aplicativo na Vercel: variáveis do `.env.example` (`DATABASE_URL` do pooler de sessão com `?sslmode=require`, `AUTH_SECRET` com 32 ou mais bytes aleatórios, `APP_URL` canônica, `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, `STORAGE_DRIVER=s3` com as 5 variáveis `STORAGE_S3_*` e `CRON_SECRET` com segredo aleatório). O disco é efêmero na Vercel: imagens exigem `s3`, nunca `disk`.
 3. Agendador da purga: o `vercel.json` já registra o Cron diário em `GET /api/conta/restaurar`; a Vercel envia `CRON_SECRET` como `Authorization` automaticamente. Fora da Vercel, agende a mesma chamada com o cabeçalho (cron do host, GitHub Actions com `schedule` ou similar).
 4. Produção: use um papel dono do schema na `DATABASE_URL` (as políticas RLS de segunda barreira valem para papéis com `bypassrls` apenas como documentação; o isolamento real é aplicado pela API). Aponte deploys de pré-visualização para um banco de staging, nunca para produção.
 5. Alternativa self-hosted: `docker compose up --build` com `.env` preenchido (o entrypoint migra e serve; imagens no volume `uploads`).
 
+Detalhes em `docs/` (arquitetura, ambiente, banco, testes, deploy, segurança) e `CONTRIBUTING.md`.
+
 ## Referência da API
 
-Autenticação (`/api/auth`): `POST cadastro`, `POST entrar`, `POST` e `GET sair`, `GET verificar?token=`, `POST reenviar`, `POST redefinir` e `GET redefinir?token=`, `POST concluir`, `POST renovar`, `POST trocar-senha`, `POST trocar-email` e `GET confirmar-troca?token=`. E-mail inexistente sempre responde 200 na recuperação e no reenvio.
+Autenticação (`/api/auth`): `POST cadastro`, `POST entrar`, `POST sair`, `GET verificar?token=`, `POST reenviar`, `POST redefinir` e `GET redefinir?token=`, `POST concluir`, `POST renovar`, `POST trocar-senha`, `POST trocar-email` e `GET confirmar-troca?token=`. E-mail inexistente sempre responde 200 na recuperação e no reenvio.
 
 Conta (`/api/conta`): `GET` (sessão com usuário e perfil), `PATCH` (nome e escola), `POST excluir` (exige senha e palavra EXCLUIR, carência de 24 horas), `POST restaurar` (dentro da carência) e `DELETE restaurar` (purga com segredo).
 
@@ -208,7 +186,7 @@ Disciplinas, turmas e links: `GET` com contagens (`totalNotas`), `POST`, `PUT` e
 
 Busca (`GET /api/busca?q=`, mínimo 2 caracteres, limite 40, com campo de origem e trecho); backup (`GET` exporta, `POST` restaura de forma substitutiva); importação (`POST /api/importar` com `conteudo` e `formato`); imagens (`POST` multipart até 6 MB, `GET ?path=` com `?png=1` para conversão, `DELETE`); visão pública sem login (`GET /api/publico/[token]` com contador de acessos e demonstração, `GET /api/publico/[token]/imagens` só para imagens referenciadas); saúde (`GET /api`); caixa de e-mail de teste fora de produção (`GET` e `DELETE /api/teste/outbox`).
 
-Os contratos vivos estão em `tests/api/contratos.test.mjs` (40 verificações) e o isolamento em `tests/api/isolamento.test.mjs`.
+Os contratos vivos estão em `tests/api/contratos.test.ts` e o isolamento em `tests/api/isolamento.test.ts`.
 
 ## Perguntas frequentes
 
@@ -236,20 +214,22 @@ src/
     publico/[token]/  vista do aluno (sem login) e servidor de imagens
   components/         editor visual, vistas (notas, links, conta), shell
   hooks/use-sessao    ciclo de vida da autenticação com carência
+  proxy.ts            CSRF, CSP e sessão no limite
   lib/
     auth/             scrypt, JWT+sessões, validação e limite de tentativas
     email/            provedor agnóstico (log, smtp, resend) e modelos pt-BR
     armazenamento/    imagens atrás de interface única (disk, s3)
-    banco/            tipos das linhas (espelham o contrato Prisma)
+    banco.ts          singleton do PrismaClient; banco/tipos espelha o schema
     notas/            AST de blocos, LaTeX, Markdown, busca, paleta e ícones
     api/              sessão, serialização, links públicos e limite
-  prisma/             contrato Prisma v8 (fonte da verdade do esquema)
+prisma/
+  schema.prisma       fonte da verdade do esquema
+  migrations/         SQL versionado (migrate deploy + migrador do contêiner)
 docker/
-  postgres/migracoes/ SQL versionado aplicado pelo migrador próprio
   app/                entrypoint + migrador do contêiner
-supabase/
-  config.toml         orquestração mínima do stack local (banco + Storage S3)
-tests/api/            contratos HTTP + isolamento do backstop RLS
+  postgres/repor.mjs  reposição local do banco
+docs/                 arquitetura, ambiente, banco, testes, deploy, segurança
+tests/                Vitest (unit, isolamento, contratos) + README
 e2e/                  suíte Playwright headless com outbox de e-mail local
 ```
 
