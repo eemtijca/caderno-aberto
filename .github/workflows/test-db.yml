@@ -19,9 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Supre a interpolação obrigatória de compose.yml (o serviço app
-    # recebe o mesmo valor via compose.ci.yml).
+    # recebe os mesmos valores via compose.ci.yml).
     env:
       AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
+      CRON_SECRET: segredo-cron-dummy-de-32-bytes-para-ci00
     steps:
       - name: Checkout
         uses: actions/checkout@v7
