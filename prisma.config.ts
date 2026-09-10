@@ -8,8 +8,12 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // generate é offline e nunca conecta; sem URL usa fictícia.
-    // migrate e app exigem a real (ambiente.ts valida no boot).
-    url: process.env.DATABASE_URL ?? "postgresql://generate:generate@localhost:5432/generate",
+    // CLI usa DIRECT_URL (pooler de sessão :5432) com fallback em DATABASE_URL.
+    // Runtime usa DATABASE_URL, ver src/lib/banco.ts.
+    // process.env permite o fallback. env() lançaria exceção se faltar.
+    url:
+      process.env.DIRECT_URL ??
+      process.env.DATABASE_URL ??
+      "postgresql://generate:generate@localhost:5432/generate",
   },
 })

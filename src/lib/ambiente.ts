@@ -3,6 +3,8 @@ import { z } from "zod"
 
 const esquema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL não definida."),
+  // Conexão do CLI Prisma. Opcional em local/CI, cai em DATABASE_URL.
+  DIRECT_URL: z.string().min(1).optional(),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET precisa de ao menos 32 caracteres."),
   EMAIL_DRIVER: z.enum(["log", "smtp", "resend"]).default("log"),
   EMAIL_FROM: z.string().default("Caderno Aberto <contato@exemplo.br>"),
@@ -39,6 +41,7 @@ const env = parsed.success
   ? parsed.data
   : {
       DATABASE_URL: "postgresql://build:build@localhost:5432/build",
+      DIRECT_URL: undefined,
       AUTH_SECRET: "segredo-ficticio-de-build-com-32-bytes-ok",
       EMAIL_DRIVER: "log" as const,
       EMAIL_FROM: "Build <build@exemplo.br>",
@@ -91,6 +94,7 @@ if (emProducao && env.ALLOW_TEST_OUTBOX === "1" && env.TESTES_CI !== "1") {
 }
 
 export const DATABASE_URL = env.DATABASE_URL
+export const DIRECT_URL = env.DIRECT_URL ?? env.DATABASE_URL
 export const AUTH_SECRET = env.AUTH_SECRET
 export const EMAIL_DRIVER = env.EMAIL_DRIVER
 export const EMAIL_FROM = env.EMAIL_FROM
