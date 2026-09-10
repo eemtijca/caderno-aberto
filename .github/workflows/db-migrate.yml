@@ -1,0 +1,53 @@
+name: Migrações do Banco
+
+# Aplica as migrações Prisma no Supabase de produção. Roda só no push
+# em main com migration nova; o build da Vercel não migra (só generate).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "prisma/migrations/**"
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrar:
+    name: Aplicar migrações em produção
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    env:
+      DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Aplicar migrações
+        run: npx prisma migrate deploy
+
+      - name: Verificar estado final
+        run: |
+          npx prisma migrate status
+          node -e "
+          import('pg').then(async ({ default: pg }) => {
+            const c = new pg.Client({ connectionString: process.env.DIRECT_URL });
+            await c.connect();
+            const m = await c.query('select migration_name from public._prisma_migrations where rolled_back_at is null order by migration_name');
+            console.log('migrações:', m.rows.map((r) => r.migration_name).join(','));
+            if (m.rows.length === 0) process.exit(1);
+            await c.end();
+          });"
