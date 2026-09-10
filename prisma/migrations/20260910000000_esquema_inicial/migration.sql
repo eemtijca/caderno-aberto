@@ -1,25 +1,24 @@
--- Caderno Aberto. Migração 0001: esquema base.
--- Domínio, autenticação local e políticas de isolamento como segunda
--- barreira, sensíveis ao contexto app.usuario_atual.
+-- Caderno Aberto. Esquema inicial.
+-- Sem papel de teste, que vive em prisma/scripts/rls-teste.sql, só local/CI.
+-- Idempotente: criações com if not exists, drops com if exists.
 
+-- Extensões (citext sem uso, mantida por idempotência).
 create extension if not exists pgcrypto;
 create extension if not exists citext;
 
--- Controle das migrações aplicadas (migrador próprio, idempotente).
-create table if not exists public.migracoes_aplicadas (
-  nome text primary key,
-  aplicada_em timestamptz not null default now()
-);
-
+-- Tabelas.
 -- Usuários: credenciais locais (hash scrypt, nunca a senha).
+-- E-mail em texto, único em lower(email).
 create table if not exists public.usuarios (
   id uuid primary key default gen_random_uuid(),
-  email citext not null unique,
+  email text not null,
   senha_hash text not null default '',
   email_verificado_em timestamptz,
   criado_em timestamptz not null default now(),
   atualizado_em timestamptz not null default now()
 );
+
+create unique index if not exists usuarios_email_unico on public.usuarios (lower(email));
 
 create table if not exists public.profiles (
   id uuid primary key references public.usuarios (id) on delete cascade,
@@ -66,6 +65,7 @@ create index if not exists turmas_professor_idx on public.turmas (professor_id, 
 -- turmas_ids/nomes) para leitura pública sem expor as tabelas
 -- privadas; gatilhos mantêm tudo sincronizado.
 -- `busca` guarda o texto normalizado (sem acentos) p/ ILIKE.
+-- turmas_ids em text[].
 create table if not exists public.notas (
   id uuid primary key default gen_random_uuid(),
   professor_id uuid not null references public.profiles (id) on delete cascade,
@@ -73,7 +73,7 @@ create table if not exists public.notas (
   disciplina_id uuid references public.disciplinas (id) on delete set null,
   disciplina_nome text not null default '',
   disciplina_cor text not null default 'verde',
-  turmas_ids uuid[] not null default '{}',
+  turmas_ids text[] not null default '{}',
   turmas_nomes text[] not null default '{}',
   ano_letivo int not null default extract(year from now())::int,
   mes int not null default extract(month from now())::int,
@@ -106,6 +106,7 @@ create table if not exists public.links (
   professor_nome text not null default '',
   nome text not null default '',
   ativo boolean not null default true,
+  pausado_na_exclusao boolean not null default false,
   expira_em timestamptz,
   acessos int not null default 0,
   criado_em timestamptz not null default now(),
@@ -144,7 +145,7 @@ create table if not exists public.tokens_verificacao (
   tipo text not null
     constraint tokens_tipo_valido check (tipo in ('verificacao', 'recuperacao', 'troca_email')),
   token_hash text not null unique,
-  novo_email citext,
+  novo_email text,
   expira_em timestamptz not null,
   usado_em timestamptz,
   criado_em timestamptz not null default now()
@@ -152,6 +153,16 @@ create table if not exists public.tokens_verificacao (
 
 create index if not exists tokens_usuario_idx on public.tokens_verificacao (usuario_id);
 create index if not exists tokens_expira_idx on public.tokens_verificacao (expira_em);
+
+-- Janela do limite de tentativas: cada tentativa com a chave
+-- (rota + IP) para o limite valer entre instâncias e reinícios.
+create table if not exists public.tentativas_limite (
+  chave text not null,
+  feita_em timestamptz not null default now(),
+  constraint tentativas_limite_pkey primary key (chave, feita_em)
+);
+
+create index if not exists tentativas_limite_feita_idx on public.tentativas_limite (feita_em);
 
 -- Gatilhos de domínio (portáteis, só tocam o esquema public).
 
@@ -222,7 +233,7 @@ as $$
 begin
   update public.notas
   set turmas_nomes = array_replace(turmas_nomes, old.nome, new.nome)
-  where turmas_ids @> array[new.id];
+  where turmas_ids @> array[new.id::text];
   return new;
 end;
 $$;
@@ -241,9 +252,9 @@ set search_path = ''
 as $$
 begin
   update public.notas
-  set turmas_ids = array_remove(turmas_ids, old.id),
+  set turmas_ids = array_remove(turmas_ids, old.id::text),
       turmas_nomes = array_remove(turmas_nomes, old.nome)
-  where turmas_ids @> array[old.id];
+  where turmas_ids @> array[old.id::text];
   return old;
 end;
 $$;
@@ -339,18 +350,3 @@ create policy "isolamento_proprio"
   on public.tokens_verificacao for all to public
   using (usuario_id = nullif(current_setting('app.usuario_atual', true), '')::uuid)
   with check (usuario_id = nullif(current_setting('app.usuario_atual', true), '')::uuid);
-
--- Papel sem privilégios para prova das políticas em testes.
-do $$
-begin
-  if not exists (select 1 from pg_roles where rolname = 'app_teste') then
-    create role app_teste nologin;
-  end if;
-  execute format('grant connect on database %I to app_teste', current_database());
-end;
-$$;
-grant usage on schema public to app_teste;
-grant select, insert, update, delete on all tables in schema public to app_teste;
-alter default privileges in schema public grant select, insert, update, delete on tables to app_teste;
-grant usage, select on all sequences in schema public to app_teste;
-alter default privileges in schema public grant usage, select on sequences to app_teste;
