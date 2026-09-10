@@ -1,7 +1,9 @@
 # Banco
 
 PostgreSQL 15+ com Prisma Client v7. Schema em `prisma/schema.prisma`,
-histórico em `prisma/migrations/`, config em `prisma.config.ts`.
+migration única em `prisma/migrations/`, config em `prisma.config.ts`
+(CLI usa `DIRECT_URL` com fallback para `DATABASE_URL`; runtime usa
+`DATABASE_URL` via `PrismaPg` em `src/lib/banco.ts`).
 
 ## Comandos
 
@@ -14,13 +16,20 @@ npx prisma migrate dev --name ajuste  # nova migração em desenvolvimento
 npx prisma studio            # navega os dados
 ```
 
+Com `DIRECT_URL` definida, `migrate status/deploy` conectam por ela
+(Supabase: pooler de sessão `:5432`); sem ela, usam `DATABASE_URL`
+(local/CI).
+
 ## Migrador do contêiner
 
 `docker/app/entrypoint.sh` aguarda o banco e roda
 `docker/app/migrar.mjs`, que aplica `prisma/migrations/*/migration.sql`
-em ordem e regista em `_prisma_migrations` (mesma soma do
-`migrate deploy`, interoperáveis). Na Vercel, o build roda
-`prisma migrate deploy` antes do `next build` (ver `vercel.json`).
+em ordem (prefere `DIRECT_URL`, cai em `DATABASE_URL`) e regista em
+`_prisma_migrations` (mesma soma do `migrate deploy`,
+interoperáveis). Em seguida aplica `prisma/scripts/rls-teste.sql`
+(papel `app_teste`, só local/CI). Na Vercel, o build roda
+`npm run vercel-build` (`prisma generate && prisma migrate deploy &&
+next build`, ver `vercel.json`).
 
 ## Reposição local
 
@@ -28,12 +37,16 @@ em ordem e regista em `_prisma_migrations` (mesma soma do
 DATABASE_URL=postgresql://... node docker/postgres/repor.mjs
 ```
 
-Apaga tabelas, funções e o registo de migrações. Nunca em produção:
-o workflow `db-reset.yml` trava o destino e só vale sem usuários reais.
+Apaga tabelas, funções e o registo de migrações. Nunca em produção.
+Após `repor.mjs`, derrube e suba o Compose (`down -v` + `up --build`)
+para reaplicar a migration única do zero.
 
 ## RLS
 
 As políticas `isolamento_*` exigem `app.usuario_atual`; sem contexto,
-zero linhas. O papel `app_teste` (sem bypass) prova as políticas em
-`npm run test:api`. A aplicação conecta com o dono do schema e filtra
+zero linhas. O papel `app_teste` (sem bypass, criado só em local/CI
+por `prisma/scripts/rls-teste.sql`) prova as políticas em
+`npm run test:api`. No Supabase o papel não existe (o `postgres` já
+tem `BYPASSRLS`); as policies seguem valendo para os demais papéis.
+A aplicação conecta com o dono do schema e filtra
 pelo dono em cada consulta (ver `docs/arquitetura.md`).

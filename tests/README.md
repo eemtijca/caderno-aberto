@@ -5,7 +5,7 @@ Três suítes Vitest mais o Playwright para a interface.
 ## Pré-requisitos
 
 ```bash
-# Banco local com as migrações aplicadas.
+# Banco local com a migration aplicada.
 export DATABASE_URL=postgresql://caderno:caderno@localhost:5432/caderno
 npx prisma migrate deploy
 ```
@@ -23,7 +23,9 @@ npm run test:e2e      # interface (exige o app no ar)
 - `test:unit` (`tests/unit/notas.test.ts`): sem banco, sem rede. Também
   grava `.tex` de exemplo em `tests/tex/` para compilação manual.
 - `test:api` (`tests/api/isolamento.test.ts`): prova as políticas RLS com
-  massa fixa e limpeza ao final. Exige `DATABASE_URL` com migrações.
+  massa fixa e limpeza ao final. O próprio comando aplica antes
+  `prisma/scripts/rls-teste.sql` (papel `app_teste`, só local/CI,
+  ausente no Supabase). Exige `DATABASE_URL` com a migration aplicada.
 - `test:contratos` (`tests/api/contratos.test.ts`): 40 verificações HTTP
   contra `TEST_BASE_URL` (padrão `http://127.0.0.1:3000`). Lê os e-mails
   em `/api/teste/outbox`, então o app precisa rodar com

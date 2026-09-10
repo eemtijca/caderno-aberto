@@ -3,12 +3,15 @@
 ## Vercel (recomendado para o app)
 
 1. Banco: qualquer PostgreSQL 15+ com conexão direta.
-2. Variáveis do `.env.example`: `DATABASE_URL` (pooler de sessão com
-   `?sslmode=require`), `AUTH_SECRET`, `APP_URL`, `EMAIL_DRIVER=resend`
+2. Variáveis do `.env.example`: `DATABASE_URL` (pooler de transação
+   com `?pgbouncer=true` e `?sslmode=require`), `DIRECT_URL` (pooler
+   de sessão `:5432` para o `migrate deploy` do build), `AUTH_SECRET`,
+   `APP_URL`, `EMAIL_DRIVER=resend`
    - `RESEND_API_KEY` e domínio verificado, `STORAGE_DRIVER=s3` + 5
      `STORAGE_S3_*`, `CRON_SECRET`. Nunca `ALLOW_TEST_OUTBOX=1`, nunca
      `STORAGE_DRIVER=disk` (disco efêmero).
-3. Build (`vercel.json`): `prisma migrate deploy && next build`.
+3. Build (`vercel.json` executa `npm run vercel-build`): `prisma generate &&
+prisma migrate deploy && next build`.
    O Cron diário chama `GET /api/conta/restaurar` com o segredo.
 4. Previews apontam para staging, nunca produção.
 
@@ -32,10 +35,3 @@ cp .env.example .env  # preencha DATABASE_URL e segredos
 npx prisma migrate deploy
 npm run dev
 ```
-
-## Reset do banco real
-
-Só sem usuários reais: Actions → "Reset do Banco Real" →
-`APAGAR-BANCO-REAL`. Trava destino local/teste, executa
-`repor.mjs` + migrações e verifica (migrações aplicadas, zero
-usuários). Depois, desabilite o workflow.

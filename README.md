@@ -82,7 +82,8 @@ O professor cria uma conta, utiliza um editor visual de blocos (caixas COPIAR, e
 ## Stack
 
 - Next.js 16 (App Router) com TypeScript e Node 24.
-- PostgreSQL 15 ou superior com Prisma ORM v7 (`prisma/schema.prisma`).
+- PostgreSQL 15 ou superior com Prisma ORM v7 (`prisma/schema.prisma`, migration única em `prisma/migrations/`).
+- Conexões separadas no Supabase/serverless: `DATABASE_URL` (runtime, pooler de transação `:6543`) e `DIRECT_URL` (CLI/migrações, pooler de sessão ou direta `:5432`); local/CI usam só `DATABASE_URL`.
 - Autenticação própria (scrypt + JWT em cookies HttpOnly); e-mails via Resend, SMTP genérico ou log local.
 - Imagens atrás de interface agnóstica: disco local (`disk`, volume Docker) ou API S3-compatível (`s3`: MinIO, R2 ou similar).
 - Tailwind CSS 4 com shadcn/ui.
@@ -113,7 +114,9 @@ O Compose sobe o PostgreSQL 17 (`db:5432`, volume `pgdata`), aplica as migraçõ
 npm install
 cp .env.example .env
 # Preencha DATABASE_URL (qualquer PostgreSQL 15+), AUTH_SECRET,
-# CRON_SECRET e APP_URL no .env
+# CRON_SECRET e APP_URL no .env. Se o runtime usar o pooler de
+# transação do Supabase (:6543), preencha também DIRECT_URL
+# (pooler de sessão :5432 ou conexão direta :5432) para as migrações.
 # Sem volume Docker, defina STORAGE_DRIVER=disk com UPLOAD_DIR local
 npx prisma migrate deploy
 npm run dev
@@ -135,7 +138,7 @@ npm run test:e2e
 Os comandos correspondem a (detalhes em `tests/README.md`):
 
 - `test:unit`: bibliotecas puras de geração LaTeX/Markdown (autocontenção, round-trip, aparência), também grava `.tex` de exemplo em `tests/tex/` para compilação manual com `tectonic`.
-- `test:api`: isolamento do backstop RLS (papel restrito `app_teste`, sem contexto, A/B, escrita cruzada). Exige `DATABASE_URL` com as migrações aplicadas.
+- `test:api`: isolamento do backstop RLS (papel restrito `app_teste`, sem contexto, A/B, escrita cruzada). O próprio comando aplica `prisma/scripts/rls-teste.sql` antes do Vitest; exige `DATABASE_URL` local (Docker Compose) com a migration aplicada. O papel `app_teste` só existe em local/CI e está ausente no Supabase.
 - `test:contratos`: verificações HTTP de ponta a ponta da API (conta, CRUD, links públicos, imagens, backup). Exige o app no ar (`TEST_BASE_URL`, padrão http://127.0.0.1:3000) com `ALLOW_TEST_OUTBOX=1`.
 - `test:e2e`: suíte Playwright em 3 navegadores, headless, cobrindo autenticação com confirmação e reenvio, notas com disciplina inline, links, conta com carência, ícones e casos extremos. Os e-mails de teste são lidos em `/api/teste/outbox` (provedor `log`). A interface interativa (`test:e2e:ui`) abre o executor visual.
 
@@ -143,31 +146,18 @@ Verificações de qualidade: `npm run lint`, `npm run tsc`, `npm run build`.
 
 ## CI (GitHub Actions)
 
-Quatro workflows em `.github/workflows/` rodam a cada push em `main` e pull request (Node 24, Ubuntu):
+Três workflows em `.github/workflows/` rodam a cada push em `main` e pull request (Node 24, Ubuntu):
 
 - **quality**: `npm run format:check`, `npm run lint`, `npm run tsc` e `test:unit`.
 - **build**: `npm run build` com `DATABASE_URL`/`AUTH_SECRET` fictícios e `EMAIL_DRIVER=log`.
-- **test-db**: sobe o Compose, aplica migrações, `test:api` (isolamento RLS) e `test:contratos` (testa a API no ar).
-- **db-reset**: só manual (`workflow_dispatch`), restrito ao environment `production` (detalhes abaixo).
+- **test-db**: sobe o Compose, aplica migrações (+ papel `app_teste`), `test:api` (isolamento RLS) e `test:contratos` (testa a API no ar).
 
 Os testes E2E (Playwright) não fazem parte do CI e devem ser executados localmente com o app no ar.
 
-## Reset do banco real (antes de haver usuários reais)
-
-Apaga **todos** os dados do banco **sem volta** — não há backup — e reaplica as migrações do zero. Vale somente enquanto não há usuários reais; ao liberá-los, desabilite este workflow no GitHub UI (Actions → Reset do Banco Real → Disable workflow).
-
-Pré-requisitos no GitHub (Settings → Environments → `production`, com revisor obrigatório):
-
-| Secret              | Valor                                                                                                                        |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL_PROD` | Conexão **direta** `:5432` do PostgreSQL de produção (`postgresql://usuario:[senha]@host:5432/banco`). Nunca pooler `:6543`. |
-
-Para disparar: Actions → "Reset do Banco Real" → Run workflow → digite exatamente `APAGAR-BANCO-REAL`. O workflow recusa destino local, executa `docker/postgres/repor.mjs` + migrações e verifica o estado final (migrações aplicadas, zero usuários). Segredos trafegam só via bloco `env:` (nunca em `echo` ou argumento de comando) e forks não os recebem em dispatch manual.
-
 ## Deploy
 
-1. Banco: PostgreSQL 15 ou superior (Compose ou gerenciado). As migrações aplicam na partida do contêiner e no build da Vercel (`prisma migrate deploy`); fora desses, rode com a `DATABASE_URL` de produção antes de publicar.
-2. Aplicativo na Vercel: variáveis do `.env.example` (`DATABASE_URL` do pooler de sessão com `?sslmode=require`, `AUTH_SECRET` com 32 ou mais bytes aleatórios, `APP_URL` canônica, `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, `STORAGE_DRIVER=s3` com as 5 variáveis `STORAGE_S3_*` e `CRON_SECRET` com segredo aleatório). O disco é efêmero na Vercel: imagens exigem `s3`, nunca `disk`.
+1. Banco: PostgreSQL 15 ou superior (Compose ou gerenciado, ex. Supabase). As migrações aplicam na partida do contêiner e no build da Vercel (`npm run vercel-build`: `prisma generate && prisma migrate deploy && next build`); fora desses, rode `npx prisma migrate deploy` com a conexão de migrações antes de publicar. No Supabase, o CLI usa `DIRECT_URL` (pooler de sessão `:5432` ou conexão direta `:5432`) e o runtime usa `DATABASE_URL` (pooler de transação `:6543` com `?pgbouncer=true`).
+2. Aplicativo na Vercel: variáveis do `.env.example` (`DATABASE_URL` do pooler de transação com `?pgbouncer=true` e `?sslmode=require`, `DIRECT_URL` do pooler de sessão `:5432`, `AUTH_SECRET` com 32 ou mais bytes aleatórios, `APP_URL` canônica, `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, `STORAGE_DRIVER=s3` com as 5 variáveis `STORAGE_S3_*` e `CRON_SECRET` com segredo aleatório). O disco é efêmero na Vercel: imagens exigem `s3`, nunca `disk`.
 3. Agendador da purga: o `vercel.json` já registra o Cron diário em `GET /api/conta/restaurar`; a Vercel envia `CRON_SECRET` como `Authorization` automaticamente. Fora da Vercel, agende a mesma chamada com o cabeçalho (cron do host, GitHub Actions com `schedule` ou similar).
 4. Produção: use um papel dono do schema na `DATABASE_URL` (as políticas RLS de segunda barreira valem para papéis com `bypassrls` apenas como documentação; o isolamento real é aplicado pela API). Aponte deploys de pré-visualização para um banco de staging, nunca para produção.
 5. Alternativa self-hosted: `docker compose up --build` com `.env` preenchido (o entrypoint migra e serve; imagens no volume `uploads`).
@@ -224,7 +214,8 @@ src/
     api/              sessão, serialização, links públicos e limite
 prisma/
   schema.prisma       fonte da verdade do esquema
-  migrations/         SQL versionado (migrate deploy + migrador do contêiner)
+  migrations/         migration única (migrate deploy + migrador do contêiner)
+  scripts/            backstop RLS local/CI (rls-teste.sql + aplicador)
 docker/
   app/                entrypoint + migrador do contêiner
   postgres/repor.mjs  reposição local do banco

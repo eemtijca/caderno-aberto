@@ -6,10 +6,23 @@ Espelho para copiar: `.env.example`.
 ## Obrigatórias
 
 - `DATABASE_URL`: PostgreSQL direto `:5432` (nunca pooler de
-  transação `:6543`, incompatível com instruções preparadas).
+  transação `:6543`, incompatível com instruções preparadas). No
+  Supabase + Vercel serverless, é o pooler de transação `:6543` com
+  `?pgbouncer=true` (runtime via `PrismaPg`).
 - `AUTH_SECRET`: 32+ bytes aleatórios (`openssl rand -base64 32`).
 - `CRON_SECRET`: segredo da purga, obrigatório em produção. A Vercel
   envia sozinha como `Authorization` no Cron.
+
+## Conexão de migrações
+
+- `DIRECT_URL` (opcional em local/CI, cai em `DATABASE_URL`):
+  conexão do CLI Prisma (`migrate deploy/status`): pooler de sessão
+  `:5432` ou direta `db.[projeto].supabase.co:5432`. Obrigatória onde
+  o runtime usa o pooler de transação `:6543` (Supabase). O endpoint
+  direto é IPv6 (ou IPv4 com o add-on); na dúvida, prefira o pooler
+  de sessão `:5432`. Configurada em `prisma.config.ts`
+  (`datasource.url`); em Prisma 7 a conexão do CLI não vive no
+  `schema.prisma`.
 
 ## Opcionais
 
