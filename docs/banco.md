@@ -27,9 +27,9 @@ Com `DIRECT_URL` definida, `migrate status/deploy` conectam por ela
 em ordem (prefere `DIRECT_URL`, cai em `DATABASE_URL`) e regista em
 `_prisma_migrations` (mesma soma do `migrate deploy`,
 interoperáveis). Em seguida aplica `prisma/scripts/rls-teste.sql`
-(papel `app_teste`, só local/CI). Na Vercel, o build roda
-`npm run vercel-build` (`prisma generate && prisma migrate deploy &&
-next build`, ver `vercel.json`).
+(papel `app_teste`, só local/CI). O build da Vercel não migra (só
+`prisma generate && next build`); o Supabase de produção é migrado
+pela Action `db-migrate` no push em `main` (ver `docs/deploy.md`).
 
 ## Reposição local
 

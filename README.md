@@ -146,20 +146,21 @@ Verificações de qualidade: `npm run lint`, `npm run tsc`, `npm run build`.
 
 ## CI (GitHub Actions)
 
-Três workflows em `.github/workflows/` rodam a cada push em `main` e pull request (Node 24, Ubuntu):
+Quatro workflows em `.github/workflows/` (Node 24, Ubuntu):
 
-- **quality**: `npm run format:check`, `npm run lint`, `npm run tsc` e `test:unit`.
-- **build**: `npm run build` com `DATABASE_URL`/`AUTH_SECRET` fictícios e `EMAIL_DRIVER=log`.
-- **test-db**: sobe o Compose, aplica migrações (+ papel `app_teste`), `test:api` (isolamento RLS) e `test:contratos` (testa a API no ar).
+- **quality**: a cada push em `main` e pull request; `npm run format:check`, `npm run lint`, `npm run tsc` e `test:unit`.
+- **build**: a cada push em `main` e pull request; `npm run build` com `DATABASE_URL`/`AUTH_SECRET` fictícios e `EMAIL_DRIVER=log`.
+- **test-db**: a cada push em `main` e pull request; sobe o Compose, aplica a migration (+ papel `app_teste`), `test:api` (isolamento RLS) e `test:contratos` (testa a API no ar).
+- **db-migrate**: só no push em `main` com migration nova (`prisma/migrations/**`); aplica `prisma migrate deploy` no Supabase de produção com `DIRECT_URL_PROD` (environment `production`, com revisor).
 
 Os testes E2E (Playwright) não fazem parte do CI e devem ser executados localmente com o app no ar.
 
 ## Deploy
 
-1. Banco: PostgreSQL 15 ou superior (Compose ou gerenciado, ex. Supabase). As migrações aplicam na partida do contêiner e no build da Vercel (`npm run vercel-build`: `prisma generate && prisma migrate deploy && next build`); fora desses, rode `npx prisma migrate deploy` com a conexão de migrações antes de publicar. No Supabase, o CLI usa `DIRECT_URL` (pooler de sessão `:5432` ou conexão direta `:5432`) e o runtime usa `DATABASE_URL` (pooler de transação `:6543` com `?pgbouncer=true`).
-2. Aplicativo na Vercel: variáveis do `.env.example` (`DATABASE_URL` do pooler de transação com `?pgbouncer=true` e `?sslmode=require`, `DIRECT_URL` do pooler de sessão `:5432`, `AUTH_SECRET` com 32 ou mais bytes aleatórios, `APP_URL` canônica, `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, `STORAGE_DRIVER=s3` com as 5 variáveis `STORAGE_S3_*` e `CRON_SECRET` com segredo aleatório). O disco é efêmero na Vercel: imagens exigem `s3`, nunca `disk`.
+1. Banco: PostgreSQL 15 ou superior (Compose ou gerenciado, ex. Supabase). As migrações aplicam na partida do contêiner e pela Action `db-migrate` no push em `main` (Supabase de produção); o build da Vercel só gera o client (`npm run vercel-build`: `prisma generate && next build`). No Supabase, o CLI usa `DIRECT_URL` (pooler de sessão `:5432` ou conexão direta `:5432`) e o runtime usa `DATABASE_URL` (pooler de transação `:6543` com `?pgbouncer=true`). Push em `main` dispara deploy e migração juntos; o app novo pode subir antes da migração terminar.
+2. Aplicativo na Vercel: variáveis do `.env.example` (`DATABASE_URL` do pooler de transação com `?pgbouncer=true` e `?sslmode=require`, sem `DIRECT_URL`, `AUTH_SECRET` com 32 ou mais bytes aleatórios, `APP_URL` canônica, `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, `STORAGE_DRIVER=s3` com as 5 variáveis `STORAGE_S3_*` e `CRON_SECRET` com segredo aleatório). O disco é efêmero na Vercel: imagens exigem `s3`, nunca `disk`.
 3. Agendador da purga: o `vercel.json` já registra o Cron diário em `GET /api/conta/restaurar`; a Vercel envia `CRON_SECRET` como `Authorization` automaticamente. Fora da Vercel, agende a mesma chamada com o cabeçalho (cron do host, GitHub Actions com `schedule` ou similar).
-4. Produção: use um papel dono do schema na `DATABASE_URL` (as políticas RLS de segunda barreira valem para papéis com `bypassrls` apenas como documentação; o isolamento real é aplicado pela API). Aponte deploys de pré-visualização para um banco de staging, nunca para produção.
+4. Produção: use um papel dono do schema na `DATABASE_URL` (as políticas RLS de segunda barreira valem para papéis com `bypassrls` apenas como documentação; o isolamento real é aplicado pela API). Previews desativados (`git.deploymentEnabled` no `vercel.json`); só `main` publica.
 5. Alternativa self-hosted: `docker compose up --build` com `.env` preenchido (o entrypoint migra e serve; imagens no volume `uploads`).
 
 Detalhes em `docs/` (arquitetura, ambiente, banco, testes, deploy, segurança) e `CONTRIBUTING.md`.

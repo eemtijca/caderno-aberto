@@ -4,16 +4,20 @@
 
 1. Banco: qualquer PostgreSQL 15+ com conexão direta.
 2. Variáveis do `.env.example`: `DATABASE_URL` (pooler de transação
-   com `?pgbouncer=true` e `?sslmode=require`), `DIRECT_URL` (pooler
-   de sessão `:5432` para o `migrate deploy` do build), `AUTH_SECRET`,
+   com `?pgbouncer=true` e `?sslmode=require`), `AUTH_SECRET`,
    `APP_URL`, `EMAIL_DRIVER=resend`
    - `RESEND_API_KEY` e domínio verificado, `STORAGE_DRIVER=s3` + 5
      `STORAGE_S3_*`, `CRON_SECRET`. Nunca `ALLOW_TEST_OUTBOX=1`, nunca
-     `STORAGE_DRIVER=disk` (disco efêmero).
+     `STORAGE_DRIVER=disk` (disco efêmero). Sem `DIRECT_URL` na Vercel.
 3. Build (`vercel.json` executa `npm run vercel-build`): `prisma generate &&
-prisma migrate deploy && next build`.
+next build`. Previews desativados (`git.deploymentEnabled` só publica
+   `main`).
    O Cron diário chama `GET /api/conta/restaurar` com o segredo.
-4. Previews apontam para staging, nunca produção.
+4. Migrações em produção: a Action `db-migrate` roda no push em `main`
+   com migration nova (`prisma/migrations/**`), com `DIRECT_URL_PROD`
+   (pooler de sessão `:5432`) no environment `production` (revisor
+   obrigatório). Deploy e migração disparam juntos; o app novo pode
+   subir antes da migração terminar.
 
 ## Compose (self-hosted)
 
