@@ -18,5 +18,8 @@ for i in $(seq 1 60); do
   sleep 2
 done
 
+echo "[entrada] Preparando o papel de teste do RLS (local/CI)..."
+node ./prisma/scripts/aplicar-rls-teste.mjs
+
 echo "[entrada] Iniciando o servidor..."
 exec node server.js

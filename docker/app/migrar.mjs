@@ -13,9 +13,9 @@ import "dotenv/config"
 const raiz = path.resolve(aqui, "..", "..")
 const pasta = path.join(raiz, "prisma", "migrations")
 
-const url = process.env.DATABASE_URL
+const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL
 if (!url) {
-  console.error("[migrar] DATABASE_URL não definida.")
+  console.error("[migrar] DIRECT_URL/DATABASE_URL não definida.")
   process.exit(1)
 }
 

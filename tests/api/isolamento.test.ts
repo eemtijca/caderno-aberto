@@ -1,6 +1,6 @@
 // Prova das políticas com o papel restrito app_teste.
-// Uso: DATABASE_URL=postgresql://caderno:caderno@localhost:5432/caderno npx vitest run tests/api/isolamento.test.ts
-// O papel de teste não contorna o RLS.
+// Uso: npm run test:api (aplica prisma/scripts/rls-teste.sql antes)
+// O papel de teste não contorna o RLS. Só existe em local/CI.
 import pg from "pg"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

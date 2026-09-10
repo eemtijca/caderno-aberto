@@ -1,7 +1,6 @@
-// Reposição total do banco de desenvolvimento: apaga todos os dados
-// e o registo de migrações. As migrações reaplicam na partida.
+// Recria o banco de desenvolvimento: apaga dados e registo de migrações.
 // Uso: DATABASE_URL=postgresql://... node docker/postgres/repor.mjs
-// Nunca apontar para produção: o workflow db-reset.yml trava o destino.
+// Nunca apontar para produção.
 import pg from "pg"
 
 const url = process.env.DATABASE_URL
@@ -11,6 +10,7 @@ if (!url) {
 }
 
 const TABELAS_APP = [
+  "tentativas_limite",
   "sessoes",
   "tokens_verificacao",
   "links",

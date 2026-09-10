@@ -13,7 +13,7 @@
     "format:check": "prettier --check .",
     "tsc": "tsc --noEmit",
     "test": "vitest run",
-    "test:api": "vitest run tests/api/isolamento.test.ts",
+    "test:api": "node prisma/scripts/aplicar-rls-teste.mjs && vitest run tests/api/isolamento.test.ts",
     "test:contratos": "vitest run tests/api/contratos.test.ts",
     "test:unit": "vitest run tests/unit/notas.test.ts",
     "postinstall": "node scripts/copy-tikzjax.mjs && prisma generate",
