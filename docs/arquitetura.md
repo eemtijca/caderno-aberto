@@ -14,7 +14,8 @@ Next.js 16 (App Router) + PostgreSQL 15+ via Prisma Client v7.
 - `src/lib/armazenamento/`: interface única (`disk` local ou `s3`
   S3-compatível). O caminho relativo é a chave.
 - `src/lib/email/`: interface única (`log`, `smtp`, `resend`) com
-  outbox em memória só nos testes.
+  outbox em memória só nos testes. Em dev, `smtp` aponta ao
+  Mailpit (`compose.yml`, profile `mailpit`).
 - `src/lib/notas/`: AST de blocos, LaTeX, Markdown, busca e tipos.
 - `src/components/`: editor, vistas e `ui/` (shadcn).
 

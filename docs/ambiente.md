@@ -29,7 +29,11 @@ Espelho para copiar: `.env.example`.
 - `APP_URL`: origem canônica (`https://app.exemplo.br`). Obrigatória
   em produção; sem ela, links de e-mail usam o host do pedido.
 - `EMAIL_DRIVER=log|smtp|resend` (padrão `log`), `EMAIL_FROM`,
-  `SMTP_URL`, `RESEND_API_KEY`.
+  `SMTP_URL`, `RESEND_API_KEY`. Com Mailpit local
+  (`docker compose --profile mailpit up`), use `EMAIL_DRIVER=smtp`
+  com `SMTP_URL=smtp://mailpit:1025` e leia em
+  `http://localhost:8025`; sem Docker, use
+  `SMTP_URL=smtp://localhost:1025`.
 - `STORAGE_DRIVER=disk|s3` (padrão `disk`), `UPLOAD_DIR`,
   `STORAGE_S3_*` (5, exigidas com `s3`).
 - `AUTH_LIMITE_TENTATIVAS=30`, `AUTH_LIMITE_EMAIL=10` (janela de 5 min).

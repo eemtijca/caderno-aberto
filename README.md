@@ -122,7 +122,7 @@ npx prisma migrate deploy
 npm run dev
 ```
 
-E-mails em desenvolvimento usam `EMAIL_DRIVER=log` (links impressos no console e visíveis em `/api/teste/outbox`). Para envios reais, configure `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, ou `EMAIL_DRIVER=smtp` com `SMTP_URL`.
+E-mails em desenvolvimento usam `EMAIL_DRIVER=log` (links impressos no console e visíveis em `/api/teste/outbox`). Para ver os e-mails em caixa local, suba `docker compose --profile mailpit up --build` com `EMAIL_DRIVER=smtp` e `SMTP_URL=smtp://mailpit:1025` (sem Docker, `smtp://localhost:1025`) e abra http://localhost:8025. Para envios reais, configure `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, ou `EMAIL_DRIVER=smtp` com `SMTP_URL`.
 
 Após criar uma conta, cadastrar uma disciplina em Conta e escrever a primeira nota.
 
