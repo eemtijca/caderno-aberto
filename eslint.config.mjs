@@ -1,7 +1,7 @@
 // Configuração do ESLint: presets do Next e regras específicas do projeto.
 // O bloco de ignores exclui artefatos gerados e pastas fora do app.
-import nextCoreWebVitals from "eslint-config-next/core-web-vitals"
-import nextTypescript from "eslint-config-next/typescript"
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 
 const eslintConfig = [
   ...nextCoreWebVitals,
@@ -36,6 +36,6 @@ const eslintConfig = [
       "playwright/.cache/**",
     ],
   },
-]
+];
 
-export default eslintConfig
+export default eslintConfig;

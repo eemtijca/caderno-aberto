@@ -1,32 +1,32 @@
-import "server-only"
+import "server-only";
 
 // Conteúdo da visão pública consumido por metadados e imagem OG (exclusivo do servidor).
 
-import { cache } from "react"
-import { resolverLinkPublico } from "@/lib/api/publico"
-import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo"
+import { cache } from "react";
+import { resolverLinkPublico } from "@/lib/api/publico";
+import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo";
 
 export interface ResumoNotaOg {
-  titulo: string
-  disciplinaNome: string
-  disciplinaCor: string
-  turmasNomes: string[]
-  anoLetivo: number
-  mes: number
-  sobre: string
+  titulo: string;
+  disciplinaNome: string;
+  disciplinaCor: string;
+  turmasNomes: string[];
+  anoLetivo: number;
+  mes: number;
+  sobre: string;
 }
 
 export interface DadosLinkOg {
-  tipo: "nota" | "turma" | "disciplina"
-  nome: string
-  professorNome: string
-  expiraEm: string | null
+  tipo: "nota" | "turma" | "disciplina";
+  nome: string;
+  professorNome: string;
+  expiraEm: string | null;
 }
 
 export interface DadosOg {
-  link: DadosLinkOg
-  nota: ResumoNotaOg | null
-  totalNotas: number
+  link: DadosLinkOg;
+  nota: ResumoNotaOg | null;
+  totalNotas: number;
 }
 
 /** Busca link + primeira nota (cacheado por requisição). Null se inválido. */
@@ -50,13 +50,13 @@ export const buscarDadosOg = cache(async (token: string): Promise<DadosOg | null
         sobre: DEMO_NOTA.sobre,
       },
       totalNotas: 1,
-    }
+    };
   }
 
-  const resolvido = await resolverLinkPublico(token)
-  if (!resolvido) return null
-  const { link, notas } = resolvido
-  const primeira = notas[0] ?? null
+  const resolvido = await resolverLinkPublico(token);
+  if (!resolvido) return null;
+  const { link, notas } = resolvido;
+  const primeira = notas[0] ?? null;
   return {
     link: {
       tipo: link.tipo,
@@ -76,5 +76,5 @@ export const buscarDadosOg = cache(async (token: string): Promise<DadosOg | null
         }
       : null,
     totalNotas: notas.length,
-  }
-})
+  };
+});

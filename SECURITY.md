@@ -16,6 +16,7 @@ O retorno é feito pelo próprio canal do GitHub. Vulnerabilidades confirmadas s
 ## Compromissos
 
 - Respostas de autenticação genéricas, sem enumeração de contas.
+- Acesso por código de 8 caracteres guardado como HMAC, com validade curta, uso único e bloqueio por tentativas; o papel de administrador é reconferido no banco a cada requisição.
 - Sessões revogáveis; troca e recuperação de senha invalidam as sessões ativas.
 - Isolamento por professor no banco, com RLS como segunda barreira.
 - Tokens de links públicos com 128 bits de entropia, expiração, pausa e revogação.

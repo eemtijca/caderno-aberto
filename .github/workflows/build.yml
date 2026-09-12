@@ -1,9 +1,8 @@
-# Build do Next.js em push na main e em pull requests.
+# Build do Next.js. CI: roda apenas em pull requests.
+# O deploy (CD) é feito pela Vercel no push.
 name: Build
 
 on:
-  push:
-    branches: [main]
   pull_request:
 
 concurrency:
@@ -35,4 +34,3 @@ jobs:
         env:
           DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
           AUTH_SECRET: segredo-dummy-de-32-bytes-para-build-0000
-          EMAIL_DRIVER: log

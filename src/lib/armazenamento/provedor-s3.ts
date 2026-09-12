@@ -5,18 +5,18 @@ import {
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
-} from "@aws-sdk/client-s3"
+} from "@aws-sdk/client-s3";
 import {
   STORAGE_S3_ACCESS_KEY,
   STORAGE_S3_BUCKET,
   STORAGE_S3_ENDPOINT,
   STORAGE_S3_REGION,
   STORAGE_S3_SECRET_KEY,
-} from "@/lib/ambiente"
-import { mimePorExtensao } from "./provedor-disco"
-import type { ArquivoGuardado, ProvedorArmazenamento } from "./tipos"
+} from "@/lib/ambiente";
+import { mimePorExtensao } from "./provedor-disco";
+import type { ArquivoGuardado, ProvedorArmazenamento } from "./tipos";
 
-let cliente: S3Client | null = null
+let cliente: S3Client | null = null;
 
 function obterCliente(): S3Client {
   if (!cliente) {
@@ -29,17 +29,17 @@ function obterCliente(): S3Client {
         accessKeyId: STORAGE_S3_ACCESS_KEY,
         secretAccessKey: STORAGE_S3_SECRET_KEY,
       },
-    })
+    });
   }
-  return cliente
+  return cliente;
 }
 
 async function lerCorpo(corpo: unknown): Promise<Buffer> {
   // O SDK pode devolver Uint8Array ou stream assíncrono.
-  if (corpo instanceof Uint8Array) return Buffer.from(corpo)
-  const partes: Uint8Array[] = []
-  for await (const parte of corpo as AsyncIterable<Uint8Array>) partes.push(parte)
-  return Buffer.concat(partes)
+  if (corpo instanceof Uint8Array) return Buffer.from(corpo);
+  const partes: Uint8Array[] = [];
+  for await (const parte of corpo as AsyncIterable<Uint8Array>) partes.push(parte);
+  return Buffer.concat(partes);
 }
 
 export function provedorS3(): ProvedorArmazenamento {
@@ -53,31 +53,31 @@ export function provedorS3(): ProvedorArmazenamento {
           Body: bytes,
           ContentType: mime,
         }),
-      )
+      );
     },
     async ler(caminho): Promise<ArquivoGuardado | null> {
       try {
         const resposta = await obterCliente().send(
           new GetObjectCommand({ Bucket: STORAGE_S3_BUCKET, Key: caminho }),
-        )
-        const bytes = await lerCorpo(resposta.Body)
+        );
+        const bytes = await lerCorpo(resposta.Body);
         const mime =
           typeof resposta.ContentType === "string" && resposta.ContentType
             ? resposta.ContentType
-            : mimePorExtensao(caminho)
-        return { bytes, mime }
+            : mimePorExtensao(caminho);
+        return { bytes, mime };
       } catch {
-        return null
+        return null;
       }
     },
     async remover(caminho) {
       await obterCliente()
         .send(new DeleteObjectCommand({ Bucket: STORAGE_S3_BUCKET, Key: caminho }))
-        .catch(() => undefined)
+        .catch(() => undefined);
     },
     async listar(prefixo) {
-      const saida: { caminho: string; mime: string }[] = []
-      let continuacao: string | undefined
+      const saida: { caminho: string; mime: string }[] = [];
+      let continuacao: string | undefined;
       try {
         do {
           const pagina = await obterCliente().send(
@@ -86,16 +86,16 @@ export function provedorS3(): ProvedorArmazenamento {
               Prefix: prefixo.endsWith("/") ? prefixo : `${prefixo}/`,
               ContinuationToken: continuacao,
             }),
-          )
+          );
           for (const objeto of pagina.Contents ?? []) {
-            if (objeto.Key) saida.push({ caminho: objeto.Key, mime: mimePorExtensao(objeto.Key) })
+            if (objeto.Key) saida.push({ caminho: objeto.Key, mime: mimePorExtensao(objeto.Key) });
           }
-          continuacao = pagina.IsTruncated ? pagina.NextContinuationToken : undefined
-        } while (continuacao)
+          continuacao = pagina.IsTruncated ? pagina.NextContinuationToken : undefined;
+        } while (continuacao);
       } catch {
-        return []
+        return [];
       }
-      return saida
+      return saida;
     },
-  }
+  };
 }

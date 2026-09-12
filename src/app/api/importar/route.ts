@@ -1,52 +1,52 @@
 // Importa uma nota em Markdown ou JSON para o professor autenticado.
 
-import { NextRequest } from "next/server"
-import { banco } from "@/lib/banco"
-import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
+import { NextRequest } from "next/server";
+import { banco } from "@/lib/banco";
+import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao";
 import {
   linhaParaNota,
   mapaTurmasProfessor,
   camposDenormalizados,
   paraJson,
-} from "@/lib/api/serializacao"
-import type { DisciplinaLinha, TurmaLinha } from "@/lib/banco/tipos"
-import { normalizarAparencia, normalizarBlocos, type AparenciaNota } from "@/lib/notas/tipos"
-import { analisarMarkdown } from "@/lib/notas/render-markdown"
-import { normalizar, textoDeBusca } from "@/lib/notas/texto"
+} from "@/lib/api/serializacao";
+import type { DisciplinaLinha, TurmaLinha } from "@/lib/banco/tipos";
+import { normalizarAparencia, normalizarBlocos, type AparenciaNota } from "@/lib/notas/tipos";
+import { analisarMarkdown } from "@/lib/notas/render-markdown";
+import { normalizar, textoDeBusca } from "@/lib/notas/texto";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const sessao = await sessaoProfessor(req)
-  if (!sessao) return naoAutenticado()
-  const { usuario } = sessao
+  const sessao = await sessaoProfessor(req);
+  if (!sessao) return naoAutenticado();
+  const { usuario } = sessao;
 
-  const corpo = await req.json().catch(() => null)
-  if (!corpo || typeof corpo.conteudo !== "string") return erroApi("Conteúdo inválido.")
+  const corpo = await req.json().catch(() => null);
+  if (!corpo || typeof corpo.conteudo !== "string") return erroApi("Conteúdo inválido.");
   // Formato ausente ou desconhecido cai em Markdown.
-  const formato = corpo.formato === "json" ? "json" : "md"
+  const formato = corpo.formato === "json" ? "json" : "md";
 
   let dados: {
-    titulo: string
-    disciplina: string
-    anoLetivo: number
-    mes: number
-    sobre: string
-    habilidades: string
-    status: "rascunho" | "publicada"
-    turmas: string[]
-    blocos: unknown
-    aparencia: AparenciaNota
-  }
+    titulo: string;
+    disciplina: string;
+    anoLetivo: number;
+    mes: number;
+    sobre: string;
+    habilidades: string;
+    status: "rascunho" | "publicada";
+    turmas: string[];
+    blocos: unknown;
+    aparencia: AparenciaNota;
+  };
 
   if (formato === "json") {
-    let obj: { nota?: Record<string, unknown> } | Record<string, unknown>
+    let obj: { nota?: Record<string, unknown> } | Record<string, unknown>;
     try {
-      obj = JSON.parse(corpo.conteudo)
+      obj = JSON.parse(corpo.conteudo);
     } catch {
-      return erroApi("JSON inválido.")
+      return erroApi("JSON inválido.");
     }
-    const n = (obj as { nota?: Record<string, unknown> }).nota ?? (obj as Record<string, unknown>)
+    const n = (obj as { nota?: Record<string, unknown> }).nota ?? (obj as Record<string, unknown>);
     dados = {
       titulo: String(n.titulo ?? "Nota importada"),
       disciplina:
@@ -65,9 +65,9 @@ export async function POST(req: NextRequest) {
         : [],
       blocos: n.blocos,
       aparencia: normalizarAparencia(n.aparencia),
-    }
+    };
   } else {
-    const md = analisarMarkdown(corpo.conteudo)
+    const md = analisarMarkdown(corpo.conteudo);
     dados = {
       titulo: md.titulo,
       disciplina: md.disciplina,
@@ -79,21 +79,21 @@ export async function POST(req: NextRequest) {
       turmas: md.turmas,
       blocos: md.blocos,
       aparencia: normalizarAparencia(md.aparencia),
-    }
+    };
   }
 
-  if (!dados.titulo.trim()) return erroApi("Arquivo sem título identificável.")
+  if (!dados.titulo.trim()) return erroApi("Arquivo sem título identificável.");
 
-  const db = await banco()
+  const db = await banco();
 
   // disciplina: cria se não existir (do próprio professor)
-  const nomeDisc = dados.disciplina.trim() || "Sem disciplina"
+  const nomeDisc = dados.disciplina.trim() || "Sem disciplina";
   const candidatas = (await db.disciplinas.findMany({
     where: {
       professorId: usuario.id,
     },
-  })) as unknown as DisciplinaLinha[]
-  let disciplina = candidatas.find((d) => d.nome.toLowerCase() === nomeDisc.toLowerCase()) ?? null
+  })) as unknown as DisciplinaLinha[];
+  let disciplina = candidatas.find((d) => d.nome.toLowerCase() === nomeDisc.toLowerCase()) ?? null;
   if (!disciplina) {
     try {
       disciplina = (await db.disciplinas.create({
@@ -103,9 +103,9 @@ export async function POST(req: NextRequest) {
           cor: "verde",
           icone: "BookOpen",
         },
-      })) as unknown as DisciplinaLinha
+      })) as unknown as DisciplinaLinha;
     } catch {
-      return erroApi("Falha ao criar a disciplina.")
+      return erroApi("Falha ao criar a disciplina.");
     }
   }
 
@@ -114,18 +114,18 @@ export async function POST(req: NextRequest) {
     where: {
       professorId: usuario.id,
     },
-  })) as unknown as TurmaLinha[]
+  })) as unknown as TurmaLinha[];
   const porNome = new Map(
     turmasDoAno
       .filter((t) => t.anoLetivo === dados.anoLetivo)
       .map((t) => [t.nome.toUpperCase(), t]),
-  )
+  );
 
-  const turmasFinais: TurmaLinha[] = []
+  const turmasFinais: TurmaLinha[] = [];
   for (const nome of dados.turmas) {
-    const nomeUp = nome.trim().toUpperCase()
-    if (!nomeUp) continue
-    let turma = porNome.get(nomeUp)
+    const nomeUp = nome.trim().toUpperCase();
+    if (!nomeUp) continue;
+    let turma = porNome.get(nomeUp);
     if (!turma) {
       const serie = nomeUp.startsWith("1")
         ? "1º ano"
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
           ? "2º ano"
           : nomeUp.startsWith("3")
             ? "3º ano"
-            : "Outro"
+            : "Outro";
       try {
         turma = (await db.turmas.create({
           data: {
@@ -142,16 +142,16 @@ export async function POST(req: NextRequest) {
             serie,
             anoLetivo: dados.anoLetivo,
           },
-        })) as unknown as TurmaLinha
-        porNome.set(nomeUp, turma)
+        })) as unknown as TurmaLinha;
+        porNome.set(nomeUp, turma);
       } catch {
-        turma = undefined
+        turma = undefined;
       }
     }
-    if (turma) turmasFinais.push(turma)
+    if (turma) turmasFinais.push(turma);
   }
 
-  const blocos = normalizarBlocos(dados.blocos)
+  const blocos = normalizarBlocos(dados.blocos);
   // Cria a nota com o índice de busca denormalizado.
   const linha = (await db.notas
     .create({
@@ -178,10 +178,10 @@ export async function POST(req: NextRequest) {
         ),
       },
     })
-    .catch(() => null)) as unknown as Parameters<typeof linhaParaNota>[0] | null
+    .catch(() => null)) as unknown as Parameters<typeof linhaParaNota>[0] | null;
 
-  if (!linha) return erroApi("Falha ao importar a nota.")
+  if (!linha) return erroApi("Falha ao importar a nota.");
 
-  const mapaTurmas = await mapaTurmasProfessor(usuario.id)
-  return json({ nota: linhaParaNota(linha, mapaTurmas) }, 201)
+  const mapaTurmas = await mapaTurmasProfessor(usuario.id);
+  return json({ nota: linhaParaNota(linha, mapaTurmas) }, 201);
 }

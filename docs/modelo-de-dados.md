@@ -8,7 +8,9 @@ Descrição das entidades persistidas e do vocabulário do domínio. O schema é
 erDiagram
   Usuarios ||--o| Profiles : possui
   Usuarios ||--o{ Sessoes : abre
-  Usuarios ||--o{ TokensVerificacao : emite
+  Usuarios ||--o{ CodigosAcesso : recebe
+  Usuarios ||--o{ SolicitacoesAcesso : atende
+  Usuarios ||--o{ EventosSeguranca : registra
   Profiles ||--o{ Disciplinas : organiza
   Profiles ||--o{ Turmas : organiza
   Profiles ||--o{ Notas : escreve
@@ -22,16 +24,17 @@ erDiagram
 
 ### Usuarios
 
-Credenciais e verificação de e-mail.
+Credenciais, papel e ativação da conta.
 
-| Campo               | Tipo        | Observação                              |
-| ------------------- | ----------- | --------------------------------------- |
-| `id`                | uuid        | Chave primária                          |
-| `email`             | text        | Único na prática, validado na aplicação |
-| `senhaHash`         | text        | Formato `scrypt$N$r$p$salHex$chaveHex`  |
-| `emailVerificadoEm` | timestamptz | Nulo enquanto não confirmado            |
-| `criadoEm`          | timestamptz | Criação                                 |
-| `atualizadoEm`      | timestamptz | Última alteração                        |
+| Campo          | Tipo        | Observação                                        |
+| -------------- | ----------- | ------------------------------------------------- |
+| `id`           | uuid        | Chave primária                                    |
+| `email`        | text        | Único na prática, validado na aplicação           |
+| `senhaHash`    | text        | Formato `scrypt$N$r$p$salHex$chaveHex`            |
+| `papel`        | text        | `admin` ou `professor` (padrão)                   |
+| `ativadoEm`    | timestamptz | Nulo enquanto o primeiro acesso não for concluído |
+| `criadoEm`     | timestamptz | Criação                                           |
+| `atualizadoEm` | timestamptz | Última alteração                                  |
 
 ### Profiles
 
@@ -128,20 +131,53 @@ Sessões de refresh. O token é armazenado apenas como hash SHA-256.
 | `expiraEm`                | timestamptz | Validade de 30 dias |
 | `criadoEm`, `ultimoUsoEm` | timestamptz | Auditoria           |
 
-### TokensVerificacao
+### CodigosAcesso
 
-Tokens de verificação de e-mail, recuperação e troca de e-mail.
+Códigos de acesso gerados pela administração. O valor é guardado apenas como HMAC.
 
-| Campo       | Tipo        | Observação                                     |
-| ----------- | ----------- | ---------------------------------------------- |
-| `id`        | uuid        | Chave primária                                 |
-| `usuarioId` | uuid        | Usuário                                        |
-| `tipo`      | text        | `verificacao`, `recuperacao` ou `troca_email`  |
-| `tokenHash` | text        | Único                                          |
-| `novoEmail` | text        | Preenchido no tipo `troca_email`               |
-| `expiraEm`  | timestamptz | 24 horas na verificação, 1 hora na recuperação |
-| `usadoEm`   | timestamptz | Nulo enquanto não consumido                    |
-| `criadoEm`  | timestamptz | Criação                                        |
+| Campo        | Tipo        | Observação                                    |
+| ------------ | ----------- | --------------------------------------------- |
+| `id`         | uuid        | Chave primária                                |
+| `usuarioId`  | uuid        | Conta que recebe o código                     |
+| `email`      | text        | E-mail usado na verificação                   |
+| `tipo`       | text        | `primeiro_acesso` ou `recuperacao`            |
+| `codigoHash` | text        | HMAC-SHA256 com `AUTH_SECRET`                 |
+| `criadoPor`  | uuid        | Administrador que emitiu                      |
+| `expiraEm`   | timestamptz | Validade definida por `CODIGO_EXPIRA_MINUTOS` |
+| `usadoEm`    | timestamptz | Nulo enquanto não consumido                   |
+| `criadoEm`   | timestamptz | Criação                                       |
+
+Unicidade parcial de `(lower(email), tipo)` entre códigos não usados: um ativo por par.
+
+### SolicitacoesAcesso
+
+Fila de pedidos de primeiro acesso e de recuperação feitos na tela de login.
+
+| Campo         | Tipo        | Observação                            |
+| ------------- | ----------- | ------------------------------------- |
+| `id`          | uuid        | Chave primária                        |
+| `nome`        | text        | Nome informado no pedido              |
+| `email`       | text        | E-mail do solicitante                 |
+| `tipo`        | text        | `primeiro_acesso` ou `recuperacao`    |
+| `status`      | text        | `pendente`, `atendida` ou `cancelada` |
+| `atendidaPor` | uuid        | Administrador que resolveu            |
+| `atendidaEm`  | timestamptz | Data da resolução                     |
+| `criadoEm`    | timestamptz | Criação                               |
+
+### EventosSeguranca
+
+Trilha de auditoria das ações sensíveis de acesso.
+
+| Campo      | Tipo        | Observação                          |
+| ---------- | ----------- | ----------------------------------- |
+| `id`       | uuid        | Chave primária                      |
+| `atorId`   | uuid        | Usuário que executou, quando houver |
+| `acao`     | text        | Ex.: `GERAR_CODIGO`, `LOGIN_FALHA`  |
+| `email`    | text        | E-mail envolvido                    |
+| `ip`       | text        | Origem                              |
+| `agente`   | text        | User-agent truncado                 |
+| `detalhe`  | jsonb       | Dados específicos do evento         |
+| `criadoEm` | timestamptz | Criação                             |
 
 ### TentativasLimite
 

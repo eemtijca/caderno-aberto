@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
 // Cartão de nota. Usado na lista, no painel e nas visões.
 
-import { BookOpenText, Eye, FileText, ListChecks, Pencil } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import type { NotaDados } from "@/lib/notas/tipos"
-import { corDisciplina } from "@/lib/notas/cores"
-import { contarQuestoes, MESES_CAP } from "@/lib/notas/texto"
+import { BookOpenText, Eye, FileText, ListChecks, Pencil } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import type { NotaDados } from "@/lib/notas/tipos";
+import { corDisciplina } from "@/lib/notas/cores";
+import { contarQuestoes, MESES_CAP } from "@/lib/notas/texto";
 
 export function CartaoNota({
   nota,
@@ -14,15 +14,15 @@ export function CartaoNota({
   onEditar,
   indice = 0,
 }: {
-  nota: NotaDados
-  onAbrir: () => void
-  onEditar?: () => void
+  nota: NotaDados;
+  onAbrir: () => void;
+  onEditar?: () => void;
   /** posição na lista: atrasa a animação de cascata */
-  indice?: number
+  indice?: number;
 }) {
-  const cor = corDisciplina(nota.disciplina?.cor)
+  const cor = corDisciplina(nota.disciplina?.cor);
   // Sem questões, o resumo mostra a contagem de blocos.
-  const questoes = contarQuestoes(nota)
+  const questoes = contarQuestoes(nota);
 
   return (
     <article
@@ -100,5 +100,5 @@ export function CartaoNota({
         ) : null}
       </div>
     </article>
-  )
+  );
 }

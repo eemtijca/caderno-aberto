@@ -20,4 +20,11 @@ for i in $(seq 1 60); do
 done
 
 echo "[entrada] Iniciando o servidor..."
+
+# Cria ou atualiza o admin inicial quando as variáveis estiverem definidas.
+if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_SENHA:-}" ]; then
+  echo "[entrada] Configurando administrador..."
+  node ./scripts/criar-admin.mjs || echo "[entrada] Aviso: falha ao configurar o admin."
+fi
+
 exec node server.js

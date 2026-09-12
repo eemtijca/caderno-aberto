@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
 // Vista Links: cria e gerencia links de nota, turma ou disciplina, com cópia,
 // pausa, expiração, regeneração e exclusão.
 
-import { useMemo, useState } from "react"
+import { useMemo, useState } from "react";
 import {
   BookOpenText,
   Check,
@@ -20,26 +20,26 @@ import {
   RefreshCw,
   Trash2,
   Users,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,8 +50,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { toast } from "sonner"
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import {
   urlDoLink,
   useCriarLink,
@@ -63,20 +63,20 @@ import {
   useTurmas,
   type LinkInfo,
   type TipoLink,
-} from "@/lib/notas/api-client"
+} from "@/lib/notas/api-client";
 
 const ROTULO_TIPO: Record<TipoLink, string> = {
   nota: "Uma nota",
   turma: "Turma inteira",
   disciplina: "Disciplina inteira",
-}
+};
 
 export function VistaLinks() {
-  const linksQ = useLinks()
-  const notasQ = useNotas({ status: "publicada" })
-  const disciplinasQ = useDisciplinas()
-  const turmasQ = useTurmas()
-  const { data: links, isLoading } = linksQ
+  const linksQ = useLinks();
+  const notasQ = useNotas({ status: "publicada" });
+  const disciplinasQ = useDisciplinas();
+  const turmasQ = useTurmas();
+  const { data: links, isLoading } = linksQ;
 
   return (
     <div className="space-y-6 pb-8">
@@ -117,7 +117,7 @@ export function VistaLinks() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function SecaoNovoLink({
@@ -125,28 +125,28 @@ function SecaoNovoLink({
   disciplinas,
   turmas,
 }: {
-  notas: { id: string; titulo: string }[]
-  disciplinas: { id: string; nome: string }[]
-  turmas: { id: string; nome: string; ano: number }[]
+  notas: { id: string; titulo: string }[];
+  disciplinas: { id: string; nome: string }[];
+  turmas: { id: string; nome: string; ano: number }[];
 }) {
-  const criar = useCriarLink()
-  const [tipo, setTipo] = useState<TipoLink>("nota")
-  const [alvo, setAlvo] = useState("")
-  const [nome, setNome] = useState("")
+  const criar = useCriarLink();
+  const [tipo, setTipo] = useState<TipoLink>("nota");
+  const [alvo, setAlvo] = useState("");
+  const [nome, setNome] = useState("");
 
   const opcoes =
     tipo === "nota"
       ? notas.map((n) => ({ id: n.id, rotulo: n.titulo }))
       : tipo === "turma"
         ? turmas.map((t) => ({ id: t.id, rotulo: `${t.nome} · ${t.ano}` }))
-        : disciplinas.map((d) => ({ id: d.id, rotulo: d.nome }))
+        : disciplinas.map((d) => ({ id: d.id, rotulo: d.nome }));
 
   const vazio =
     tipo === "nota"
       ? "Publique uma nota primeiro."
       : tipo === "turma"
         ? "Cadastre turmas primeiro."
-        : "Cadastre disciplinas primeiro."
+        : "Cadastre disciplinas primeiro.";
 
   return (
     <section className="na-cascata border-border bg-card rounded-2xl border p-5">
@@ -160,8 +160,8 @@ function SecaoNovoLink({
           <Select
             value={tipo}
             onValueChange={(v) => {
-              setTipo(v as TipoLink)
-              setAlvo("")
+              setTipo(v as TipoLink);
+              setAlvo("");
             }}
           >
             <SelectTrigger className="w-full rounded-lg">
@@ -222,18 +222,18 @@ function SecaoNovoLink({
               ...(tipo === "nota" ? { notaId: alvo } : {}),
               ...(tipo === "turma" ? { turmaId: alvo } : {}),
               ...(tipo === "disciplina" ? { disciplinaId: alvo } : {}),
-            }
-            const r = await criar.mutateAsync(dados)
-            setAlvo("")
-            setNome("")
+            };
+            const r = await criar.mutateAsync(dados);
+            setAlvo("");
+            setNome("");
             toast.success("Link criado", {
               description: "O endereço já foi copiado. Envie para os alunos.",
-            })
-            void navigator.clipboard?.writeText(urlDoLink(r.link.token)).catch(() => undefined)
+            });
+            void navigator.clipboard?.writeText(urlDoLink(r.link.token)).catch(() => undefined);
           } catch (e) {
             toast.error("Não foi possível criar o link", {
               description: e instanceof Error ? e.message : "Tente novamente em instantes.",
-            })
+            });
           }
         }}
       >
@@ -241,38 +241,38 @@ function SecaoNovoLink({
         Criar e copiar link
       </Button>
     </section>
-  )
+  );
 }
 
 function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
-  const editar = useEditarLink()
-  const excluir = useExcluirLink()
-  const [copiado, setCopiado] = useState(false)
-  const [editando, setEditando] = useState(false)
-  const [nome, setNome] = useState(link.nome)
+  const editar = useEditarLink();
+  const excluir = useExcluirLink();
+  const [copiado, setCopiado] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [nome, setNome] = useState(link.nome);
   const [expira, setExpira] = useState(
     link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "",
-  )
+  );
 
-  const url = useMemo(() => urlDoLink(link.token), [link.token])
+  const url = useMemo(() => urlDoLink(link.token), [link.token]);
   // Um link só está disponível se estiver ativo e dentro do prazo.
-  const expirado = link.expiraEm ? new Date(link.expiraEm).getTime() < Date.now() : false
-  const disponivel = link.ativo && !expirado
+  const expirado = link.expiraEm ? new Date(link.expiraEm).getTime() < Date.now() : false;
+  const disponivel = link.ativo && !expirado;
   const aviso =
     link.tipo === "nota" && link.alvoDetalhe === "rascunho"
       ? "A nota ainda é rascunho. Publique para liberar o acesso"
-      : ""
+      : "";
 
   const copiar = async () => {
     try {
-      await navigator.clipboard.writeText(url)
-      setCopiado(true)
-      toast.success("Link copiado", { description: "Envie para a turma." })
-      setTimeout(() => setCopiado(false), 2000)
+      await navigator.clipboard.writeText(url);
+      setCopiado(true);
+      toast.success("Link copiado", { description: "Envie para a turma." });
+      setTimeout(() => setCopiado(false), 2000);
     } catch {
-      toast.error("Não foi possível copiar. Selecione o endereço acima e copie manualmente.")
+      toast.error("Não foi possível copiar. Selecione o endereço acima e copie manualmente.");
     }
-  }
+  };
 
   const salvarEdicao = async () => {
     try {
@@ -282,15 +282,15 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
           nome: nome.trim(),
           expiraEm: expira ? new Date(`${expira}T23:59:59`).toISOString() : null,
         },
-      })
-      setEditando(false)
-      toast.success("Link atualizado")
+      });
+      setEditando(false);
+      toast.success("Link atualizado");
     } catch (e) {
       toast.error("Não foi possível salvar", {
         description: e instanceof Error ? e.message : undefined,
-      })
+      });
     }
-  }
+  };
 
   return (
     <article
@@ -372,9 +372,11 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
                 size="sm"
                 className="h-9 rounded-lg"
                 onClick={() => {
-                  setEditando(false)
-                  setNome(link.nome)
-                  setExpira(link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "")
+                  setEditando(false);
+                  setNome(link.nome);
+                  setExpira(
+                    link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "",
+                  );
                 }}
               >
                 Cancelar
@@ -428,9 +430,11 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
               <DropdownMenuItem
                 className="gap-2"
                 onClick={() => {
-                  setNome(link.nome)
-                  setExpira(link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "")
-                  setEditando(true)
+                  setNome(link.nome);
+                  setExpira(
+                    link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "",
+                  );
+                  setEditando(true);
                 }}
               >
                 <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar nome e expiração
@@ -440,12 +444,12 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
                 disabled={editar.isPending}
                 onClick={async () => {
                   try {
-                    await editar.mutateAsync({ id: link.id, dados: { ativo: !link.ativo } })
-                    toast.success(link.ativo ? "Link pausado" : "Link reativado")
+                    await editar.mutateAsync({ id: link.id, dados: { ativo: !link.ativo } });
+                    toast.success(link.ativo ? "Link pausado" : "Link reativado");
                   } catch (e) {
                     toast.error("Não foi possível atualizar o link", {
                       description: e instanceof Error ? e.message : undefined,
-                    })
+                    });
                   }
                 }}
               >
@@ -457,14 +461,14 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
                 disabled={editar.isPending}
                 onClick={async () => {
                   try {
-                    await editar.mutateAsync({ id: link.id, dados: { regenerar: true } })
+                    await editar.mutateAsync({ id: link.id, dados: { regenerar: true } });
                     toast.success("Novo link gerado", {
                       description: "O endereço antigo deixará de funcionar.",
-                    })
+                    });
                   } catch (e) {
                     toast.error("Não foi possível gerar novo endereço", {
                       description: e instanceof Error ? e.message : undefined,
-                    })
+                    });
                   }
                 }}
               >
@@ -494,12 +498,12 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
                       className="bg-destructive hover:bg-destructive/90 text-white"
                       onClick={async () => {
                         try {
-                          await excluir.mutateAsync(link.id)
-                          toast.success("Link excluído")
+                          await excluir.mutateAsync(link.id);
+                          toast.success("Link excluído");
                         } catch (e) {
                           toast.error("Não foi possível excluir o link", {
                             description: e instanceof Error ? e.message : undefined,
-                          })
+                          });
                         }
                       }}
                     >
@@ -513,5 +517,5 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
         </div>
       </div>
     </article>
-  )
+  );
 }

@@ -1,6 +1,5 @@
 # Caderno Aberto. Orquestração local: aplicação + PostgreSQL.
 # Sobe tudo com: docker compose up --build
-# Com caixa de e-mail local: docker compose --profile mailpit up --build
 # A aplicação lê DATABASE_URL e aplica as migrações na partida.
 
 name: caderno-aberto
@@ -37,25 +36,12 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:?Defina AUTH_SECRET no .env}
       CRON_SECRET: ${CRON_SECRET:?Defina CRON_SECRET no .env}
       APP_URL: ${APP_URL:-}
-      EMAIL_DRIVER: ${EMAIL_DRIVER:-log}
-      EMAIL_FROM: ${EMAIL_FROM:-Caderno Aberto <contato@exemplo.br>}
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      SMTP_URL: ${SMTP_URL:-}
       UPLOAD_DIR: /data/imagens
       STORAGE_DRIVER: disk
       NEXT_PUBLIC_APP_VERSION: ${NEXT_PUBLIC_APP_VERSION:-0.1.0}
     volumes:
       - uploads:/data/imagens
     command: ["./docker/app/entrypoint.sh"]
-
-  # Caixa de e-mail local (SMTP :1025, UI :8025). Só com --profile mailpit.
-  mailpit:
-    image: axllent/mailpit:v1.31
-    profiles: ["mailpit"]
-    restart: unless-stopped
-    ports:
-      - "1025:1025"
-      - "8025:8025"
 
 volumes:
   pgdata:

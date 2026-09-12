@@ -1,6 +1,6 @@
 # ADR-002: provedores agnósticos de e-mail e imagens
 
-- Estado: aceita.
+- Estado: substituída parcialmente pelo [ADR-004](004-acesso-por-codigo.md). O envio de e-mail foi removido; a interface agnóstica de armazenamento de imagens permanece válida.
 - Data: 2026.
 
 ## Contexto

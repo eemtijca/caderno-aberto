@@ -1,30 +1,30 @@
-"use client"
+"use client";
 
 // Vista Turmas e calendário: agrupa as notas por ano, turma e disciplina, tudo
 // derivado dos metadados (nada é cadastrado aqui).
 
-import { useMemo, useState } from "react"
-import { ChevronDown, ChevronRight, Pencil, Plus, Settings } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client"
-import { corDisciplina } from "@/lib/notas/cores"
-import { MESES_CAP } from "@/lib/notas/texto"
+import { useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, Pencil, Plus, Settings } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client";
+import { corDisciplina } from "@/lib/notas/cores";
+import { MESES_CAP } from "@/lib/notas/texto";
 
 export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void }) {
-  const notasQ = useNotas()
-  const disciplinasQ = useDisciplinas()
-  const { data: turmas } = useTurmas()
-  const notas = notasQ.data
-  const disciplinas = disciplinasQ.data
-  const carregando = notasQ.isLoading || disciplinasQ.isLoading
+  const notasQ = useNotas();
+  const disciplinasQ = useDisciplinas();
+  const { data: turmas } = useTurmas();
+  const notas = notasQ.data;
+  const disciplinas = disciplinasQ.data;
+  const carregando = notasQ.isLoading || disciplinasQ.isLoading;
 
   const anos = useMemo(
     () => [...new Set((notas ?? []).map((n) => n.anoLetivo))].sort((a, b) => b - a),
     [notas],
-  )
+  );
 
   return (
     <div className="space-y-5">
@@ -86,32 +86,32 @@ export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void 
         </Tabs>
       )}
     </div>
-  )
+  );
 }
 
 function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string) => void }) {
-  const turmasQ = useTurmas(ano)
-  const notasQ = useNotas({ ano })
-  const [abertas, setAbertas] = useState<Record<string, boolean>>({})
-  const { data: turmas, isLoading: carregandoTurmas } = turmasQ
-  const { data: notas } = notasQ
+  const turmasQ = useTurmas(ano);
+  const notasQ = useNotas({ ano });
+  const [abertas, setAbertas] = useState<Record<string, boolean>>({});
+  const { data: turmas, isLoading: carregandoTurmas } = turmasQ;
+  const { data: notas } = notasQ;
 
   // Índice de turma para notas; notas sem turma ficam de fora e ganham seção própria.
   const porTurma = useMemo(() => {
-    const mapa = new Map<string, typeof notas>()
+    const mapa = new Map<string, typeof notas>();
     for (const n of notas ?? []) {
-      if (n.turmas.length === 0) continue
+      if (n.turmas.length === 0) continue;
       for (const t of n.turmas) {
-        const lista = mapa.get(t.id) ?? []
-        lista.push(n)
-        mapa.set(t.id, lista)
+        const lista = mapa.get(t.id) ?? [];
+        lista.push(n);
+        mapa.set(t.id, lista);
       }
     }
-    return mapa
-  }, [notas])
+    return mapa;
+  }, [notas]);
 
-  const semTurma = (notas ?? []).filter((n) => n.turmas.length === 0)
-  const lista = (turmas ?? []).slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+  const semTurma = (notas ?? []).filter((n) => n.turmas.length === 0);
+  const lista = (turmas ?? []).slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
   return (
     <section className="space-y-2">
@@ -129,9 +129,9 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
       ) : (
         <div className="border-border overflow-hidden rounded-2xl border">
           {lista.map((t) => {
-            const aberta = abertas[t.id]
-            const notasTurma = porTurma.get(t.id) ?? []
-            const meses = [...new Set(notasTurma.map((n) => n.mes))].sort((a, b) => a - b)
+            const aberta = abertas[t.id];
+            const notasTurma = porTurma.get(t.id) ?? [];
+            const meses = [...new Set(notasTurma.map((n) => n.mes))].sort((a, b) => a - b);
             return (
               <div key={t.id} className="border-border border-b last:border-b-0">
                 <button
@@ -157,7 +157,7 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
                       <p className="text-muted-foreground text-sm">Sem notas nesta turma.</p>
                     ) : (
                       meses.map((m) => {
-                        const doMes = notasTurma.filter((n) => n.mes === m)
+                        const doMes = notasTurma.filter((n) => n.mes === m);
                         return (
                           <div key={m} className="space-y-1.5">
                             <p className="text-muted-foreground text-[0.72rem] font-bold tracking-wider uppercase">
@@ -167,13 +167,13 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
                               <LinhaNota key={n.id} nota={n} navegar={navegar} />
                             ))}
                           </div>
-                        )
+                        );
                       })
                     )}
                   </div>
                 ) : null}
               </div>
-            )
+            );
           })}
         </div>
       )}
@@ -192,7 +192,7 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
         </details>
       ) : null}
     </section>
-  )
+  );
 }
 
 function PainelDisciplinas({
@@ -201,26 +201,26 @@ function PainelDisciplinas({
   disciplinas,
   notas,
 }: {
-  ano: number
-  navegar: (para: string) => void
-  disciplinas: { id: string; nome: string; cor: string }[]
+  ano: number;
+  navegar: (para: string) => void;
+  disciplinas: { id: string; nome: string; cor: string }[];
   notas: {
-    id: string
-    titulo: string
-    disciplinaId: string
-    mes: number
-    anoLetivo: number
-    status: string
-  }[]
+    id: string;
+    titulo: string;
+    disciplinaId: string;
+    mes: number;
+    anoLetivo: number;
+    status: string;
+  }[];
 }) {
-  const doAno = notas.filter((n) => n.anoLetivo === ano)
+  const doAno = notas.filter((n) => n.anoLetivo === ano);
   return (
     <section className="space-y-2">
       <h2 className="fonte-display px-1 text-lg font-bold">Por disciplina</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         {disciplinas.map((d, i) => {
-          const cor = corDisciplina(d.cor)
-          const notasD = doAno.filter((n) => n.disciplinaId === d.id)
+          const cor = corDisciplina(d.cor);
+          const notasD = doAno.filter((n) => n.disciplinaId === d.id);
           return (
             <div
               key={d.id}
@@ -260,19 +260,19 @@ function PainelDisciplinas({
                 <p className="text-muted-foreground mt-2 text-sm">Sem notas em {ano}.</p>
               )}
             </div>
-          )
+          );
         })}
       </div>
     </section>
-  )
+  );
 }
 
 function LinhaNota({
   nota,
   navegar,
 }: {
-  nota: { id: string; titulo: string; status: string; disciplina?: { nome: string } | null }
-  navegar: (para: string) => void
+  nota: { id: string; titulo: string; status: string; disciplina?: { nome: string } | null };
+  navegar: (para: string) => void;
 }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -298,5 +298,5 @@ function LinhaNota({
         <Pencil className="h-3.5 w-3.5" aria-hidden />
       </button>
     </div>
-  )
+  );
 }

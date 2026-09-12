@@ -13,109 +13,109 @@ import {
   idBloco,
   normalizarAparencia,
   normalizarBlocos,
-} from "./tipos"
+} from "./tipos";
 
 function inlineParaMd(texto: string): string {
   // Marcadores próprios do app viram realces compatíveis com Markdown.
-  return texto.replace(/\\resultado\{([^}]*)\}/g, "==$1==").replace(/\\dest\{([^}]*)\}/g, "**$1**")
+  return texto.replace(/\\resultado\{([^}]*)\}/g, "==$1==").replace(/\\dest\{([^}]*)\}/g, "**$1**");
 }
 
 function escaparTabelaMd(texto: string): string {
-  return inlineParaMd(texto).replace(/\\/g, "\\\\").replace(/\|/g, "\\|")
+  return inlineParaMd(texto).replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 }
 
 // Divide pelos separadores | não escapados
 function dividirCelulasTabela(conteudo: string): string[] {
-  const celulas: string[] = []
-  let atual = ""
+  const celulas: string[] = [];
+  let atual = "";
   for (let i = 0; i < conteudo.length; i++) {
-    const c = conteudo[i]
+    const c = conteudo[i];
     if (c === "\\" && i + 1 < conteudo.length) {
-      const prox = conteudo[i + 1]
+      const prox = conteudo[i + 1];
       if (prox === "|" || prox === "\\") {
-        atual += prox
-        i++
-        continue
+        atual += prox;
+        i++;
+        continue;
       }
     }
     if (c === "|") {
-      celulas.push(atual)
-      atual = ""
-      continue
+      celulas.push(atual);
+      atual = "";
+      continue;
     }
-    atual += c
+    atual += c;
   }
-  celulas.push(atual)
-  return celulas
+  celulas.push(atual);
+  return celulas;
 }
 
 function mdParaInline(texto: string): string {
   // Caminho inverso de inlineParaMd ao importar Markdown.
-  return texto.replace(/==([^=]+)==/g, "\\resultado{$1}")
+  return texto.replace(/==([^=]+)==/g, "\\resultado{$1}");
 }
 
 function rotuloParaMd(rotulo: Rotulo | null | undefined): string {
-  if (!rotulo) return ""
-  if (rotulo.tipo === "livre") return rotulo.texto ? `**${rotulo.texto}** ` : ""
+  if (!rotulo) return "";
+  if (rotulo.tipo === "livre") return rotulo.texto ? `**${rotulo.texto}** ` : "";
   const nome = {
     definicao: "Definição.",
     formulas: "Fórmulas.",
     relacoes: "Relações.",
     modelo: "Modelo básico.",
     resolucao: "Resolução.",
-  }[rotulo.tipo]
-  return nome ? `**${nome}** ` : ""
+  }[rotulo.tipo];
+  return nome ? `**${nome}** ` : "";
 }
 
 function filhoParaMd(f: BlocoFilho): string {
   switch (f.tipo) {
     case "paragrafo":
-      return `${rotuloParaMd(f.rotulo)}${inlineParaMd(f.texto)}`
+      return `${rotuloParaMd(f.rotulo)}${inlineParaMd(f.texto)}`;
     case "formula":
-      return `$$${f.latex}$$`
+      return `$$${f.latex}$$`;
     case "lista":
-      return f.itens.map((i) => `- ${inlineParaMd(i)}`).join("\n")
+      return f.itens.map((i) => `- ${inlineParaMd(i)}`).join("\n");
     case "tabela": {
-      if (f.linhas.length === 0) return ""
-      const nCol = Math.max(...f.linhas.map((l) => l.length))
+      if (f.linhas.length === 0) return "";
+      const nCol = Math.max(...f.linhas.map((l) => l.length));
       const norm = f.linhas.map((l) => {
-        const c = [...l]
-        while (c.length < nCol) c.push("")
-        return c.map((x) => escaparTabelaMd(x))
-      })
-      const sep = `|${Array.from({ length: nCol }, () => "---").join("|")}|`
-      const linhas = norm.map((l) => `| ${l.join(" | ")} |`)
+        const c = [...l];
+        while (c.length < nCol) c.push("");
+        return c.map((x) => escaparTabelaMd(x));
+      });
+      const sep = `|${Array.from({ length: nCol }, () => "---").join("|")}|`;
+      const linhas = norm.map((l) => `| ${l.join(" | ")} |`);
       // Com cabeçalho a linha separadora vai depois da primeira linha.
-      if (f.comCabecalho) return [linhas[0], sep, ...linhas.slice(1)].join("\n")
-      return [sep, ...linhas].join("\n")
+      if (f.comCabecalho) return [linhas[0], sep, ...linhas.slice(1)].join("\n");
+      return [sep, ...linhas].join("\n");
     }
     case "chamada":
       // Delimitador :: usado pelos contêineres de bloco.
-      return `:: ${f.estilo}\n${inlineParaMd(f.texto)}\n::`
+      return `:: ${f.estilo}\n${inlineParaMd(f.texto)}\n::`;
   }
 }
 
 function questaoParaMd(q: Questao, numero: number): string {
-  let s = `${numero}. ${inlineParaMd(q.enunciado)}`
+  let s = `${numero}. ${inlineParaMd(q.enunciado)}`;
   if (q.alternativas.length > 0) {
     s +=
-      "\n" + q.alternativas.map((a, i) => `   ${"abcd"[i] ?? "?"}) ${inlineParaMd(a)}`).join("\n")
+      "\n" + q.alternativas.map((a, i) => `   ${"abcd"[i] ?? "?"}) ${inlineParaMd(a)}`).join("\n");
   }
-  return s
+  return s;
 }
 
 function blocoParaMd(b: Bloco): string {
   switch (b.tipo) {
     case "secao":
-      return `## ${b.titulo}`
+      return `## ${b.titulo}`;
     case "paragrafo":
     case "formula":
     case "lista":
     case "tabela":
     case "chamada":
-      return filhoParaMd(b)
+      return filhoParaMd(b);
     case "figura":
-      return `![${inlineParaMd(b.legenda)}](${b.url})`
+      return `![${inlineParaMd(b.legenda)}](${b.url})`;
     case "tikz":
       return [
         "```tikz",
@@ -124,7 +124,7 @@ function blocoParaMd(b: Bloco): string {
         b.legenda.trim() ? `*${inlineParaMd(b.legenda)}*` : "",
       ]
         .filter(Boolean)
-        .join("\n")
+        .join("\n");
     case "copiar":
     case "exemplo":
     case "dica":
@@ -132,59 +132,61 @@ function blocoParaMd(b: Bloco): string {
         `:: ${b.tipo}${b.rotulo ? ` ${b.rotulo}` : ""}`,
         ...b.filhos.map(filhoParaMd),
         "::",
-      ].join("\n\n")
+      ].join("\n\n");
     case "exercicios": {
       const partes: string[] = [
         `:: exercicios${b.rotulo && b.rotulo !== "Exercícios propostos" ? ` ${b.rotulo}` : ""}`,
-      ]
-      let numero = 0
+      ];
+      let numero = 0;
       for (const nivel of b.niveis) {
-        if (nivel.questoes.length === 0) continue
-        partes.push(`### Nível ${nivel.numero} · ${nivel.titulo}`)
+        if (nivel.questoes.length === 0) continue;
+        partes.push(`### Nível ${nivel.numero} · ${nivel.titulo}`);
         for (const q of nivel.questoes) {
-          numero++
-          partes.push(questaoParaMd(q, numero))
+          numero++;
+          partes.push(questaoParaMd(q, numero));
         }
       }
-      const gabAuto: string[] = []
-      let n = 0
+      const gabAuto: string[] = [];
+      let n = 0;
       // Reproduz o gabarito objetivo (1a, 2c) na mesma ordem das questões.
       for (const nivel of b.niveis) {
         for (const q of nivel.questoes) {
-          n++
+          n++;
           if (q.alternativas.length > 0 && q.correta !== null)
-            gabAuto.push(`${n}${"abcd"[q.correta] ?? ""}`)
+            gabAuto.push(`${n}${"abcd"[q.correta] ?? ""}`);
         }
       }
-      const gab = [gabAuto.join(" · "), inlineParaMd(b.gabarito.trim())].filter(Boolean).join(" · ")
-      if (gab) partes.push(`**Gabarito:** ${gab}`)
-      partes.push("::")
-      return partes.join("\n\n")
+      const gab = [gabAuto.join(" · "), inlineParaMd(b.gabarito.trim())]
+        .filter(Boolean)
+        .join(" · ");
+      if (gab) partes.push(`**Gabarito:** ${gab}`);
+      partes.push("::");
+      return partes.join("\n\n");
     }
   }
 }
 
 export interface MarkdownNota {
-  titulo: string
-  disciplina: string
-  anoLetivo: number
-  mes: number
-  turmas: string[]
-  habilidades: string
-  sobre: string
-  status: string
-  slug?: string
-  aparencia?: AparenciaNota
-  blocos: Bloco[]
+  titulo: string;
+  disciplina: string;
+  anoLetivo: number;
+  mes: number;
+  turmas: string[];
+  habilidades: string;
+  sobre: string;
+  status: string;
+  slug?: string;
+  aparencia?: AparenciaNota;
+  blocos: Bloco[];
 }
 
 function aparenciaParaMd(ap: AparenciaNota | null | undefined): string[] {
-  const linhas: string[] = []
-  if (ap?.fonte && ap.fonte !== APARENCIA_PADRAO.fonte) linhas.push(`fonte: ${ap.fonte}`)
-  if (ap?.escala && ap.escala !== APARENCIA_PADRAO.escala) linhas.push(`escala: ${ap.escala}`)
+  const linhas: string[] = [];
+  if (ap?.fonte && ap.fonte !== APARENCIA_PADRAO.fonte) linhas.push(`fonte: ${ap.fonte}`);
+  if (ap?.escala && ap.escala !== APARENCIA_PADRAO.escala) linhas.push(`escala: ${ap.escala}`);
   if (ap?.entrelinha && ap.entrelinha !== APARENCIA_PADRAO.entrelinha)
-    linhas.push(`entrelinha: ${ap.entrelinha}`)
-  return linhas
+    linhas.push(`entrelinha: ${ap.entrelinha}`);
+  return linhas;
 }
 
 export function gerarMarkdown(nota: NotaDados): string {
@@ -201,14 +203,14 @@ export function gerarMarkdown(nota: NotaDados): string {
     `slug: ${nota.slug}`,
     ...aparenciaParaMd(nota.aparencia),
     "---",
-  ]
-  const cabecalho = fm.join("\n")
-  const sobre = nota.sobre.trim() ? `> ${nota.sobre.trim().replace(/\n/g, "\n> ")}` : ""
-  const corpo = nota.blocos.map(blocoParaMd).join("\n\n")
+  ];
+  const cabecalho = fm.join("\n");
+  const sobre = nota.sobre.trim() ? `> ${nota.sobre.trim().replace(/\n/g, "\n> ")}` : "";
+  const corpo = nota.blocos.map(blocoParaMd).join("\n\n");
   return [cabecalho, "", `# ${nota.titulo}`, "", sobre, "", corpo, ""]
     .filter((x) => x !== undefined)
     .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
+    .replace(/\n{3,}/g, "\n\n");
 }
 
 // Mapeia rótulos em texto (com e sem acento) para o tipo canônico.
@@ -223,184 +225,184 @@ const ROTULO_MD: Record<string, RotuloTipo> = {
   "modelo basico.": "modelo",
   "resolução.": "resolucao",
   "resolucao.": "resolucao",
-}
+};
 
 function extrairRotuloMd(linha: string): { rotulo: Rotulo | null; resto: string } {
-  const m = /^\*\*([^*]+)\*\*\s*([\s\S]*)$/.exec(linha.trim())
-  if (!m) return { rotulo: null, resto: linha }
-  const nome = m[1].trim().toLowerCase()
-  if (ROTULO_MD[nome]) return { rotulo: { tipo: ROTULO_MD[nome] }, resto: m[2] }
-  return { rotulo: { tipo: "livre", texto: m[1] }, resto: m[2] }
+  const m = /^\*\*([^*]+)\*\*\s*([\s\S]*)$/.exec(linha.trim());
+  if (!m) return { rotulo: null, resto: linha };
+  const nome = m[1].trim().toLowerCase();
+  if (ROTULO_MD[nome]) return { rotulo: { tipo: ROTULO_MD[nome] }, resto: m[2] };
+  return { rotulo: { tipo: "livre", texto: m[1] }, resto: m[2] };
 }
 
 // Estado dos contêineres abertos com ::, resolvidos por uma pilha.
 interface PilhaContainer {
-  tipo: "copiar" | "exemplo" | "dica" | "exercicios" | "raiz"
-  rotulo?: string
-  destino: Bloco[] | BlocoFilho[]
-  filhos?: BlocoFilho[]
-  exercicios?: BlocoExercicios
-  nivelAtual?: { numero: 1 | 2 | 3; titulo: string; questoes: Questao[] }
-  buffer: string[]
-  linhasTabela: string[]
+  tipo: "copiar" | "exemplo" | "dica" | "exercicios" | "raiz";
+  rotulo?: string;
+  destino: Bloco[] | BlocoFilho[];
+  filhos?: BlocoFilho[];
+  exercicios?: BlocoExercicios;
+  nivelAtual?: { numero: 1 | 2 | 3; titulo: string; questoes: Questao[] };
+  buffer: string[];
+  linhasTabela: string[];
 }
 
 export function analisarMarkdown(md: string): MarkdownNota {
   // Normaliza quebras CRLF antes de dividir as linhas.
-  const linhas = md.replace(/\r\n/g, "\n").split("\n")
-  const meta: Record<string, string> = {}
-  let i = 0
+  const linhas = md.replace(/\r\n/g, "\n").split("\n");
+  const meta: Record<string, string> = {};
+  let i = 0;
 
   if (linhas[0]?.trim() === "---") {
-    i = 1
+    i = 1;
     while (i < linhas.length && linhas[i].trim() !== "---") {
-      const m = /^([a-zA-Zà-úÀ-Ú]+)\s*:\s*(.*)$/.exec(linhas[i])
-      if (m) meta[m[1].toLowerCase()] = m[2].trim()
-      i++
+      const m = /^([a-zA-Zà-úÀ-Ú]+)\s*:\s*(.*)$/.exec(linhas[i]);
+      if (m) meta[m[1].toLowerCase()] = m[2].trim();
+      i++;
     }
-    i++
+    i++;
   }
 
-  let titulo = meta["titulo"] ?? ""
+  let titulo = meta["titulo"] ?? "";
   if (!titulo) {
     while (i < linhas.length) {
-      const m = /^#\s+(.*)$/.exec(linhas[i])
+      const m = /^#\s+(.*)$/.exec(linhas[i]);
       if (m) {
-        titulo = m[1].trim()
-        i++
-        break
+        titulo = m[1].trim();
+        i++;
+        break;
       }
-      i++
+      i++;
     }
   }
 
-  const sobreLinhas: string[] = []
-  let emCite = false
+  const sobreLinhas: string[] = [];
+  let emCite = false;
   // O "sobre" da nota é a citação em bloco logo após o título.
   while (i < linhas.length) {
-    const l = linhas[i]
+    const l = linhas[i];
     if (!emCite && /^#\s+/.test(l.trim())) {
-      i++
-      continue
+      i++;
+      continue;
     }
     if (/^>\s?/.test(l)) {
-      emCite = true
-      sobreLinhas.push(l.replace(/^>\s?/, ""))
-      i++
+      emCite = true;
+      sobreLinhas.push(l.replace(/^>\s?/, ""));
+      i++;
     } else if (emCite && l.trim() === "") {
-      break
+      break;
     } else if (emCite) {
-      sobreLinhas.push(l)
-      i++
+      sobreLinhas.push(l);
+      i++;
     } else if (l.trim() === "") {
-      i++
+      i++;
     } else {
-      break
+      break;
     }
   }
-  const sobre = sobreLinhas.join(" ").trim()
+  const sobre = sobreLinhas.join(" ").trim();
 
-  const raiz: Bloco[] = []
-  const pilha: PilhaContainer[] = [{ tipo: "raiz", destino: raiz, buffer: [], linhasTabela: [] }]
+  const raiz: Bloco[] = [];
+  const pilha: PilhaContainer[] = [{ tipo: "raiz", destino: raiz, buffer: [], linhasTabela: [] }];
 
   const destinoAtual = (): Bloco[] | BlocoFilho[] =>
     pilha[pilha.length - 1].tipo === "raiz"
       ? (pilha[pilha.length - 1].destino as Bloco[])
-      : (pilha[pilha.length - 1].filhos ?? pilha[pilha.length - 1].destino)
+      : (pilha[pilha.length - 1].filhos ?? pilha[pilha.length - 1].destino);
 
   const flushParagrafo = (): void => {
-    const topo = pilha[pilha.length - 1]
-    const texto = topo.buffer.join("\n").trim()
-    topo.buffer = []
-    if (!texto) return
-    const { rotulo, resto } = extrairRotuloMd(texto)
+    const topo = pilha[pilha.length - 1];
+    const texto = topo.buffer.join("\n").trim();
+    topo.buffer = [];
+    if (!texto) return;
+    const { rotulo, resto } = extrairRotuloMd(texto);
     const bloco: BlocoFilho = {
       id: idBloco(),
       tipo: "paragrafo",
       texto: mdParaInline(resto),
       rotulo,
-    }
-    ;(destinoAtual() as BlocoFilho[]).push(bloco)
-  }
+    };
+    (destinoAtual() as BlocoFilho[]).push(bloco);
+  };
 
   const flushTabela = (): void => {
-    const topo = pilha[pilha.length - 1]
-    const linhas = topo.linhasTabela
-    topo.linhasTabela = []
-    if (linhas.length === 0) return
+    const topo = pilha[pilha.length - 1];
+    const linhas = topo.linhasTabela;
+    topo.linhasTabela = [];
+    if (linhas.length === 0) return;
     const celulas = linhas
       .filter((l) => !/^\|[\s:|-]+\|?$/.test(l.trim()))
       .map((l) =>
         dividirCelulasTabela(l.trim().replace(/^\|/, "").replace(/\|$/, "")).map((c) =>
           mdParaInline(c.trim()),
         ),
-      )
-    if (celulas.length === 0) return
-    const ehSep = linhas.some((l) => /^\|[\s:|-]+\|?$/.test(l.trim()))
-    const idxSep = linhas.findIndex((l) => /^\|[\s:|-]+\|?$/.test(l.trim()))
-    const comCabecalho = ehSep && idxSep === 1
-    ;(destinoAtual() as BlocoFilho[]).push({
+      );
+    if (celulas.length === 0) return;
+    const ehSep = linhas.some((l) => /^\|[\s:|-]+\|?$/.test(l.trim()));
+    const idxSep = linhas.findIndex((l) => /^\|[\s:|-]+\|?$/.test(l.trim()));
+    const comCabecalho = ehSep && idxSep === 1;
+    (destinoAtual() as BlocoFilho[]).push({
       id: idBloco(),
       tipo: "tabela",
       comCabecalho,
       linhas: celulas,
-    })
-  }
+    });
+  };
 
   const flushExercicioAtual = (): void => {
-    const topo = pilha[pilha.length - 1]
+    const topo = pilha[pilha.length - 1];
     if (topo.nivelAtual && topo.exercicios) {
-      topo.exercicios.niveis.push(topo.nivelAtual)
-      topo.nivelAtual = undefined
+      topo.exercicios.niveis.push(topo.nivelAtual);
+      topo.nivelAtual = undefined;
     }
-  }
+  };
 
   while (i < linhas.length) {
-    const linha = linhas[i]
+    const linha = linhas[i];
 
     if (/^::\s*$/.test(linha.trim())) {
-      flushParagrafo()
-      flushTabela()
-      const topo = pilha.pop()
+      flushParagrafo();
+      flushTabela();
+      const topo = pilha.pop();
       if (topo && topo.tipo !== "raiz") {
         if (topo.tipo === "exercicios" && topo.exercicios) {
-          flushExercicioAtual()
-          raiz.push(topo.exercicios)
+          flushExercicioAtual();
+          raiz.push(topo.exercicios);
         } else {
           raiz.push({
             id: idBloco(),
             tipo: topo.tipo as "copiar" | "exemplo" | "dica",
             rotulo: topo.rotulo ?? "",
             filhos: topo.filhos ?? [],
-          } as Bloco)
+          } as Bloco);
         }
       }
-      i++
-      continue
+      i++;
+      continue;
     }
 
     const mAbertura =
-      /^::\s*(copiar|exemplo|dica|exercicios|atencao|diaadia|simbolos)\s*(.*)$/.exec(linha.trim())
+      /^::\s*(copiar|exemplo|dica|exercicios|atencao|diaadia|simbolos)\s*(.*)$/.exec(linha.trim());
     if (mAbertura) {
-      flushParagrafo()
-      flushTabela()
-      const tipo = mAbertura[1] as PilhaContainer["tipo"] | EstiloChamada
-      const rotulo = mAbertura[2].trim()
+      flushParagrafo();
+      flushTabela();
+      const tipo = mAbertura[1] as PilhaContainer["tipo"] | EstiloChamada;
+      const rotulo = mAbertura[2].trim();
       if (tipo === "atencao" || tipo === "diaadia" || tipo === "simbolos") {
-        let texto = ""
-        i++
+        let texto = "";
+        i++;
         while (i < linhas.length && !/^::\s*$/.test(linhas[i].trim())) {
-          texto += (texto ? "\n" : "") + linhas[i]
-          i++
+          texto += (texto ? "\n" : "") + linhas[i];
+          i++;
         }
-        i++
-        ;(destinoAtual() as BlocoFilho[]).push({
+        i++;
+        (destinoAtual() as BlocoFilho[]).push({
           id: idBloco(),
           tipo: "chamada",
           estilo: tipo as EstiloChamada,
           texto: mdParaInline(texto.trim()),
-        })
-        continue
+        });
+        continue;
       }
       if (tipo === "exercicios") {
         pilha.push({
@@ -415,7 +417,7 @@ export function analisarMarkdown(md: string): MarkdownNota {
           },
           buffer: [],
           linhasTabela: [],
-        })
+        });
       } else {
         pilha.push({
           tipo,
@@ -424,185 +426,185 @@ export function analisarMarkdown(md: string): MarkdownNota {
           filhos: [],
           buffer: [],
           linhasTabela: [],
-        })
+        });
       }
-      i++
-      continue
+      i++;
+      continue;
     }
 
-    const topo = pilha[pilha.length - 1]
+    const topo = pilha[pilha.length - 1];
     if (topo.tipo === "exercicios" && topo.exercicios) {
-      const mNivel = /^###\s*N[íi]vel\s*([123])\s*[·:\-.]?\s*(.*)$/.exec(linha.trim())
+      const mNivel = /^###\s*N[íi]vel\s*([123])\s*[·:\-.]?\s*(.*)$/.exec(linha.trim());
       if (mNivel) {
-        flushExercicioAtual()
+        flushExercicioAtual();
         topo.nivelAtual = {
           numero: Number(mNivel[1]) as 1 | 2 | 3,
           // Tolera o separador "Nível 1 . Conceitos"
           titulo: mNivel[2].trim().replace(/^[·:\-.]+\s*/, "") || "Conceitos",
           questoes: [],
-        }
-        i++
-        continue
+        };
+        i++;
+        continue;
       }
-      const mGab = /^\*\*Gabarito:\*\*\s*(.*)$/.exec(linha.trim())
+      const mGab = /^\*\*Gabarito:\*\*\s*(.*)$/.exec(linha.trim());
       if (mGab) {
-        flushExercicioAtual()
-        topo.exercicios.gabarito = mdParaInline(mGab[1].trim())
-        i++
-        continue
+        flushExercicioAtual();
+        topo.exercicios.gabarito = mdParaInline(mGab[1].trim());
+        i++;
+        continue;
       }
-      const mQuestao = /^(\d+)[.)]\s+(.*)$/.exec(linha.trim())
+      const mQuestao = /^(\d+)[.)]\s+(.*)$/.exec(linha.trim());
       if (mQuestao && topo.nivelAtual) {
         topo.nivelAtual.questoes.push({
           id: idBloco(),
           enunciado: mdParaInline(mQuestao[2].trim()),
           alternativas: [],
           correta: null,
-        })
-        i++
-        continue
+        });
+        i++;
+        continue;
       }
-      const mAlt = /^([a-d])[.)]\s+(.*)$/.exec(linha.trim())
+      const mAlt = /^([a-d])[.)]\s+(.*)$/.exec(linha.trim());
       if (mAlt && topo.nivelAtual && topo.nivelAtual.questoes.length > 0) {
         topo.nivelAtual.questoes[topo.nivelAtual.questoes.length - 1].alternativas.push(
           mdParaInline(mAlt[2].trim()),
-        )
-        i++
-        continue
+        );
+        i++;
+        continue;
       }
-      i++
-      continue
+      i++;
+      continue;
     }
 
-    const mSecao = /^##\s+(.*)$/.exec(linha.trim())
+    const mSecao = /^##\s+(.*)$/.exec(linha.trim());
     if (mSecao) {
-      flushParagrafo()
-      flushTabela()
-      const tituloSecao = mSecao[1].replace(/^\d+[.)]\s*/, "").trim()
-      ;(pilha[0].destino as Bloco[]).push({ id: idBloco(), tipo: "secao", titulo: tituloSecao })
-      i++
-      continue
+      flushParagrafo();
+      flushTabela();
+      const tituloSecao = mSecao[1].replace(/^\d+[.)]\s*/, "").trim();
+      (pilha[0].destino as Bloco[]).push({ id: idBloco(), tipo: "secao", titulo: tituloSecao });
+      i++;
+      continue;
     }
 
     if (linha.trim().startsWith("$$")) {
-      flushParagrafo()
-      flushTabela()
-      let latex = linha.trim().slice(2)
+      flushParagrafo();
+      flushTabela();
+      let latex = linha.trim().slice(2);
       if (latex.endsWith("$$")) {
-        latex = latex.slice(0, -2)
+        latex = latex.slice(0, -2);
       } else {
-        i++
+        i++;
         while (i < linhas.length && !linhas[i].trim().endsWith("$$")) {
-          latex += "\n" + linhas[i]
-          i++
+          latex += "\n" + linhas[i];
+          i++;
         }
-        if (i < linhas.length) latex += "\n" + linhas[i].trim().replace(/\$\$$/, "")
+        if (i < linhas.length) latex += "\n" + linhas[i].trim().replace(/\$\$$/, "");
       }
-      ;(destinoAtual() as BlocoFilho[]).push({
+      (destinoAtual() as BlocoFilho[]).push({
         id: idBloco(),
         tipo: "formula",
         latex: latex.trim(),
-      })
-      i++
-      continue
+      });
+      i++;
+      continue;
     }
 
     if (linha.trim().startsWith("```")) {
-      const lang = linha.trim().slice(3).trim().toLowerCase()
+      const lang = linha.trim().slice(3).trim().toLowerCase();
       if (lang === "tikz" || lang === "tikzjax") {
-        flushParagrafo()
-        flushTabela()
-        let codigo = ""
-        i++
+        flushParagrafo();
+        flushTabela();
+        let codigo = "";
+        i++;
         while (i < linhas.length && !linhas[i].trim().startsWith("```")) {
-          codigo += (codigo ? "\n" : "") + linhas[i]
-          i++
+          codigo += (codigo ? "\n" : "") + linhas[i];
+          i++;
         }
-        i++
-        let legenda = ""
+        i++;
+        let legenda = "";
         if (i < linhas.length && /^\*.*\*$/.test(linhas[i].trim())) {
-          legenda = mdParaInline(linhas[i].trim().replace(/^\*|\*$/g, ""))
-          i++
+          legenda = mdParaInline(linhas[i].trim().replace(/^\*|\*$/g, ""));
+          i++;
         }
-        ;(pilha[0].destino as Bloco[]).push({
+        (pilha[0].destino as Bloco[]).push({
           id: idBloco(),
           tipo: "tikz",
           codigo: codigo.trim(),
           legenda,
-        })
-        continue
+        });
+        continue;
       }
     }
 
     if (/^[-*]\s+/.test(linha.trim())) {
-      flushParagrafo()
-      flushTabela()
-      const itens: string[] = []
+      flushParagrafo();
+      flushTabela();
+      const itens: string[] = [];
       while (i < linhas.length && /^[-*]\s+/.test(linhas[i].trim())) {
-        itens.push(mdParaInline(linhas[i].trim().replace(/^[-*]\s+/, "")))
-        i++
+        itens.push(mdParaInline(linhas[i].trim().replace(/^[-*]\s+/, "")));
+        i++;
       }
-      ;(destinoAtual() as BlocoFilho[]).push({ id: idBloco(), tipo: "lista", itens })
-      continue
+      (destinoAtual() as BlocoFilho[]).push({ id: idBloco(), tipo: "lista", itens });
+      continue;
     }
 
     if (linha.trim().startsWith("|")) {
-      flushParagrafo()
+      flushParagrafo();
       while (i < linhas.length && linhas[i].trim().startsWith("|")) {
-        pilha[pilha.length - 1].linhasTabela.push(linhas[i])
-        i++
+        pilha[pilha.length - 1].linhasTabela.push(linhas[i]);
+        i++;
       }
-      flushTabela()
-      continue
+      flushTabela();
+      continue;
     }
 
-    const mFig = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(linha.trim())
+    const mFig = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(linha.trim());
     if (mFig) {
-      flushParagrafo()
-      flushTabela()
-      ;(pilha[0].destino as Bloco[]).push({
+      flushParagrafo();
+      flushTabela();
+      (pilha[0].destino as Bloco[]).push({
         id: idBloco(),
         tipo: "figura",
         url: mFig[2],
         legenda: mdParaInline(mFig[1]),
-      })
-      i++
-      continue
+      });
+      i++;
+      continue;
     }
 
     if (linha.trim() === "") {
-      flushParagrafo()
-      i++
-      continue
+      flushParagrafo();
+      i++;
+      continue;
     }
 
     if (/^#\s+/.test(linha.trim())) {
-      i++
-      continue
+      i++;
+      continue;
     }
 
-    pilha[pilha.length - 1].buffer.push(linha)
-    i++
+    pilha[pilha.length - 1].buffer.push(linha);
+    i++;
   }
   // Fecha contêineres que ficaram abertos até o fim do arquivo.
   while (pilha.length > 1) {
-    const topo = pilha.pop()
+    const topo = pilha.pop();
     if (topo && topo.tipo !== "raiz") {
       if (topo.tipo === "exercicios" && topo.exercicios) {
-        flushExercicioAtual()
-        raiz.push(topo.exercicios)
+        flushExercicioAtual();
+        raiz.push(topo.exercicios);
       } else {
         raiz.push({
           id: idBloco(),
           tipo: topo.tipo as "copiar" | "exemplo" | "dica",
           rotulo: topo.rotulo ?? "",
           filhos: topo.filhos ?? [],
-        } as Bloco)
+        } as Bloco);
       }
     }
   }
-  flushParagrafo()
-  flushTabela()
+  flushParagrafo();
+  flushTabela();
 
   return {
     titulo: titulo || "Nota sem título",
@@ -623,5 +625,5 @@ export function analisarMarkdown(md: string): MarkdownNota {
       entrelinha: meta["entrelinha"],
     }),
     blocos: normalizarBlocos(raiz),
-  }
+  };
 }

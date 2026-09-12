@@ -13,7 +13,6 @@ flowchart LR
   S -->|fetch JSON| A[Rotas src/app/api]
   P -->|GET /api/publico/token| A
   A --> D[(PostgreSQL via Prisma)]
-  A --> E[Provedor de e-mail]
   A --> F[Provedor de armazenamento]
   M[proxy.ts] -->|CSRF e CSP| N
 ```
@@ -29,7 +28,6 @@ flowchart LR
 - `src/lib/api/`: helpers de sessão, serialização, token de link, limite de tentativas e resolução de links públicos.
 - `src/lib/banco.ts`: singleton do PrismaClient (`banco()`); `src/lib/banco/tipos.ts` espelha o schema para o servidor.
 - `src/lib/armazenamento/`: interface única de imagens (`disk` local ou `s3` compatível com S3). O caminho relativo é a chave.
-- `src/lib/email/`: interface única de envio (`log`, `smtp` ou `resend`), com outbox em memória disponível apenas em testes.
 - `src/lib/notas/`: AST de blocos, geração de LaTeX e Markdown, busca textual, ícones e cores.
 - `src/lib/ambiente.ts`: validação das variáveis de ambiente com zod, com falha antecipada.
 
@@ -56,7 +54,7 @@ sequenceDiagram
   R-->>C: JSON com Cache-Control private, no-store
 ```
 
-O JWT de acesso tem validade de 1 hora e é verificado sem consultar o banco. O refresh opaco tem validade de 30 dias, é armazenado apenas como hash e sofre rotação a cada renovação, com trava de concorrência para que apenas uma renovação vença. Detalhes em [seguranca.md](seguranca.md).
+O JWT de acesso tem validade de 1 hora. A cada requisição o usuário é recarregado do banco, de modo que papel, ativação da conta e carência de exclusão valem imediatamente. O refresh opaco tem validade de 30 dias, é armazenado apenas como hash e sofre rotação a cada renovação, com trava de concorrência para que apenas uma renovação vença. Detalhes em [seguranca.md](seguranca.md).
 
 ## Isolamento entre professores
 
@@ -79,17 +77,17 @@ Detalhes de edição em [editor.md](editor.md) e do modelo em [modelo-de-dados.m
 src/
   app/
     api/              rotas HTTP (multiusuário, sessão por cookies)
-      auth/           cadastro, login, verificação, recuperação e troca
+      auth/           login, sair, renovar, solicitar e usar código
+      admin/          solicitações, códigos, usuários e auditoria
       publico/[token] vista do aluno (sem login) e servidor de imagens
     l/[token]/        página pública com metadados e OpenGraph
     page.tsx          shell do aplicativo em rotas hash
-  components/         editor, vistas, diálogos, shell e ui/ (shadcn)
+  components/         editor, vistas, console admin, shell e ui/ (shadcn)
   hooks/              sessão e utilitários de interface
   lib/
-    api/              sessão, serialização, links públicos e limite
+    api/              sessão, admin, auditoria, serialização e limite
     armazenamento/    imagens atrás de interface única (disk, s3)
-    auth/             scrypt, sessões e validação
-    email/            provedor agnóstico (log, smtp, resend) e modelos
+    auth/             scrypt, código de acesso, sessões e validação
     notas/            AST, LaTeX, Markdown, busca, paleta e ícones
     ambiente.ts       validação de variáveis
     banco.ts          singleton do PrismaClient
@@ -106,3 +104,4 @@ e2e/                  Playwright headless
 - [ADR-001: Prisma Client v7](adr/001-prisma-v7.md)
 - [ADR-002: provedores agnósticos de e-mail e imagens](adr/002-provedores-agnosticos.md)
 - [ADR-003: isolamento pelo dono com RLS de barreira](adr/003-isolamento.md)
+- [ADR-004: acesso por código gerido pela administração](adr/004-acesso-por-codigo.md)

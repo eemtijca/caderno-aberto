@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
 // Painel inicial do professor: saudação, contadores, notas do mês e últimas edições.
 
-import { ArrowRight, BookOpenText, CalendarRange, Eye, Link2, Plus, Settings } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useDisciplinas, useLinks, useNotas } from "@/lib/notas/api-client"
-import { useSessao } from "@/hooks/use-sessao"
-import { CartaoNota } from "@/components/notas/cartao-nota"
-import { MESES_CAP } from "@/lib/notas/texto"
+import { ArrowRight, BookOpenText, CalendarRange, Eye, Link2, Plus, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDisciplinas, useLinks, useNotas } from "@/lib/notas/api-client";
+import { useSessao } from "@/hooks/use-sessao";
+import { CartaoNota } from "@/components/notas/cartao-nota";
+import { MESES_CAP } from "@/lib/notas/texto";
 
 export function VistaInicio({
   navegar,
   onNovaNota,
 }: {
-  navegar: (para: string) => void
-  onNovaNota: () => void
+  navegar: (para: string) => void;
+  onNovaNota: () => void;
 }) {
-  const notasQ = useNotas()
-  const disciplinasQ = useDisciplinas()
-  const linksQ = useLinks()
-  const { perfil } = useSessao()
+  const notasQ = useNotas();
+  const disciplinasQ = useDisciplinas();
+  const linksQ = useLinks();
+  const { perfil } = useSessao();
 
-  const notas = notasQ.data
-  const mesAtual = new Date().getMonth() + 1
-  const anoAtual = new Date().getFullYear()
-  const publicadas = (notas ?? []).filter((n) => n.status === "publicada").length
-  const doMes = (notas ?? []).filter((n) => n.mes === mesAtual && n.anoLetivo === anoAtual)
+  const notas = notasQ.data;
+  const mesAtual = new Date().getMonth() + 1;
+  const anoAtual = new Date().getFullYear();
+  const publicadas = (notas ?? []).filter((n) => n.status === "publicada").length;
+  const doMes = (notas ?? []).filter((n) => n.mes === mesAtual && n.anoLetivo === anoAtual);
   // Ordena por atualização decrescente sem mutar a lista original.
   const recentes = [...(notas ?? [])]
     .sort((a, b) => (a.atualizadoEm < b.atualizadoEm ? 1 : -1))
-    .slice(0, 4)
+    .slice(0, 4);
 
-  const hora = new Date().getHours()
-  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite"
+  const hora = new Date().getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
   // Remove o tratamento Prof. do nome para não repetir na saudação.
-  const professor = perfil?.nome?.trim()
+  const professor = perfil?.nome?.trim();
 
   return (
     <div className="space-y-8">
@@ -169,7 +169,7 @@ export function VistaInicio({
         )}
       </section>
     </div>
-  )
+  );
 }
 
 function Numero({
@@ -180,12 +180,12 @@ function Numero({
   carregando,
   indice,
 }: {
-  icone: typeof BookOpenText
-  valor: number
-  rotulo: string
-  onClick: () => void
-  carregando?: boolean
-  indice?: number
+  icone: typeof BookOpenText;
+  valor: number;
+  rotulo: string;
+  onClick: () => void;
+  carregando?: boolean;
+  indice?: number;
 }) {
   return (
     <button
@@ -205,15 +205,15 @@ function Numero({
       )}
       <span className="text-muted-foreground text-[0.78rem]">{rotulo}</span>
     </button>
-  )
+  );
 }
 
 function CabecalhoSecao({
   titulo,
   acao,
 }: {
-  titulo: string
-  acao?: { rotulo: string; onClick: () => void }
+  titulo: string;
+  acao?: { rotulo: string; onClick: () => void };
 }) {
   return (
     <div className="flex items-center justify-between">
@@ -228,5 +228,5 @@ function CabecalhoSecao({
         </button>
       ) : null}
     </div>
-  )
+  );
 }

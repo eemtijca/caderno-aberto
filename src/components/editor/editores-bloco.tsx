@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
 // Editores de blocos. Uma UI por tipo (parágrafo, fórmula, caixas, exercícios...). Usados no nível superior e dentro das caixas (copiar/exemplo/dica).
 
-import { useRef, useState } from "react"
-import { ArrowDown, ArrowUp, CircleAlert, Eye, ImagePlus, Plus, Trash2, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useRef, useState } from "react";
+import { ArrowDown, ArrowUp, CircleAlert, Eye, ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { TextareaAuto, BarraInline } from "./pecas"
-import { Matematica } from "@/components/notas/matematica"
-import { Tikz } from "@/components/notas/tikz"
-import { comprimirImagem, enviarImagem } from "@/lib/notas/api-client"
+} from "@/components/ui/select";
+import { TextareaAuto, BarraInline } from "./pecas";
+import { Matematica } from "@/components/notas/matematica";
+import { Tikz } from "@/components/notas/tikz";
+import { comprimirImagem, enviarImagem } from "@/lib/notas/api-client";
 import type {
   BlocoCaixa,
   BlocoChamada,
@@ -31,20 +31,20 @@ import type {
   EstiloChamada,
   Questao,
   RotuloTipo,
-} from "@/lib/notas/tipos"
-import { ROTULOS_FIXOS, ESTILOS_CHAMADA, idBloco } from "@/lib/notas/tipos"
-import { toast } from "sonner"
+} from "@/lib/notas/tipos";
+import { ROTULOS_FIXOS, ESTILOS_CHAMADA, idBloco } from "@/lib/notas/tipos";
+import { toast } from "sonner";
 
-type Patch = (patch: Record<string, unknown>) => void
+type Patch = (patch: Record<string, unknown>) => void;
 
 export function EditorSecao({
   bloco,
   numero,
   onPatch,
 }: {
-  bloco: BlocoSecao
-  numero: number
-  onPatch: Patch
+  bloco: BlocoSecao;
+  numero: number;
+  onPatch: Patch;
 }) {
   return (
     <div className="flex items-center gap-2.5">
@@ -59,25 +59,25 @@ export function EditorSecao({
         className="fonte-display hover:border-border/70 focus:border-border focus:bg-card w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-lg font-bold transition-colors outline-none"
       />
     </div>
-  )
+  );
 }
 
 export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onPatch: Patch }) {
-  const ref = useRef<HTMLTextAreaElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null);
 
   const rotuloAtual: string = bloco.rotulo
     ? bloco.rotulo.tipo === "livre"
       ? `livre:${bloco.rotulo.texto ?? ""}`
       : bloco.rotulo.tipo
-    : "nenhum"
+    : "nenhum";
 
   const trocarRotulo = (valor: string) => {
-    if (valor === "nenhum") return onPatch({ rotulo: null })
+    if (valor === "nenhum") return onPatch({ rotulo: null });
     if (valor.startsWith("livre:")) {
-      return onPatch({ rotulo: { tipo: "livre", texto: valor.slice(6) } })
+      return onPatch({ rotulo: { tipo: "livre", texto: valor.slice(6) } });
     }
-    onPatch({ rotulo: { tipo: valor as RotuloTipo } })
-  }
+    onPatch({ rotulo: { tipo: valor as RotuloTipo } });
+  };
 
   return (
     <div className="space-y-1">
@@ -126,7 +126,7 @@ export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onP
         ariaLabel="Texto do parágrafo"
       />
     </div>
-  )
+  );
 }
 
 export function EditorFormula({ bloco, onPatch }: { bloco: { latex: string }; onPatch: Patch }) {
@@ -149,15 +149,15 @@ export function EditorFormula({ bloco, onPatch }: { bloco: { latex: string }; on
         </div>
       ) : null}
     </div>
-  )
+  );
 }
 
 export function EditorLista({ bloco, onPatch }: { bloco: BlocoLista; onPatch: Patch }) {
   const mudarItem = (i: number, valor: string) => {
-    const itens = [...bloco.itens]
-    itens[i] = valor
-    onPatch({ itens })
-  }
+    const itens = [...bloco.itens];
+    itens[i] = valor;
+    onPatch({ itens });
+  };
   return (
     <div className="space-y-1">
       {bloco.itens.map((item, i) => (
@@ -190,23 +190,23 @@ export function EditorLista({ bloco, onPatch }: { bloco: BlocoLista; onPatch: Pa
         <Plus className="h-3.5 w-3.5" aria-hidden /> item
       </button>
     </div>
-  )
+  );
 }
 
 export function EditorTabela({ bloco, onPatch }: { bloco: BlocoTabela; onPatch: Patch }) {
   // Normaliza as linhas para a maior largura, preenchendo células faltantes.
-  const nCol = Math.max(1, ...bloco.linhas.map((l) => l.length), 1)
+  const nCol = Math.max(1, ...bloco.linhas.map((l) => l.length), 1);
   const linhas = bloco.linhas.map((l) => {
-    const c = [...l]
-    while (c.length < nCol) c.push("")
-    return c
-  })
+    const c = [...l];
+    while (c.length < nCol) c.push("");
+    return c;
+  });
 
   const mudarCelula = (i: number, j: number, valor: string) => {
-    const copia = linhas.map((l) => [...l])
-    copia[i][j] = valor
-    onPatch({ linhas: copia })
-  }
+    const copia = linhas.map((l) => [...l]);
+    copia[i][j] = valor;
+    onPatch({ linhas: copia });
+  };
 
   return (
     <div className="space-y-2">
@@ -285,7 +285,7 @@ export function EditorTabela({ bloco, onPatch }: { bloco: BlocoTabela; onPatch: 
         </label>
       </div>
     </div>
-  )
+  );
 }
 
 export function EditorChamada({ bloco, onPatch }: { bloco: BlocoChamada; onPatch: Patch }) {
@@ -321,28 +321,28 @@ export function EditorChamada({ bloco, onPatch }: { bloco: BlocoChamada; onPatch
         ariaLabel="Texto da chamada"
       />
     </div>
-  )
+  );
 }
 
 export function EditorFigura({ bloco, onPatch }: { bloco: BlocoFigura; onPatch: Patch }) {
-  const inputArquivo = useRef<HTMLInputElement>(null)
-  const [enviando, setEnviando] = useState(false)
+  const inputArquivo = useRef<HTMLInputElement>(null);
+  const [enviando, setEnviando] = useState(false);
 
   const enviar = async (arquivo: File) => {
-    setEnviando(true)
+    setEnviando(true);
     try {
-      const comprimida = await comprimirImagem(arquivo)
-      const r = await enviarImagem(comprimida, arquivo.name)
-      onPatch({ url: r.url })
-      toast.success("Imagem enviada")
+      const comprimida = await comprimirImagem(arquivo);
+      const r = await enviarImagem(comprimida, arquivo.name);
+      onPatch({ url: r.url });
+      toast.success("Imagem enviada");
     } catch (e) {
       toast.error("Falha no envio", {
         description: e instanceof Error ? e.message : "Tente novamente.",
-      })
+      });
     } finally {
-      setEnviando(false)
+      setEnviando(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-2">
@@ -370,8 +370,8 @@ export function EditorFigura({ bloco, onPatch }: { bloco: BlocoFigura; onPatch: 
             accept="image/*"
             className="hidden"
             onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) void enviar(f)
+              const f = e.target.files?.[0];
+              if (f) void enviar(f);
             }}
           />
           <Button
@@ -401,7 +401,7 @@ export function EditorFigura({ bloco, onPatch }: { bloco: BlocoFigura; onPatch: 
         aria-label="Legenda da figura"
       />
     </div>
-  )
+  );
 }
 
 export function EditorTikz({ bloco, onPatch }: { bloco: BlocoTikz; onPatch: Patch }) {
@@ -428,14 +428,14 @@ export function EditorTikz({ bloco, onPatch }: { bloco: BlocoTikz; onPatch: Patc
         </div>
       ) : null}
     </div>
-  )
+  );
 }
 
 export interface AcoesFilhos {
-  onPatchFilho: (filhoId: string, patch: Record<string, unknown>) => void
-  onRemoverFilho: (filhoId: string) => void
-  onMoverFilho: (filhoId: string, delta: number) => void
-  onInserirFilho: (tipo: BlocoFilho["tipo"]) => void
+  onPatchFilho: (filhoId: string, patch: Record<string, unknown>) => void;
+  onRemoverFilho: (filhoId: string) => void;
+  onMoverFilho: (filhoId: string, delta: number) => void;
+  onInserirFilho: (tipo: BlocoFilho["tipo"]) => void;
 }
 
 const TIPOS_FILHO: { tipo: BlocoFilho["tipo"]; rotulo: string }[] = [
@@ -444,17 +444,17 @@ const TIPOS_FILHO: { tipo: BlocoFilho["tipo"]; rotulo: string }[] = [
   { tipo: "lista", rotulo: "Lista" },
   { tipo: "chamada", rotulo: "Atenção / Dia a dia / Símbolos" },
   { tipo: "tabela", rotulo: "Tabela" },
-]
+];
 
 export function novoFilho(tipo: BlocoFilho["tipo"]): BlocoFilho {
-  const id = idBloco()
+  const id = idBloco();
   switch (tipo) {
     case "paragrafo":
-      return { id, tipo: "paragrafo", texto: "", rotulo: null }
+      return { id, tipo: "paragrafo", texto: "", rotulo: null };
     case "formula":
-      return { id, tipo: "formula", latex: "" }
+      return { id, tipo: "formula", latex: "" };
     case "lista":
-      return { id, tipo: "lista", itens: [""] }
+      return { id, tipo: "lista", itens: [""] };
     case "tabela":
       return {
         id,
@@ -464,9 +464,9 @@ export function novoFilho(tipo: BlocoFilho["tipo"]): BlocoFilho {
           ["", ""],
           ["", ""],
         ],
-      }
+      };
     case "chamada":
-      return { id, tipo: "chamada", estilo: "atencao", texto: "" }
+      return { id, tipo: "chamada", estilo: "atencao", texto: "" };
   }
 }
 
@@ -475,16 +475,16 @@ export function EditorCaixa({
   onPatch,
   acoes,
 }: {
-  bloco: BlocoCaixa
-  onPatch: Patch
-  acoes: AcoesFilhos
+  bloco: BlocoCaixa;
+  onPatch: Patch;
+  acoes: AcoesFilhos;
 }) {
   const rotuloPlaceholder =
     bloco.tipo === "copiar"
       ? "Nome curto do bloco (ex.: Taxa de transformação)"
       : bloco.tipo === "exemplo"
         ? "Exemplo resolvido"
-        : "Dica / erro comum"
+        : "Dica / erro comum";
 
   return (
     <div className="space-y-3">
@@ -540,7 +540,7 @@ export function EditorCaixa({
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 function BotaoMini({
@@ -550,11 +550,11 @@ function BotaoMini({
   disabled,
   perigo,
 }: {
-  children: React.ReactNode
-  rotulo: string
-  onClick: () => void
-  disabled?: boolean
-  perigo?: boolean
+  children: React.ReactNode;
+  rotulo: string;
+  onClick: () => void;
+  disabled?: boolean;
+  perigo?: boolean;
 }) {
   return (
     <button
@@ -571,50 +571,50 @@ function BotaoMini({
     >
       {children}
     </button>
-  )
+  );
 }
 
 /** Editor de um filho (dentro de caixa). */
 export function EditorFilho({ filho, onPatch }: { filho: BlocoFilho; onPatch: Patch }) {
   switch (filho.tipo) {
     case "paragrafo":
-      return <EditorParagrafo bloco={filho} onPatch={onPatch} />
+      return <EditorParagrafo bloco={filho} onPatch={onPatch} />;
     case "formula":
-      return <EditorFormula bloco={filho} onPatch={onPatch} />
+      return <EditorFormula bloco={filho} onPatch={onPatch} />;
     case "lista":
-      return <EditorLista bloco={filho} onPatch={onPatch} />
+      return <EditorLista bloco={filho} onPatch={onPatch} />;
     case "tabela":
-      return <EditorTabela bloco={filho} onPatch={onPatch} />
+      return <EditorTabela bloco={filho} onPatch={onPatch} />;
     case "chamada":
-      return <EditorChamada bloco={filho} onPatch={onPatch} />
+      return <EditorChamada bloco={filho} onPatch={onPatch} />;
   }
 }
 
 export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; onPatch: Patch }) {
-  const setNiveis = (niveis: BlocoExercicios["niveis"]) => onPatch({ niveis })
+  const setNiveis = (niveis: BlocoExercicios["niveis"]) => onPatch({ niveis });
 
   const mudarNivel = (i: number, patch: Partial<BlocoExercicios["niveis"][number]>) => {
-    const niveis = bloco.niveis.map((n, j) => (j === i ? { ...n, ...patch } : n))
-    setNiveis(niveis)
-  }
+    const niveis = bloco.niveis.map((n, j) => (j === i ? { ...n, ...patch } : n));
+    setNiveis(niveis);
+  };
 
   const novaQuestao = (): Questao => ({
     id: idBloco(),
     enunciado: "",
     alternativas: [],
     correta: null,
-  })
+  });
 
   const mudarQuestao = (iNivel: number, idQuestao: string, patch: Partial<Questao>) => {
     const niveis = bloco.niveis.map((n, j) =>
       j === iNivel
         ? { ...n, questoes: n.questoes.map((q) => (q.id === idQuestao ? { ...q, ...patch } : q)) }
         : n,
-    )
-    setNiveis(niveis)
-  }
+    );
+    setNiveis(niveis);
+  };
 
-  const CORES_NIVEL_BORDA = ["border-sky-400", "border-amber-400", "border-rose-400"]
+  const CORES_NIVEL_BORDA = ["border-sky-400", "border-amber-400", "border-rose-400"];
 
   return (
     <div className="space-y-4">
@@ -676,7 +676,7 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                 {q.alternativas.length > 0 ? (
                   <div className="mt-2 space-y-1.5">
                     {q.alternativas.map((alt, k) => {
-                      const correta = q.correta === k
+                      const correta = q.correta === k;
                       return (
                         <div
                           key={k}
@@ -702,9 +702,9 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                           <TextareaAuto
                             valor={alt}
                             onChange={(v) => {
-                              const alternativas = [...q.alternativas]
-                              alternativas[k] = v
-                              mudarQuestao(i, q.id, { alternativas })
+                              const alternativas = [...q.alternativas];
+                              alternativas[k] = v;
+                              mudarQuestao(i, q.id, { alternativas });
                             }}
                             placeholder={`Alternativa (${"abcd"[k] ?? "?"})`}
                             ariaLabel={`Alternativa ${"abcd"[k] ?? "?"}`}
@@ -712,7 +712,7 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                           <button
                             type="button"
                             onClick={() => {
-                              const alternativas = q.alternativas.filter((_, x) => x !== k)
+                              const alternativas = q.alternativas.filter((_, x) => x !== k);
                               // Reajusta o índice do gabarito após a remoção da alternativa.
                               const correta =
                                 q.correta === null
@@ -721,8 +721,8 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                                     ? null
                                     : q.correta > k
                                       ? q.correta - 1
-                                      : q.correta
-                              mudarQuestao(i, q.id, { alternativas, correta })
+                                      : q.correta;
+                              mudarQuestao(i, q.id, { alternativas, correta });
                             }}
                             className="text-muted-foreground/60 hover:bg-accent hover:text-destructive rounded-md p-1 transition-colors"
                             aria-label={`Remover alternativa ${"abcd"[k] ?? "?"}`}
@@ -730,7 +730,7 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                             <X className="h-3 w-3" aria-hidden />
                           </button>
                         </div>
-                      )
+                      );
                     })}
                   </div>
                 ) : null}
@@ -782,5 +782,5 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
         />
       </div>
     </div>
-  )
+  );
 }

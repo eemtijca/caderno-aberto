@@ -1,23 +1,24 @@
 // Lê e atualiza os dados de perfil do professor autenticado.
 
-import { NextRequest } from "next/server"
-import { banco } from "@/lib/banco"
-import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
+import { NextRequest } from "next/server";
+import { banco } from "@/lib/banco";
+import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const sessao = await sessaoProfessor(req)
+  const sessao = await sessaoProfessor(req);
   // Sem sessão, devolve nulos em vez de erro para o app decidir a navegação.
   if (!sessao) {
-    return json({ usuario: null, perfil: null })
+    return json({ usuario: null, perfil: null });
   }
-  const { usuario, perfil } = sessao
+  const { usuario, perfil } = sessao;
   return json({
     usuario: {
       id: usuario.id,
       email: usuario.email,
-      emailConfirmado: Boolean(usuario.emailVerificadoEm),
+      papel: usuario.papel,
+      ativado: Boolean(usuario.ativadoEm),
       criadoEm: usuario.criadoEm,
     },
     perfil: perfil
@@ -29,26 +30,26 @@ export async function GET(req: NextRequest) {
           expiraEm: perfil.expiraEm ?? null,
         }
       : null,
-  })
+  });
 }
 
 export async function PATCH(req: NextRequest) {
-  const sessao = await sessaoProfessor(req)
-  if (!sessao) return naoAutenticado()
-  const { usuario } = sessao
+  const sessao = await sessaoProfessor(req);
+  if (!sessao) return naoAutenticado();
+  const { usuario } = sessao;
 
-  const corpo = await req.json().catch(() => null)
-  if (!corpo) return erroApi("Corpo inválido.")
+  const corpo = await req.json().catch(() => null);
+  if (!corpo) return erroApi("Corpo inválido.");
 
   // Nome e escola são aparados e limitados em tamanho.
-  const dados: { nome?: string; escola?: string } = {}
-  if (typeof corpo.nome === "string") dados.nome = corpo.nome.trim().slice(0, 120)
-  if (typeof corpo.escola === "string") dados.escola = corpo.escola.trim().slice(0, 160)
+  const dados: { nome?: string; escola?: string } = {};
+  if (typeof corpo.nome === "string") dados.nome = corpo.nome.trim().slice(0, 120);
+  if (typeof corpo.escola === "string") dados.escola = corpo.escola.trim().slice(0, 160);
 
-  if (Object.keys(dados).length === 0) return erroApi("Nada para atualizar.")
+  if (Object.keys(dados).length === 0) return erroApi("Nada para atualizar.");
 
-  const db = await banco()
-  const perfil = await db.profiles.update({ where: { id: usuario.id }, data: dados })
-  if (!perfil) return erroApi("Falha ao salvar o perfil.")
-  return json({ perfil: { nome: perfil.nome, escola: perfil.escola, email: perfil.email } })
+  const db = await banco();
+  const perfil = await db.profiles.update({ where: { id: usuario.id }, data: dados });
+  if (!perfil) return erroApi("Falha ao salvar o perfil.");
+  return json({ perfil: { nome: perfil.nome, escola: perfil.escola, email: perfil.email } });
 }

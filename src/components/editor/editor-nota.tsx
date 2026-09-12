@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
 // Editor da nota: metadados, aparência, blocos arrastáveis e prévia ao vivo.
 // O salvamento é automático após um intervalo de inatividade.
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -12,14 +12,14 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from "@dnd-kit/core"
+} from "@dnd-kit/core";
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   ArrowLeft,
   BookOpenText,
@@ -41,26 +41,26 @@ import {
   Printer,
   Trash2,
   X,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,10 +71,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "sonner"
+} from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 import {
   useDisciplinas,
@@ -83,11 +83,11 @@ import {
   useNota,
   useSalvarNota,
   useTurmas,
-} from "@/lib/notas/api-client"
-import { useSessao } from "@/hooks/use-sessao"
-import { DialogoCompartilhar } from "@/components/dialogo-compartilhar"
-import { MESES_CAP } from "@/lib/notas/texto"
-import type { AparenciaNota, Bloco, NotaDados } from "@/lib/notas/tipos"
+} from "@/lib/notas/api-client";
+import { useSessao } from "@/hooks/use-sessao";
+import { DialogoCompartilhar } from "@/components/dialogo-compartilhar";
+import { MESES_CAP } from "@/lib/notas/texto";
+import type { AparenciaNota, Bloco, NotaDados } from "@/lib/notas/tipos";
 import {
   APARENCIA_PADRAO,
   ENTRELINHAS_NOTA,
@@ -95,8 +95,8 @@ import {
   FONTES_NOTA,
   idBloco,
   variaveisAparencia,
-} from "@/lib/notas/tipos"
-import { BlocosView } from "@/components/notas/blocos-view"
+} from "@/lib/notas/tipos";
+import { BlocosView } from "@/components/notas/blocos-view";
 import {
   atualizarBloco,
   atualizarFilho,
@@ -108,7 +108,7 @@ import {
   removerBloco,
   removerFilho,
   reordenar,
-} from "./ops"
+} from "./ops";
 import {
   EditorCaixa,
   EditorChamada,
@@ -121,7 +121,7 @@ import {
   EditorTabela,
   EditorTikz,
   novoFilho,
-} from "./editores-bloco"
+} from "./editores-bloco";
 
 const PALETA: { tipo: Bloco["tipo"]; rotulo: string; descricao: string }[] = [
   { tipo: "secao", rotulo: "Seção", descricao: "Título numerado de tópico" },
@@ -140,19 +140,19 @@ const PALETA: { tipo: Bloco["tipo"]; rotulo: string; descricao: string }[] = [
   { tipo: "exemplo", rotulo: "Exemplo", descricao: "Exemplo resolvido passo a passo" },
   { tipo: "dica", rotulo: "Dica", descricao: "Dica / erro comum" },
   { tipo: "exercicios", rotulo: "Exercícios", descricao: "Lista com níveis e gabarito" },
-]
+];
 
 export function novoBloco(tipo: Bloco["tipo"]): Bloco {
-  const id = idBloco()
+  const id = idBloco();
   switch (tipo) {
     case "secao":
-      return { id, tipo: "secao", titulo: "" }
+      return { id, tipo: "secao", titulo: "" };
     case "paragrafo":
-      return { id, tipo: "paragrafo", texto: "", rotulo: null }
+      return { id, tipo: "paragrafo", texto: "", rotulo: null };
     case "formula":
-      return { id, tipo: "formula", latex: "" }
+      return { id, tipo: "formula", latex: "" };
     case "lista":
-      return { id, tipo: "lista", itens: [""] }
+      return { id, tipo: "lista", itens: [""] };
     case "tabela":
       return {
         id,
@@ -162,19 +162,19 @@ export function novoBloco(tipo: Bloco["tipo"]): Bloco {
           ["", ""],
           ["", ""],
         ],
-      }
+      };
     case "chamada":
-      return { id, tipo: "chamada", estilo: "atencao", texto: "" }
+      return { id, tipo: "chamada", estilo: "atencao", texto: "" };
     case "figura":
-      return { id, tipo: "figura", url: "", legenda: "" }
+      return { id, tipo: "figura", url: "", legenda: "" };
     case "tikz":
-      return { id, tipo: "tikz", codigo: "\\draw (0,0) -- (2,0) -- (1,1) -- cycle;", legenda: "" }
+      return { id, tipo: "tikz", codigo: "\\draw (0,0) -- (2,0) -- (1,1) -- cycle;", legenda: "" };
     case "copiar":
-      return { id, tipo: "copiar", rotulo: "", filhos: [novoFilho("paragrafo")] }
+      return { id, tipo: "copiar", rotulo: "", filhos: [novoFilho("paragrafo")] };
     case "exemplo":
-      return { id, tipo: "exemplo", rotulo: "Exemplo resolvido", filhos: [novoFilho("paragrafo")] }
+      return { id, tipo: "exemplo", rotulo: "Exemplo resolvido", filhos: [novoFilho("paragrafo")] };
     case "dica":
-      return { id, tipo: "dica", rotulo: "Dica / erro comum", filhos: [novoFilho("paragrafo")] }
+      return { id, tipo: "dica", rotulo: "Dica / erro comum", filhos: [novoFilho("paragrafo")] };
     case "exercicios":
       return {
         id,
@@ -186,12 +186,12 @@ export function novoBloco(tipo: Bloco["tipo"]): Bloco {
           { numero: 3, titulo: "Síntese", questoes: [] },
         ],
         gabarito: "",
-      }
+      };
   }
 }
 
 export function VistaEditor({ id, navegar }: { id: string; navegar: (para: string) => void }) {
-  const { data: nota, isLoading, isError } = useNota(id)
+  const { data: nota, isLoading, isError } = useNota(id);
 
   if (isLoading) {
     return (
@@ -200,7 +200,7 @@ export function VistaEditor({ id, navegar }: { id: string; navegar: (para: strin
         <Skeleton className="h-8 w-1/3" />
         <Skeleton className="h-96 w-full rounded-2xl" />
       </div>
-    )
+    );
   }
 
   if (!nota || isError) {
@@ -214,52 +214,52 @@ export function VistaEditor({ id, navegar }: { id: string; navegar: (para: strin
           <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar às notas
         </Button>
       </div>
-    )
+    );
   }
 
-  return <FormularioNota key={nota.id} notaInicial={nota} navegar={navegar} />
+  return <FormularioNota key={nota.id} notaInicial={nota} navegar={navegar} />;
 }
 
 function FormularioNota({
   notaInicial,
   navegar,
 }: {
-  notaInicial: NotaDados
-  navegar: (para: string) => void
+  notaInicial: NotaDados;
+  navegar: (para: string) => void;
 }) {
-  const id = notaInicial.id
-  const { data: disciplinas } = useDisciplinas()
-  const { data: turmas } = useTurmas()
-  const { perfil } = useSessao()
-  const salvar = useSalvarNota(id)
-  const excluir = useExcluirNota()
-  const duplicar = useDuplicarNota()
-  const [compartilharAberto, setCompartilharAberto] = useState(false)
+  const id = notaInicial.id;
+  const { data: disciplinas } = useDisciplinas();
+  const { data: turmas } = useTurmas();
+  const { perfil } = useSessao();
+  const salvar = useSalvarNota(id);
+  const excluir = useExcluirNota();
+  const duplicar = useDuplicarNota();
+  const [compartilharAberto, setCompartilharAberto] = useState(false);
 
-  const [titulo, setTitulo] = useState(notaInicial.titulo)
-  const [disciplinaId, setDisciplinaId] = useState(notaInicial.disciplinaId)
-  const [anoLetivo, setAnoLetivo] = useState(notaInicial.anoLetivo)
-  const [mes, setMes] = useState(notaInicial.mes)
-  const [sobre, setSobre] = useState(notaInicial.sobre)
-  const [habilidades, setHabilidades] = useState(notaInicial.habilidades)
-  const [status, setStatus] = useState<"rascunho" | "publicada">(notaInicial.status)
-  const [turmasSel, setTurmasSel] = useState<string[]>(notaInicial.turmas.map((t) => t.id))
-  const [blocos, setBlocos] = useState<Bloco[]>(notaInicial.blocos)
+  const [titulo, setTitulo] = useState(notaInicial.titulo);
+  const [disciplinaId, setDisciplinaId] = useState(notaInicial.disciplinaId);
+  const [anoLetivo, setAnoLetivo] = useState(notaInicial.anoLetivo);
+  const [mes, setMes] = useState(notaInicial.mes);
+  const [sobre, setSobre] = useState(notaInicial.sobre);
+  const [habilidades, setHabilidades] = useState(notaInicial.habilidades);
+  const [status, setStatus] = useState<"rascunho" | "publicada">(notaInicial.status);
+  const [turmasSel, setTurmasSel] = useState<string[]>(notaInicial.turmas.map((t) => t.id));
+  const [blocos, setBlocos] = useState<Bloco[]>(notaInicial.blocos);
   const [aparencia, setAparencia] = useState<AparenciaNota>(
     notaInicial.aparencia ?? APARENCIA_PADRAO,
-  )
+  );
 
-  const [sujo, setSujo] = useState(false)
-  const [estadoSalvamento, setEstadoSalvamento] = useState<"salvo" | "salvando" | "erro">("salvo")
-  const [paletaEm, setPaletaEm] = useState<number | null>(null)
-  const timerAutoSave = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [sujo, setSujo] = useState(false);
+  const [estadoSalvamento, setEstadoSalvamento] = useState<"salvo" | "salvando" | "erro">("salvo");
+  const [paletaEm, setPaletaEm] = useState<number | null>(null);
+  const timerAutoSave = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Autosave: espera 900ms do último campo alterado antes de persistir.
   useEffect(() => {
-    if (!sujo) return
-    if (timerAutoSave.current) clearTimeout(timerAutoSave.current)
+    if (!sujo) return;
+    if (timerAutoSave.current) clearTimeout(timerAutoSave.current);
     timerAutoSave.current = setTimeout(async () => {
-      setEstadoSalvamento("salvando")
+      setEstadoSalvamento("salvando");
       try {
         await salvar.mutateAsync({
           titulo,
@@ -272,16 +272,16 @@ function FormularioNota({
           turmasIds: turmasSel,
           blocos,
           aparencia,
-        })
-        setEstadoSalvamento("salvo")
-        setSujo(false)
+        });
+        setEstadoSalvamento("salvo");
+        setSujo(false);
       } catch {
-        setEstadoSalvamento("erro")
+        setEstadoSalvamento("erro");
       }
-    }, 900)
+    }, 900);
     return () => {
-      if (timerAutoSave.current) clearTimeout(timerAutoSave.current)
-    }
+      if (timerAutoSave.current) clearTimeout(timerAutoSave.current);
+    };
   }, [
     titulo,
     disciplinaId,
@@ -294,45 +294,45 @@ function FormularioNota({
     blocos,
     aparencia,
     sujo,
-  ])
+  ]);
 
   // Envolve um setter para sinalizar que a nota passou a ter alterações pendentes.
   const marcar =
     <T,>(fn: (v: T) => void) =>
     (valor: T) => {
-      fn(valor)
-      setSujo(true)
-    }
+      fn(valor);
+      setSujo(true);
+    };
 
   const mudarBlocos = (fn: (b: Bloco[]) => Bloco[]) => {
-    setBlocos(fn)
-    setSujo(true)
-  }
+    setBlocos(fn);
+    setSujo(true);
+  };
 
   const turmasDoAno = useMemo(
     () => (turmas ?? []).filter((t) => t.anoLetivo === anoLetivo),
     [turmas, anoLetivo],
-  )
+  );
 
   const sensores = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
+  );
 
   // Converte o resultado do arraste em reordenação imutável da lista.
   const aoArrastarFim = (e: DragEndEvent) => {
-    const { active, over } = e
+    const { active, over } = e;
     if (active.id !== over?.id && over) {
-      const de = blocos.findIndex((b) => b.id === String(active.id))
-      const para = blocos.findIndex((b) => b.id === String(over.id))
-      if (de !== -1 && para !== -1) mudarBlocos(() => reordenar(blocos, de, para))
+      const de = blocos.findIndex((b) => b.id === String(active.id));
+      const para = blocos.findIndex((b) => b.id === String(over.id));
+      if (de !== -1 && para !== -1) mudarBlocos(() => reordenar(blocos, de, para));
     }
-  }
+  };
 
-  const linkLeitura = `#/nota/${notaInicial.id}`
+  const linkLeitura = `#/nota/${notaInicial.id}`;
 
   const exportar = (formato: "tex" | "md" | "json") => {
-    window.open(`/api/notas/${id}/exportar?formato=${formato}`, "_blank")
+    window.open(`/api/notas/${id}/exportar?formato=${formato}`, "_blank");
     toast.success(
       formato === "tex"
         ? "Arquivo para impressão gerado"
@@ -345,8 +345,8 @@ function FormularioNota({
             ? "Autocontido: compila direto no Overleaf ou TeX Live, sem arquivos externos."
             : undefined,
       },
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-5">
@@ -438,11 +438,11 @@ function FormularioNota({
           disabled={duplicar.isPending}
           onClick={async () => {
             try {
-              const r = await duplicar.mutateAsync(id)
-              toast.success("Nota duplicada", { description: "A cópia abriu como rascunho." })
-              navegar(`/editor/${r.nota.id}`)
+              const r = await duplicar.mutateAsync(id);
+              toast.success("Nota duplicada", { description: "A cópia abriu como rascunho." });
+              navegar(`/editor/${r.nota.id}`);
             } catch {
-              toast.error("Não foi possível duplicar.")
+              toast.error("Não foi possível duplicar.");
             }
           }}
         >
@@ -484,11 +484,11 @@ function FormularioNota({
                 className="bg-destructive hover:bg-destructive/90 text-white"
                 onClick={async () => {
                   try {
-                    await excluir.mutateAsync(id)
-                    toast.success("Nota excluída")
-                    navegar("/notas")
+                    await excluir.mutateAsync(id);
+                    toast.success("Nota excluída");
+                    navegar("/notas");
                   } catch {
-                    toast.error("Não foi possível excluir.")
+                    toast.error("Não foi possível excluir.");
                   }
                 }}
               >
@@ -571,7 +571,7 @@ function FormularioNota({
             </Label>
             <div className="flex flex-wrap gap-2">
               {turmasDoAno.map((t) => {
-                const sel = turmasSel.includes(t.id)
+                const sel = turmasSel.includes(t.id);
                 return (
                   <button
                     key={t.id}
@@ -590,7 +590,7 @@ function FormularioNota({
                   >
                     {t.nome}
                   </button>
-                )
+                );
               })}
             </div>
           </div>
@@ -754,7 +754,7 @@ function FormularioNota({
         <DialogoCompartilhar aberto aoFechar={() => setCompartilharAberto(false)} notaId={id} />
       ) : null}
     </div>
-  )
+  );
 }
 
 function ListaBlocos({
@@ -765,22 +765,22 @@ function ListaBlocos({
   sensores,
   aoArrastarFim,
 }: {
-  blocos: Bloco[]
-  mudarBlocos: (fn: (b: Bloco[]) => Bloco[]) => void
-  paletaEm: number | null
-  setPaletaEm: (i: number | null) => void
-  sensores: ReturnType<typeof useSensors>
-  aoArrastarFim: (e: DragEndEvent) => void
+  blocos: Bloco[];
+  mudarBlocos: (fn: (b: Bloco[]) => Bloco[]) => void;
+  paletaEm: number | null;
+  setPaletaEm: (i: number | null) => void;
+  sensores: ReturnType<typeof useSensors>;
+  aoArrastarFim: (e: DragEndEvent) => void;
 }) {
   // Numeração das seções é acumulada na ordem de exibição, ignorando outros tipos.
-  let numeroSecao = 0
+  let numeroSecao = 0;
 
   return (
     <DndContext sensors={sensores} collisionDetection={closestCenter} onDragEnd={aoArrastarFim}>
       <SortableContext items={blocos.map((b) => b.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-2.5">
           {blocos.map((b, i) => {
-            if (b.tipo === "secao") numeroSecao++
+            if (b.tipo === "secao") numeroSecao++;
             return (
               <div key={b.id}>
                 <CartaoBloco
@@ -794,14 +794,14 @@ function ListaBlocos({
                 {paletaEm === i + 1 ? (
                   <PaletaInsercao
                     onEscolher={(tipo) => {
-                      mudarBlocos((bs) => inserirBloco(bs, i + 1, novoBloco(tipo)))
-                      setPaletaEm(null)
+                      mudarBlocos((bs) => inserirBloco(bs, i + 1, novoBloco(tipo)));
+                      setPaletaEm(null);
                     }}
                     onFechar={() => setPaletaEm(null)}
                   />
                 ) : null}
               </div>
-            )
+            );
           })}
         </div>
       </SortableContext>
@@ -810,8 +810,8 @@ function ListaBlocos({
         {paletaEm === blocos.length || blocos.length === 0 ? (
           <PaletaInsercao
             onEscolher={(tipo) => {
-              mudarBlocos((bs) => inserirBloco(bs, bs.length, novoBloco(tipo)))
-              setPaletaEm(null)
+              mudarBlocos((bs) => inserirBloco(bs, bs.length, novoBloco(tipo)));
+              setPaletaEm(null);
             }}
             onFechar={() => setPaletaEm(null)}
           />
@@ -827,7 +827,7 @@ function ListaBlocos({
         )}
       </div>
     </DndContext>
-  )
+  );
 }
 
 function CartaoBloco({
@@ -838,22 +838,22 @@ function CartaoBloco({
   mudarBlocos,
   onInserirAqui,
 }: {
-  bloco: Bloco
-  indice: number
-  numeroSecao: number
-  total: number
-  mudarBlocos: (fn: (b: Bloco[]) => Bloco[]) => void
-  onInserirAqui: () => void
+  bloco: Bloco;
+  indice: number;
+  numeroSecao: number;
+  total: number;
+  mudarBlocos: (fn: (b: Bloco[]) => Bloco[]) => void;
+  onInserirAqui: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: bloco.id,
-  })
+  });
 
   const estilo: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.6 : 1,
-  }
+  };
 
   const classesCaixa =
     bloco.tipo === "copiar"
@@ -866,9 +866,10 @@ function CartaoBloco({
             ? "border border-violet-300/70 border-l-4 border-l-violet-500 bg-violet-50/20 dark:border-violet-800/60 dark:bg-violet-950/10"
             : bloco.tipo === "exercicios"
               ? "border border-border bg-stone-50/70 dark:bg-stone-900/40"
-              : "border border-border"
+              : "border border-border";
 
-  const patch = (p: Record<string, unknown>) => mudarBlocos((bs) => atualizarBloco(bs, bloco.id, p))
+  const patch = (p: Record<string, unknown>) =>
+    mudarBlocos((bs) => atualizarBloco(bs, bloco.id, p));
 
   return (
     <article
@@ -1022,27 +1023,27 @@ function CartaoBloco({
               mudarBlocos((bs) => moverFilho(bs, bloco.id, filhoId, delta)),
             onInserirFilho: (tipo) =>
               mudarBlocos((bs) => {
-                const caixa = bs.find((b) => b.id === bloco.id)
+                const caixa = bs.find((b) => b.id === bloco.id);
                 const fim =
                   caixa &&
                   (caixa.tipo === "copiar" || caixa.tipo === "exemplo" || caixa.tipo === "dica")
                     ? caixa.filhos.length
-                    : 0
-                return inserirFilho(bs, bloco.id, fim, novoFilho(tipo))
+                    : 0;
+                return inserirFilho(bs, bloco.id, fim, novoFilho(tipo));
               }),
           }}
         />
       )}
     </article>
-  )
+  );
 }
 
 function PaletaInsercao({
   onEscolher,
   onFechar,
 }: {
-  onEscolher: (tipo: Bloco["tipo"]) => void
-  onFechar: () => void
+  onEscolher: (tipo: Bloco["tipo"]) => void;
+  onFechar: () => void;
 }) {
   return (
     <div className="border-border bg-popover mt-2 rounded-2xl border p-3 shadow-lg">
@@ -1075,7 +1076,7 @@ function PaletaInsercao({
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 function Previa({
@@ -1083,11 +1084,11 @@ function Previa({
   titulo,
   aparencia,
 }: {
-  blocos: Bloco[]
-  titulo: string
-  aparencia: AparenciaNota
+  blocos: Bloco[];
+  titulo: string;
+  aparencia: AparenciaNota;
 }) {
-  const [gabarito, setGabarito] = useState(false)
+  const [gabarito, setGabarito] = useState(false);
   return (
     <div className="na-nota" style={variaveisAparencia(aparencia) as React.CSSProperties}>
       <div className="mb-4 flex items-center justify-between">
@@ -1109,5 +1110,5 @@ function Previa({
         botão de imprimir na leitura.
       </p>
     </div>
-  )
+  );
 }

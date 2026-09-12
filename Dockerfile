@@ -34,6 +34,7 @@ COPY --from=compilacao /app/.next/standalone ./
 COPY --from=compilacao /app/.next/static ./.next/static
 COPY --from=compilacao /app/public ./public
 COPY --from=compilacao /app/docker ./docker
+COPY --from=compilacao /app/scripts ./scripts
 COPY --from=compilacao /app/generated ./generated
 COPY --from=compilacao /app/prisma ./prisma
 # pg + transitivas + dotenv p/ o migrador (fora da árvore do standalone).

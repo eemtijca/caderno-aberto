@@ -30,13 +30,14 @@ npx prisma migrate status
 
 Com `DIRECT_URL` definida, o comando usa essa conexão.
 
-## E-mail
+## Acesso por código
 
-- Desenvolvimento sem provedor: `EMAIL_DRIVER=log` imprime os links no console e os registra em `/api/teste/outbox` quando `ALLOW_TEST_OUTBOX=1`.
-- Mailpit local: `docker compose --profile mailpit up --build`, com `EMAIL_DRIVER=smtp` e `SMTP_URL=smtp://mailpit:1025`. Interface em http://localhost:8025.
-- Envio real: `EMAIL_DRIVER=resend` com `RESEND_API_KEY` e domínio verificado, ou `EMAIL_DRIVER=smtp` com `SMTP_URL`.
+- O acesso não depende de e-mail. O primeiro administrador é criado com `npm run criar-admin` (variáveis `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME`), também executado na partida do Compose quando definidas.
+- A administração vê a fila de solicitações no console (`#/admin`), gera o código de 8 caracteres e o entrega ao professor. O código expira em `CODIGO_EXPIRA_MINUTOS` (padrão 60) e é exibido uma única vez.
+- Esqueceu a senha é equivalente: o professor solicita na tela de login e a administração gera um novo código.
+- Auditoria: as ações sensíveis ficam em `eventos_seguranca` e na aba Auditoria.
 
-Se um e-mail não chegar, verifique a caixa de teste (quando habilitada), o provedor e o log do processo. Falhas de envio são registradas e ignoradas para não interromper o fluxo do usuário.
+Se um código não funcionar, confira a validade, o bloqueio por tentativas (`AUTH_LIMITE_CODIGO`) e regenere o código, já que o anterior é invalidado.
 
 ## Imagens
 
@@ -90,9 +91,9 @@ O `vercel.json` registra o Cron diário em `GET /api/conta/restaurar` e a Vercel
 | Aplicação não inicia               | Variável inválida ou ausente. A mensagem de erro do zod indica o campo. Confira `AUTH_SECRET` e `CRON_SECRET`. |
 | Erro de conexão com o banco        | `DATABASE_URL` incorreta ou banco indisponível. Evite o pooler de transação fora do runtime serverless.        |
 | Migração acusa checksum divergente | Uma migração aplicada foi editada. Crie uma nova migração corretiva e restaure o histórico.                    |
-| E-mail não enviado                 | Provedor mal configurado ou domínio não verificado. Verifique `EMAIL_DRIVER` e as credenciais.                 |
+| E-mail não enviado                 | Não se aplica: o acesso usa código gerido pela administração.                                                  |
 | Imagem não aparece                 | Caminho fora da pasta do professor ou imagem não referenciada nos blocos. Confira o armazenamento.             |
-| Login falha com mensagem genérica  | Credenciais incorretas, e-mail não confirmado ou carência de exclusão vencida. Verifique o log.                |
+| Login falha com mensagem genérica  | Credenciais incorretas, conta não ativada por código ou carência de exclusão vencida. Verifique o log.         |
 | Muitas tentativas (429)            | Limite por IP atingido. Aguarde a janela de 5 minutos ou ajuste `AUTH_LIMITE_*`.                               |
 | Link público indisponível          | Link pausado, expirado, revogado ou professor em exclusão. Verifique a vista Links.                            |
 | Testes de isolamento falham        | Banco não migrado ou papel `app_teste` ausente. Rode `npm run test:api`, que aplica o script.                  |

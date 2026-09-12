@@ -41,7 +41,7 @@ A aplicação conecta com o dono do schema e filtra pelo dono em cada consulta. 
 
 ## Purga de contas
 
-`GET` e `DELETE /api/conta/restaurar` removem, em lotes de 100, os perfis com `exclusaoSolicitadaEm` preenchido e `expiraEm` vencido. A remoção do usuário cascateia para perfil, sessões, tokens, disciplinas, turmas, notas e links. A rota exige `Authorization: Bearer <CRON_SECRET>` e é agendada pelo Cron da Vercel. Detalhes em [operacao.md](operacao.md).
+`GET` e `DELETE /api/conta/restaurar` removem, em lotes de 100, os perfis com `exclusaoSolicitadaEm` preenchido e `expiraEm` vencido. A remoção do usuário cascateia para perfil, sessões, códigos, disciplinas, turmas, notas e links. A rota exige `Authorization: Bearer <CRON_SECRET>` e é agendada pelo Cron da Vercel. Detalhes em [operacao.md](operacao.md).
 
 ## Índices
 
@@ -51,7 +51,10 @@ O schema define índices para os acessos mais frequentes:
 - `disciplinas`: `(professorId)` com unicidade `(professorId, nome)`.
 - `turmas`: `(professorId, anoLetivo)` com unicidade `(professorId, nome, anoLetivo)`.
 - `links`: `(professorId)`, `(notaId)`, `(turmaId)`, `(disciplinaId)` e `(token)`.
-- `sessoes` e `tokens_verificacao`: índices por usuário e por expiração.
+- `sessoes`: índices por usuário e por expiração.
+- `codigos_acesso`: índice por `lower(email)`, por `expira_em` e unicidade parcial de `(lower(email), tipo)` entre códigos não usados.
+- `solicitacoes_acesso`: índice por `(status, criado_em)` e unicidade parcial de `(lower(email), tipo)` entre pendentes.
+- `eventos_seguranca`: índices por `criado_em` e por `lower(email)`.
 - `tentativas_limite`: chave primária composta `(chave, feitaEm)` e índice por `feitaEm`.
 
 ## Campos denormalizados

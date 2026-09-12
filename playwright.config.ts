@@ -1,5 +1,5 @@
 // Configuração do Playwright: 3 navegadores, execução serial e servidor local.
-import { defineConfig, devices } from "@playwright/test"
+import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Read environment variables from file.
@@ -21,6 +21,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 1,
   workers: 1,
   reporter: [["html"], ["list"]],
+  globalSetup: "./e2e/global-setup.ts",
   use: {
     baseURL: process.env.TEST_BASE_URL || "http://127.0.0.1:3000",
     trace: "on-first-retry",
@@ -65,24 +66,25 @@ export default defineConfig({
     // },
   ],
 
-  webServer: {
-    command: "npm run dev",
-    url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-    // Ambiente completo para quando o próprio Playwright sobe o app.
-    // A suíte cria dezenas de contas do mesmo IP; sem teto alto o
-    // limite de tentativas responderia 429 no meio dos cenários.
-    env: {
-      DATABASE_URL:
-        process.env.DATABASE_URL || "postgresql://caderno:caderno@localhost:5432/caderno",
-      AUTH_SECRET: process.env.AUTH_SECRET || "segredo-dummy-de-32-bytes-para-testes-00",
-      CRON_SECRET: process.env.CRON_SECRET || "segredo-cron-dummy-de-32-bytes-para-ci00",
-      ALLOW_TEST_OUTBOX: "1",
-      TESTES_CI: "1",
-      AUTH_LIMITE_TENTATIVAS: "1000",
-      AUTH_LIMITE_EMAIL: "1000",
-      UPLOAD_DIR: process.env.UPLOAD_DIR || "./.tmp/imagens-teste",
-    },
-  },
-})
+  // Em CI o app já sobe pelo Compose; a variável evita um segundo servidor.
+  webServer:
+    process.env.PLAYWRIGHT_SKIP_WEBSERVER === "1"
+      ? undefined
+      : {
+          command: "npm run dev",
+          url: "http://127.0.0.1:3000",
+          reuseExistingServer: !process.env.CI,
+          timeout: 120 * 1000,
+          // Ambiente completo para quando o próprio Playwright sobe o app.
+          env: {
+            DATABASE_URL:
+              process.env.DATABASE_URL || "postgresql://caderno:caderno@localhost:5432/caderno",
+            AUTH_SECRET: process.env.AUTH_SECRET || "segredo-dummy-de-32-bytes-para-testes-00",
+            CRON_SECRET: process.env.CRON_SECRET || "segredo-cron-dummy-de-32-bytes-para-ci00",
+            AUTH_LIMITE_TENTATIVAS: "1000",
+            AUTH_LIMITE_CODIGO: "1000",
+            CODIGO_EXPIRA_MINUTOS: "60",
+            UPLOAD_DIR: process.env.UPLOAD_DIR || "./.tmp/imagens-teste",
+          },
+        },
+});

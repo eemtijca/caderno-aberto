@@ -1,5 +1,5 @@
 // Nota de exemplo estática usada na landing sem tocar no banco.
-import type { NotaDados } from "./tipos"
+import type { NotaDados } from "./tipos";
 
 export const DEMO_NOTA: NotaDados = {
   id: "demo-landing",
@@ -98,6 +98,6 @@ export const DEMO_NOTA: NotaDados = {
       gabarito: "Questão 2: resposta discursiva.",
     },
   ],
-}
+};
 
-export const DEMO_TOKEN = "demo-landing"
+export const DEMO_TOKEN = "demo-landing";

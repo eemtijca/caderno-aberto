@@ -6,17 +6,21 @@ Comandos e pré-requisitos estão em [../tests/README.md](../tests/README.md). E
 
 - Vitest em `tests/**/*.test.ts` (`vitest.config.ts`, alias `@`, ambiente node).
 - `describe` por arquivo ou área, `it` por comportamento, com mensagens em português.
-- Testes de API e de contratos exigem banco migrado. Contratos e e2e exigem o app no ar com `ALLOW_TEST_OUTBOX=1`, que nunca deve ser usado em produção.
+- Testes de API e de contratos exigem banco migrado e o app no ar para os contratos.
 - A massa de teste usa `@exemplo.br` e limpeza ao final (`afterAll` ou exclusões). Nada de dados reais.
 
 ## Estrutura das suítes
 
-| Suíte      | Arquivo                        | Dependências                       | Cobertura                                                              |
-| ---------- | ------------------------------ | ---------------------------------- | ---------------------------------------------------------------------- |
-| Unit       | `tests/unit/notas.test.ts`     | Nenhuma                            | LaTeX e Markdown, autocontenção, round-trip e aparência                |
-| Isolamento | `tests/api/isolamento.test.ts` | `DATABASE_URL` e papel `app_teste` | Políticas RLS sem e com contexto, escrita cruzada entre professores    |
-| Contratos  | `tests/api/contratos.test.ts`  | App no ar e outbox habilitada      | Rotas HTTP de conta, CRUD, links públicos, imagens e backup            |
-| E2E        | `e2e/*.spec.ts`                | App no ar e Playwright             | Autenticação, notas, links, conta, navegação, pública e casos extremos |
+| Suíte      | Arquivo                        | Dependências                       | Cobertura                                                         |
+| ---------- | ------------------------------ | ---------------------------------- | ----------------------------------------------------------------- |
+| Unit       | `tests/unit/*.test.ts`         | Nenhuma                            | LaTeX e Markdown, código de acesso, HMAC e limites                |
+| Isolamento | `tests/api/isolamento.test.ts` | `DATABASE_URL` e papel `app_teste` | Políticas RLS sem e com contexto, escrita cruzada e tabelas novas |
+| Contratos  | `tests/api/contratos.test.ts`  | App no ar                          | Rotas HTTP de conta, CRUD, links públicos, imagens e backup       |
+| Códigos    | `tests/api/codigos.test.ts`    | App no ar e `DATABASE_URL`         | Solicitar, atender, usar, expirar, reuso e bloqueio               |
+| Admin      | `tests/api/admin.test.ts`      | App no ar e `DATABASE_URL`         | Guarda de papel e CRUD de contas                                  |
+| Segurança  | `tests/api/seguranca.test.ts`  | App no ar                          | CSRF, cabeçalhos, cron e não enumeração                           |
+| Sessão     | `tests/api/sessao.test.ts`     | App no ar e `DATABASE_URL`         | Rotação e reuso de refresh, logout e troca de senha               |
+| E2E        | `e2e/*.spec.ts`                | App no ar e Playwright             | Autenticação, código, admin, notas, links, conta e casos extremos |
 
 ## Boas práticas
 
@@ -29,7 +33,7 @@ Comandos e pré-requisitos estão em [../tests/README.md](../tests/README.md). E
 
 - `quality`: formato, lint, tipos e testes unitários.
 - `build`: compilação com valores fictícios de ambiente.
-- `test-db`: sobe o Compose, aplica as migrações com o papel `app_teste` e roda isolamento e contratos.
-- Os testes e2e rodam localmente com `npm run test:e2e` e não fazem parte do CI.
+- `test-db`: sobe o Compose, aplica o RLS de teste e roda isolamento, contratos, códigos, admin, segurança, sessão e os testes e2e no Chromium.
+- Os testes e2e completos (Firefox e WebKit) podem ser executados localmente com `npm run test:e2e`.
 
 Detalhes de deploy em [deploy.md](deploy.md).
