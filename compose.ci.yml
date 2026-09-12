@@ -1,7 +1,7 @@
 # Caderno Aberto. Sobreposição do Compose somente para o CI (test-db.yml).
 # Reaproveita compose.yml e adiciona apenas o necessário aos testes:
-# segredos fictícios e a caixa de e-mail de teste. As imagens usam o
-# volume uploads:/data/imagens do compose base, sem ajustes manuais.
+# segredos fictícios. As imagens usam o volume uploads:/data/imagens do
+# compose base, sem ajustes manuais.
 # ATENÇÃO: se compose.yml ganhar variável obrigatória nova, ela precisa
 # ser espelhada aqui.
 services:
@@ -17,6 +17,3 @@ services:
     environment:
       AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
       CRON_SECRET: segredo-cron-dummy-de-32-bytes-para-ci00
-      EMAIL_DRIVER: log
-      ALLOW_TEST_OUTBOX: "1"
-      TESTES_CI: "1"
