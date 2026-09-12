@@ -1,9 +1,8 @@
 # Sobe app e banco via Docker Compose e roda testes de isolamento e contratos.
+# CI: roda apenas em pull requests.
 name: Testes de Banco
 
 on:
-  push:
-    branches: [main]
   pull_request:
 
 concurrency:
@@ -68,6 +67,30 @@ jobs:
         run: npm run test:contratos
         env:
           TEST_BASE_URL: http://127.0.0.1:3000
+          DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
+
+      - name: Testes de códigos e administração
+        run: npm run test:codigos
+        env:
+          TEST_BASE_URL: http://127.0.0.1:3000
+          DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
+
+      - name: Testes de segurança e sessão
+        run: npm run test:seguranca
+        env:
+          TEST_BASE_URL: http://127.0.0.1:3000
+          DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
+
+      - name: Instalar navegador (Chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: Testes de ponta a ponta (Chromium)
+        run: npm run test:e2e -- --project=chromium
+        env:
+          TEST_BASE_URL: http://127.0.0.1:3000
+          DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
+          AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
+          PLAYWRIGHT_SKIP_WEBSERVER: "1"
 
       - name: Logs dos serviços (em falha)
         if: failure()
