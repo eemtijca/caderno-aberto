@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, erroApi, naoAutenticado } from "@/lib/api/sessao"
 import { linhaParaNota, mapaTurmasProfessor } from "@/lib/api/serializacao"
+import type { DisciplinaLinha, NotaLinha } from "@/lib/banco/tipos"
 import { gerarTex } from "@/lib/notas/render-latex"
 import { gerarMarkdown } from "@/lib/notas/render-markdown"
 
@@ -9,21 +11,30 @@ export const dynamic = "force-dynamic"
 type Ctx = { params: Promise<{ id: string }> }
 
 export async function GET(req: NextRequest, ctx: Ctx) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, perfil } = sessao
+  const { usuario, perfil } = sessao
   const { id } = await ctx.params
   const formato = (req.nextUrl.searchParams.get("formato") ?? "json").toLowerCase()
 
-  const { data: linha } = await cliente
-    .from("notas")
-    .select("*, disciplina:disciplinas(*)")
-    .eq("id", id)
-    .maybeSingle()
+  const db = await banco()
+  const linha = (await db.notas.findFirst({
+    where: {
+      id,
+      professorId: usuario.id,
+    },
+  })) as unknown as NotaLinha | null
   if (!linha) return erroApi("Nota não encontrada.", 404)
 
-  const mapaTurmas = await mapaTurmasProfessor(cliente, linha.professor_id)
-  const nota = linhaParaNota(linha, mapaTurmas)
+  const disciplina = linha.disciplinaId
+    ? ((await db.disciplinas.findFirst({
+        where: {
+          id: linha.disciplinaId,
+        },
+      })) as unknown as DisciplinaLinha | null)
+    : null
+  const mapaTurmas = await mapaTurmasProfessor(linha.professorId)
+  const nota = linhaParaNota({ ...linha, disciplina }, mapaTurmas)
   const professor = perfil?.nome ?? ""
 
   if (formato === "tex") {

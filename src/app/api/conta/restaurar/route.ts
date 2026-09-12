@@ -1,41 +1,91 @@
+import { NextRequest } from "next/server"
+import { timingSafeEqual } from "node:crypto"
+import { banco } from "@/lib/banco"
+import { CRON_SECRET } from "@/lib/ambiente"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
-import { clienteAdmin } from "@/lib/supabase/admin"
 
 export const dynamic = "force-dynamic"
 
 // POST /api/conta/restaurar. Cancela solicitação de exclusão dentro da carência.
-export async function POST() {
-  const sessao = await sessaoProfessor()
+export async function POST(req: NextRequest) {
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
   const { usuario } = sessao
-  const admin = clienteAdmin()
-  const { data: perfil } = (await admin
-    .from("profiles")
-    .select("exclusao_solicitada_em,expira_em")
-    .eq("id", usuario.id)
-    .maybeSingle()) as {
-    data: { exclusao_solicitada_em: string | null; expira_em: string | null } | null
-  }
-  if (!perfil?.exclusao_solicitada_em) return erroApi("Nenhuma solicitação de exclusão pendente.")
-  if (perfil.expira_em && new Date(perfil.expira_em) < new Date())
+  const db = await banco()
+  const perfil = await db.profiles.findFirst({ where: { id: usuario.id } })
+  if (!perfil?.exclusaoSolicitadaEm) return erroApi("Nenhuma solicitação de exclusão pendente.")
+  if (perfil.expiraEm && perfil.expiraEm < new Date())
     return erroApi("Prazo de carência expirado. A conta será removida.", 410)
-  const { error } = await admin
-    .from("profiles")
-    .update({ exclusao_solicitada_em: null, expira_em: null } as never)
-    .eq("id", usuario.id)
-  if (error) return erroApi("Falha ao restaurar: " + error.message)
-  await admin
-    .from("links")
-    .update({ ativo: true } as never)
-    .eq("professor_id", usuario.id)
-    .eq("ativo", false)
+  await db.$transaction(async (tx) => {
+    await tx.profiles.update({
+      where: { id: usuario.id },
+      data: {
+        exclusaoSolicitadaEm: null,
+        expiraEm: null,
+      },
+    })
+    const links = await tx.links.findMany({ where: { professorId: usuario.id } })
+    for (const link of links) {
+      // Reativa só os pausados pela exclusão; os demais seguem como estavam.
+      if (link.pausadoNaExclusao)
+        await tx.links.update({
+          where: { id: link.id },
+          data: { ativo: true, pausadoNaExclusao: false },
+        })
+    }
+  })
   return json({ ok: true })
 }
 
-// POST /api/conta/purge. Executa purga de contas expiradas (chamado por cron).
-export async function DELETE() {
-  const admin = clienteAdmin()
-  const { data, error } = await admin.rpc("purge_exclusoes_expiradas" as never)
-  if (error) return erroApi("Falha na purga: " + error.message)
-  return json({ removidas: data })
+// DELETE /api/conta/restaurar. Remove contas com carência vencida.
+// Exige sempre o segredo do agendador (CRON_SECRET).
+export async function DELETE(req: NextRequest) {
+  if (!CRON_SECRET) return erroApi("Agendador não configurado.", 503)
+  const cabecalho = req.headers.get("authorization") ?? ""
+  const esperado = `Bearer ${CRON_SECRET}`
+  const confere =
+    cabecalho.length === esperado.length &&
+    timingSafeEqual(Buffer.from(cabecalho), Buffer.from(esperado))
+  if (!confere) return erroApi("Acesso negado.", 403)
+  return json({ removidas: await removerVencidas() })
+}
+
+// GET /api/conta/restaurar. Variante para agendadores que disparam GET
+// (Vercel Cron). Exige CRON_SECRET sempre.
+export async function GET(req: NextRequest) {
+  if (!CRON_SECRET) return erroApi("Agendador não configurado.", 503)
+  const cabecalho = req.headers.get("authorization") ?? ""
+  const esperado = `Bearer ${CRON_SECRET}`
+  const confere =
+    cabecalho.length === esperado.length &&
+    timingSafeEqual(Buffer.from(cabecalho), Buffer.from(esperado))
+  if (!confere) return erroApi("Acesso negado.", 403)
+  return json({ removidas: await removerVencidas() })
+}
+
+async function removerVencidas(): Promise<number> {
+  const db = banco()
+  // Purga em lotes só as contas com exclusão solicitada e carência vencida.
+  const agora = new Date()
+  let removidas = 0
+  for (;;) {
+    const lote = await db.profiles.findMany({
+      where: {
+        exclusaoSolicitadaEm: { not: null },
+        expiraEm: { lt: agora },
+      },
+      select: { id: true },
+      take: 100,
+    })
+    if (lote.length === 0) break
+    for (const perfil of lote) {
+      try {
+        await db.usuarios.delete({ where: { id: perfil.id } })
+        removidas++
+      } catch {
+        // Falhas isoladas não interrompem a purga.
+      }
+    }
+  }
+  return removidas
 }

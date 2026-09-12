@@ -1,6 +1,6 @@
 "use client"
 
-// Vista pública do aluno. /#/l/<token> Sem login: tudo vem de /api/publico/<token>, que só devolve o que o RLS libera (link ativo + notas publicadas). Alunos podem alternar o gabarito, imprimir A4 e mudar o tema.
+// Vista pública do aluno. /#/l/<token> Sem login: tudo vem de /api/publico/<token>, que devolve link ativo e notas publicadas. Alunos podem alternar o gabarito, imprimir A4 e mudar o tema.
 
 import { useEffect, useMemo, useState } from "react"
 import {

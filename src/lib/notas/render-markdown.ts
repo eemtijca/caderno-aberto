@@ -427,7 +427,7 @@ export function analisarMarkdown(md: string): MarkdownNota {
         flushExercicioAtual()
         topo.nivelAtual = {
           numero: Number(mNivel[1]) as 1 | 2 | 3,
-          // Tolera separadores antigos ("Nível 1 . Conceitos")
+          // Tolera o separador "Nível 1 . Conceitos"
           titulo: mNivel[2].trim().replace(/^[·:\-.]+\s*/, "") || "Conceitos",
           questoes: [],
         }

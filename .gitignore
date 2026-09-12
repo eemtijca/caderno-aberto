@@ -1,5 +1,6 @@
 # dependências / build
 node_modules/
+generated/
 .next/
 out/
 build/
@@ -13,14 +14,17 @@ build/
 *.log
 dev.log
 server.log
+coverage/
+.vercel/
 
-# dados locais de teste (Postgres embutido / shim)
+# dados locais de teste
 tools/
 tests/shim/dados/
+.tmp/
 
-# Supabase CLI
-supabase/.temp/
-supabase/.branches/
+# artefactos locais de base de dados
+pgdata/
+uploads/
 
 # sistema
 .DS_Store
@@ -41,3 +45,4 @@ public/vendor/
 tests/unit/build/
 tests/tex/*.tex
 tests/tex/*.pdf
+dist/

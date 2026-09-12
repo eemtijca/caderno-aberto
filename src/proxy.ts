@@ -1,92 +1,85 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { createServerClient } from "@supabase/ssr"
+import * as jose from "jose"
+import { AUTH_SECRET } from "@/lib/ambiente"
 
-const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
-const CHAVE_ANON =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-  ""
+const SEGREDO = new TextEncoder().encode(AUTH_SECRET)
 
-function getSupabaseOrigin(request: NextRequest): string {
-  const direta =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL_PRODUCTION ?? ""
-  if (direta) {
-    try {
-      return new URL(direta).origin
-    } catch {}
+async function lerUsuarioId(req: NextRequest): Promise<string | null> {
+  const token = req.cookies.get("sessao")?.value
+  if (!token) return null
+  try {
+    const { payload } = await jose.jwtVerify(token, SEGREDO)
+    return typeof payload.sub === "string" ? payload.sub : null
+  } catch {
+    return null
   }
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? ""
-  if (host.includes("app.github.dev")) {
-    return `https://${host.replace(/-3000\./, "-54321.")}`
+}
+
+function hostProprio(req: NextRequest): string {
+  const url = new URL(process.env.APP_URL || req.url)
+  return url.host.toLowerCase()
+}
+
+/** Nega mutação cross-site (CSRF). GET/HEAD/OPTIONS passam. */
+function negarCsrf(req: NextRequest): boolean {
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return false
+  const sitio = req.headers.get("sec-fetch-site")
+  if (sitio === "same-origin" || sitio === "none") return false
+  if (sitio === "cross-site" || sitio === "same-site") return true
+  const origem = req.headers.get("origin") ?? req.headers.get("referer") ?? ""
+  if (!origem) return false
+  try {
+    return new URL(origem).host.toLowerCase() !== hostProprio(req)
+  } catch {
+    return true
   }
-  const nome = process.env.CODESPACE_NAME ?? process.env.NEXT_PUBLIC_CODESPACE_NAME ?? ""
-  const dominio = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN ?? "app.github.dev"
-  if (nome) return `https://${nome}-54321.${dominio}`
-  return "http://127.0.0.1:54321"
 }
 
 export async function proxy(request: NextRequest) {
+  if (negarCsrf(request)) {
+    return new NextResponse("Origem não confiável.", { status: 403 })
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64")
   const isDev = process.env.NODE_ENV === "development"
-  const supaOrigin = getSupabaseOrigin(request)
-  const supaWs = supaOrigin.replace(/^http/, "ws")
 
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'wasm-unsafe-eval' ${isDev ? "'unsafe-inline' 'unsafe-eval'" : `'nonce-${nonce}' 'strict-dynamic' https: 'unsafe-inline'`}`,
+    `script-src 'self' 'wasm-unsafe-eval' ${isDev ? "'unsafe-inline' 'unsafe-eval'" : `'nonce-${nonce}' 'strict-dynamic'`}`,
     "style-src 'self' 'unsafe-inline'",
     "style-src-elem 'self' 'unsafe-inline'",
     "style-src-attr 'unsafe-inline'",
     "worker-src 'self' blob:",
     "child-src blob:",
-    `connect-src 'self' ${supaOrigin} ${supaWs} http://127.0.0.1:54321 ws://127.0.0.1:54321 http://localhost:54321 ws://localhost:54321 https://*.app.github.dev wss://*.app.github.dev https://*.supabase.co wss://*.supabase.co`,
+    "connect-src 'self'",
     "font-src 'self' data:",
-    "img-src 'self' data: blob: https://*.app.github.dev https://*.supabase.co",
+    "img-src 'self' data: blob:",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    // Somente em produção (HTTPS): no dev http+loopback a diretiva
-    // quebra motores sem isenção de loopback, como o WebKit.
+    // Produção usa HTTPS; desenvolvimento mantém loopback.
     ...(isDev ? [] : ["upgrade-insecure-requests"]),
   ].join("; ")
 
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-nonce", nonce)
-  requestHeaders.set("Content-Security-Policy", csp)
 
-  let resposta = NextResponse.next({
+  // Propaga o usuário do JWT válido; sem acesso ao banco.
+  const usuarioId = await lerUsuarioId(request)
+  if (usuarioId) requestHeaders.set("x-usuario-id", usuarioId)
+  else requestHeaders.delete("x-usuario-id")
+
+  const resposta = NextResponse.next({
     request: { headers: requestHeaders },
   })
 
   resposta.headers.set("Content-Security-Policy", csp)
   resposta.headers.set("x-nonce", nonce)
-
-  if (!URL_SUPABASE || !CHAVE_ANON) return resposta
-
-  const supabase = createServerClient(URL_SUPABASE, CHAVE_ANON, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
-      },
-      setAll(lista, headers) {
-        for (const { name, value } of lista) {
-          request.cookies.set(name, value)
-        }
-        resposta = NextResponse.next({ request })
-        for (const { name, value, options } of lista) {
-          resposta.cookies.set(name, value, options)
-        }
-        for (const [chave, valor] of Object.entries(headers)) {
-          resposta.headers.set(chave, valor)
-        }
-        resposta.headers.set("Content-Security-Policy", csp)
-        resposta.headers.set("x-nonce", nonce)
-      },
-    },
-  })
-
-  await supabase.auth.getUser()
+  resposta.headers.set("X-Content-Type-Options", "nosniff")
+  resposta.headers.set("X-Frame-Options", "DENY")
+  resposta.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+  resposta.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 
   return resposta
 }

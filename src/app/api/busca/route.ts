@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json } from "@/lib/api/sessao"
 import { extrairTextoBlocos, normalizar } from "@/lib/notas/texto"
 import type { Bloco } from "@/lib/notas/tipos"
+import type { NotaLinha } from "@/lib/banco/tipos"
 
 export const dynamic = "force-dynamic"
 
@@ -9,22 +11,21 @@ export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim()
   if (q.length < 2) return json({ resultados: [] })
 
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return json({ resultados: [] })
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
 
   const alvo = normalizar(q)
-  const { data: linhas } = await cliente
-    .from("notas")
-    .select(
-      "id, titulo, sobre, habilidades, status, ano_letivo, mes, blocos, turmas_nomes, disciplina_nome, disciplina_cor, atualizado_em",
-    )
-    .eq("professor_id", usuario.id)
-    .ilike("busca", `%${alvo}%`)
-    .order("atualizado_em", { ascending: false })
-    .limit(40)
+  // Busca textual já isolada por professor no banco.
+  const like = alvo.replace(/[%_\\]/g, (c) => `\\${c}`)
+  const db = banco()
+  const linhas = (await db.notas.findMany({
+    where: { professorId: usuario.id, busca: { contains: like } },
+    orderBy: { atualizadoEm: "desc" },
+    take: 40,
+  })) as unknown as NotaLinha[]
 
-  const resultados = (linhas ?? [])
+  const resultados = linhas
     .map((linha) => {
       const blocos = (linha.blocos ?? []) as Bloco[]
       const campos: { campo: string; texto: string }[] = [
@@ -44,12 +45,12 @@ export async function GET(req: NextRequest) {
           return {
             id: linha.id,
             titulo: linha.titulo,
-            disciplina: linha.disciplina_nome,
-            cor: linha.disciplina_cor,
+            disciplina: linha.disciplinaNome,
+            cor: linha.disciplinaCor,
             status: linha.status,
-            anoLetivo: linha.ano_letivo,
+            anoLetivo: linha.anoLetivo,
             mes: linha.mes,
-            turmas: linha.turmas_nomes ?? [],
+            turmas: linha.turmasNomes ?? [],
             campo,
             trecho,
           }

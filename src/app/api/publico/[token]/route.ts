@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server"
-import { clienteAnon } from "@/lib/supabase/servidor"
 import { json, erroApi } from "@/lib/api/sessao"
+import { registrarAcesso, resolverLinkPublico } from "@/lib/api/publico"
 import type { AparenciaNota, Bloco } from "@/lib/notas/tipos"
 import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
 import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo"
@@ -8,9 +8,6 @@ import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo"
 export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ token: string }> }
-
-const COLUNAS =
-  "id, titulo, disciplina_nome, disciplina_cor, turmas_nomes, ano_letivo, mes, sobre, habilidades, blocos, aparencia, atualizado_em"
 
 export interface NotaPublica {
   id: string
@@ -57,63 +54,37 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       notas,
     })
   }
-  const cliente = clienteAnon()
 
-  const { data: link } = await cliente
-    .from("links")
-    .select("id, tipo, nota_id, turma_id, disciplina_id, professor_nome, nome, expira_em")
-    .eq("token", token)
-    .maybeSingle()
-
-  if (!link) {
+  const resolvido = await resolverLinkPublico(token)
+  if (!resolvido || (resolvido.link.tipo === "nota" && resolvido.notas.length === 0)) {
     return erroApi("Este link não existe, foi revogado ou expirou.", 404)
   }
+  const { link, notas: linhas } = resolvido
 
-  try {
-    await cliente.rpc("registrar_acesso", { p_token: token })
-  } catch {}
+  // Contador de acessos tolerante a falhas.
+  await registrarAcesso(link.id, link.acessos)
 
-  let consulta = cliente.from("notas").select(COLUNAS)
-  if (link.tipo === "nota") {
-    consulta = consulta.eq("id", link.nota_id as string)
-  } else if (link.tipo === "turma") {
-    consulta = consulta.contains("turmas_ids", [link.turma_id as string])
-  } else {
-    consulta = consulta.eq("disciplina_id", link.disciplina_id as string)
-  }
-  consulta = consulta
-    .order("ano_letivo", { ascending: true })
-    .order("mes", { ascending: true })
-    .order("atualizado_em", { ascending: true })
-
-  const { data: linhas } = await consulta
-
-  // Rascunho não abre para o aluno
-  if (link.tipo === "nota" && (!linhas || linhas.length === 0)) {
-    return erroApi("Este link não existe, foi revogado ou expirou.", 404)
-  }
-
-  const notas: NotaPublica[] = (linhas ?? []).map((linha) => ({
+  const notas: NotaPublica[] = linhas.map((linha) => ({
     id: linha.id,
     titulo: linha.titulo,
-    disciplinaNome: linha.disciplina_nome,
-    disciplinaCor: linha.disciplina_cor,
-    turmasNomes: linha.turmas_nomes ?? [],
-    anoLetivo: linha.ano_letivo,
+    disciplinaNome: linha.disciplinaNome,
+    disciplinaCor: linha.disciplinaCor,
+    turmasNomes: linha.turmasNomes ?? [],
+    anoLetivo: linha.anoLetivo,
     mes: linha.mes,
     sobre: linha.sobre,
     habilidades: linha.habilidades,
     blocos: reescreverImagens(normalizarBlocos(linha.blocos) as Bloco[], token),
     aparencia: normalizarAparencia(linha.aparencia),
-    atualizadoEm: linha.atualizado_em,
+    atualizadoEm: linha.atualizadoEm.toISOString(),
   }))
 
   return json({
     link: {
       tipo: link.tipo,
       nome: link.nome,
-      professorNome: link.professor_nome,
-      expiraEm: link.expira_em,
+      professorNome: link.professorNome,
+      expiraEm: link.expiraEm?.toISOString() ?? null,
     },
     notas,
   })
@@ -136,6 +107,7 @@ function reescreverImagens(blocos: Bloco[], token: string): Bloco[] {
   return visita(blocos)
 }
 
+/** Reescreve URL interna de imagem para o caminho público do link. */
 export function urlImagemPublica(url: string, token: string): string {
   if (url.startsWith("/api/imagens?path=")) {
     const caminho = decodeURIComponent(url.slice("/api/imagens?path=".length))

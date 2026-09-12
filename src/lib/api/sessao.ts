@@ -1,29 +1,30 @@
 import "server-only"
 
-import { NextResponse } from "next/server"
-import type { SupabaseClient, User } from "@supabase/supabase-js"
-import { clienteServidor } from "@/lib/supabase/servidor"
-import type { Database, PerfilLinha } from "@/lib/supabase/tipos"
+import { NextRequest, NextResponse } from "next/server"
+import { banco } from "@/lib/banco"
+import { sessaoRequisicao, type SessaoUsuario } from "@/lib/auth/sessao"
+import type { PerfilLinha } from "@/lib/banco/tipos"
 
 export interface SessaoProfessor {
-  cliente: SupabaseClient<Database>
-  usuario: User
+  usuario: SessaoUsuario
   perfil: PerfilLinha | null
 }
 
-// Sessão validada no servidor de autenticação
-export async function sessaoProfessor(): Promise<SessaoProfessor | null> {
-  const cliente = await clienteServidor()
-  const { data, error } = await cliente.auth.getUser()
-  if (error || !data.user) return null
+// Guarda única de sessão para rotas privadas.
+/** Sessão da requisição com perfil. Null sem sessão válida. */
+export async function sessaoProfessor(req?: NextRequest): Promise<SessaoProfessor | null> {
+  const requisicao =
+    req ?? ({ cookies: { get: () => undefined }, headers: new Headers() } as unknown as NextRequest)
+  const usuario = await sessaoRequisicao(requisicao).catch(() => null)
+  if (!usuario) return null
 
-  const { data: perfil } = await cliente
-    .from("profiles")
-    .select("*")
-    .eq("id", data.user.id)
-    .maybeSingle()
+  const db = banco()
+  const perfil = (await db.profiles.findFirst({ where: { id: usuario.id } })) as PerfilLinha | null
 
-  return { cliente, usuario: data.user, perfil: perfil ?? null }
+  // Contas com carência vencida não autenticam.
+  if (perfil?.expiraEm && perfil.expiraEm < new Date()) return null
+
+  return { usuario, perfil }
 }
 
 export function json(dados: unknown, status = 200): NextResponse {

@@ -1,11 +1,14 @@
 "use client"
 
-// Sessão do professor. Contexto global de autenticação com ciclo completo de conta.
+// Contexto global de autenticação do professor.
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
-import type { Session, User } from "@supabase/supabase-js"
 import { useQueryClient } from "@tanstack/react-query"
-import { supabaseNavegador } from "@/lib/supabase/cliente"
+
+export interface UsuarioSessao {
+  id: string
+  email: string
+}
 
 export interface PerfilProfessor {
   nome: string
@@ -15,19 +18,22 @@ export interface PerfilProfessor {
 
 interface SessaoValor {
   carregando: boolean
-  usuario: User | null
+  usuario: UsuarioSessao | null
   perfil: PerfilProfessor | null
   modoRecuperacao: boolean
   entrar: (email: string, senha: string) => Promise<void>
+  /** Cadastro sempre resolve "confirmar". */
   cadastrar: (nome: string, email: string, senha: string) => Promise<"entrar" | "confirmar">
   sair: () => Promise<void>
   atualizarPerfil: (dados: { nome?: string; escola?: string }) => Promise<void>
-  trocarSenha: (novaSenha: string) => Promise<void>
+  trocarSenha: (senhaAtual: string, novaSenha: string) => Promise<void>
   trocarEmail: (novoEmail: string) => Promise<void>
   pedirRedefinicao: (email: string) => Promise<void>
+  /** Conclusão exige token válido prévio. */
   concluirRedefinicao: (novaSenha: string) => Promise<void>
   reenviarConfirmacao: (email: string) => Promise<void>
   excluirConta: (senha: string, confirmacao?: string) => Promise<void>
+  /** Solicitação resolve a expiração da carência. */
   solicitarExclusao: (senha: string, confirmacao: string) => Promise<{ expiraEm: string }>
   restaurarConta: () => Promise<void>
   recarregarPerfil: () => Promise<void>
@@ -35,113 +41,93 @@ interface SessaoValor {
 
 const ContextoSessao = createContext<SessaoValor | null>(null)
 
-// Dicionário de erros do Supabase Auth para mensagens claras em pt-BR.
-function traduzirErro(mensagem: string): string {
-  const m = mensagem.toLowerCase()
-  if (m.includes("invalid login credentials")) return "E-mail ou senha incorretos."
-  if (m.includes("user already registered") || m.includes("already been registered"))
-    return "Já existe uma conta com este e-mail."
-  if (m.includes("password should be at least") || m.includes("password is too short"))
-    return "A senha deve ter pelo menos 6 caracteres."
-  if (m.includes("password too common"))
-    return "Esta senha é muito comum. Escolha uma mais difícil de adivinhar."
-  if (m.includes("signup requires a valid password") || m.includes("valid password"))
-    return "Defina uma senha válida (mínimo de 6 caracteres)."
-  if (m.includes("email not confirmed"))
-    return "Confirme o e-mail antes de entrar. Verifique a caixa de entrada."
-  if (m.includes("rate limit") || m.includes("over_request_rate_limit"))
-    return "Muitas tentativas. Aguarde um momento e tente novamente."
-  if (m.includes("over_email_send_rate_limit"))
-    return "Muitos e-mails enviados em pouco tempo. Tente de novo em alguns minutos."
-  if (m.includes("new email address is the same")) return "O novo e-mail é igual ao atual."
-  if (m.includes("same password")) return "A nova senha é igual à atual."
-  if (m.includes("email address is invalid") || m.includes("unable to validate email"))
-    return "E-mail inválido. Confira o endereço digitado."
-  if (m.includes("user not found")) return "Não encontramos uma conta com este e-mail."
-  if (m.includes("email provider is disabled"))
-    return "O login por e-mail está desativado nesta instalação."
-  if (m.includes("signups not allowed") || m.includes("signup is disabled"))
-    return "Novos cadastros estão temporariamente desativados."
-  if (
-    m.includes("session expired") ||
-    m.includes("refresh_token_not_found") ||
-    m.includes("invalid refresh token")
-  )
-    return "Sua sessão expirou. Entre novamente para continuar."
-  if (m.includes("network") || m.includes("fetch failed"))
-    return "Falha de conexão com o servidor. Verifique sua internet."
-  if (m.includes("unexpected failure")) return "Serviço indisponível no momento. Tente novamente."
-  if (m.includes("duplicate") && m.includes("email")) return "Já existe uma conta com este e-mail."
-  return mensagem
+// Token de recuperação lido do hash da URL.
+function tokenRecuperacaoDoHash(): string | null {
+  if (typeof window === "undefined") return null
+  const hash = window.location.hash
+  if (!hash.startsWith("#/redefinir")) return null
+  const query = hash.split("?")[1] ?? ""
+  const token = new URLSearchParams(query).get("token") ?? ""
+  return /^[0-9a-f]{64}$/.test(token) ? token : null
+}
+
+async function lerErro(resposta: Response, padrao: string): Promise<string> {
+  try {
+    const corpo = (await resposta.json()) as { erro?: string }
+    return corpo.erro ?? padrao
+  } catch {
+    return padrao
+  }
 }
 
 export function ProvedorSessao({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient()
   const [carregando, setCarregando] = useState(true)
-  const [usuario, setUsuario] = useState<User | null>(null)
+  const [usuario, setUsuario] = useState<UsuarioSessao | null>(null)
   const [perfil, setPerfil] = useState<PerfilProfessor | null>(null)
   const [modoRecuperacao, setModoRecuperacao] = useState(false)
+  const [tokenRecuperacao, setTokenRecuperacao] = useState<string | null>(null)
   const usuarioRef = useRef<string | null>(null)
 
-  const carregarPerfil = useCallback(async () => {
-    try {
+  const aplicarConta = useCallback(
+    (conta: { usuario: { id: string; email: string } | null; perfil: PerfilProfessor | null }) => {
+      const novo = conta.usuario ? { id: conta.usuario.id, email: conta.usuario.email } : null
+      const trocou = (novo?.id ?? null) !== usuarioRef.current
+      setUsuario(novo)
+      usuarioRef.current = novo?.id ?? null
+      setPerfil(conta.perfil)
+      if (trocou) qc.clear()
+    },
+    [qc],
+  )
+
+  const carregarConta = useCallback(async () => {
+    const ler = async () => {
       const r = await fetch("/api/conta", { cache: "no-store" })
-      if (!r.ok) {
-        setPerfil(null)
-        return
+      if (!r.ok) return null
+      return (await r.json()) as {
+        usuario: { id: string; email: string } | null
+        perfil: PerfilProfessor | null
       }
-      const c = (await r.json()) as {
-        usuario: { id: string } | null
-        perfil:
-          | (PerfilProfessor & { exclusaoSolicitadaEm?: string | null; expiraEm?: string | null })
-          | null
-      }
-      setPerfil(c.perfil ?? null)
-    } catch {
+    }
+    let conta = await ler().catch(() => null)
+    if (!conta?.usuario) {
+      await fetch("/api/auth/renovar", { method: "POST" }).catch(() => null)
+      conta = await ler().catch(() => null)
+    }
+    if (conta) aplicarConta(conta)
+    else {
+      setUsuario(null)
+      usuarioRef.current = null
       setPerfil(null)
+    }
+  }, [aplicarConta])
+
+  const sincronizarRecuperacao = useCallback(async () => {
+    const token = tokenRecuperacaoDoHash()
+    if (!token) {
+      setModoRecuperacao(false)
+      setTokenRecuperacao(null)
+      return
+    }
+    try {
+      const r = await fetch(`/api/auth/redefinir?token=${token}`, { cache: "no-store" })
+      const corpo = (await r.json()) as { valido?: boolean }
+      setModoRecuperacao(corpo.valido === true)
+      setTokenRecuperacao(corpo.valido === true ? token : null)
+    } catch {
+      setModoRecuperacao(false)
+      setTokenRecuperacao(null)
     }
   }, [])
 
   useEffect(() => {
-    const supabase = supabaseNavegador()
-    const { data: sub } = supabase.auth.onAuthStateChange((evento, sessao) => {
-      const novoUsuario = sessao?.user ?? null
-      const trocou = (novoUsuario?.id ?? null) !== usuarioRef.current
-
-      if (evento === "PASSWORD_RECOVERY") {
-        setModoRecuperacao(true)
-        setUsuario(novoUsuario)
-        usuarioRef.current = novoUsuario?.id ?? null
-        setCarregando(false)
-        return
-      }
-
-      setUsuario(novoUsuario)
-      usuarioRef.current = novoUsuario?.id ?? null
-      setCarregando(false)
-
-      if (trocou) {
-        qc.clear()
-        if (novoUsuario) void carregarPerfil()
-        else setPerfil(null)
-      } else if (
-        novoUsuario &&
-        (evento === "USER_UPDATED" || evento === "SIGNED_IN" || evento === "INITIAL_SESSION")
-      ) {
-        void carregarPerfil()
-      }
-    })
-
-    supabase.auth
-      .getSession()
-      .then(({ data }: { data: { session: Session | null } }) => {
-        setUsuario(data.session?.user ?? null)
-        usuarioRef.current = data.session?.user?.id ?? null
-      })
-      .finally(() => setCarregando(false))
-
-    return () => sub.subscription.unsubscribe()
-  }, [qc, carregarPerfil])
+    void carregarConta().finally(() => setCarregando(false))
+    void sincronizarRecuperacao()
+    const aoMudarHash = () => void sincronizarRecuperacao()
+    window.addEventListener("hashchange", aoMudarHash)
+    return () => window.removeEventListener("hashchange", aoMudarHash)
+  }, [carregarConta, sincronizarRecuperacao])
 
   const valor: SessaoValor = {
     carregando,
@@ -150,25 +136,27 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
     modoRecuperacao,
 
     async entrar(email, senha) {
-      const supabase = supabaseNavegador()
-      const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
-      if (error) throw new Error(traduzirErro(error.message))
+      const r = await fetch("/api/auth/entrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, senha }),
+      })
+      if (!r.ok) throw new Error(await lerErro(r, "E-mail ou senha incorretos."))
+      await carregarConta()
     },
 
     async cadastrar(nome, email, senha) {
-      const supabase = supabaseNavegador()
-      const { error } = await supabase.auth.signUp({
-        email,
-        password: senha,
-        options: { data: { nome } },
+      const r = await fetch("/api/auth/cadastro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, email, senha }),
       })
-      if (error) throw new Error(traduzirErro(error.message))
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao criar a conta."))
       return "confirmar"
     },
 
     async sair() {
-      const supabase = supabaseNavegador()
-      await supabase.auth.signOut()
+      await fetch("/api/auth/sair", { method: "POST" }).catch(() => null)
       qc.clear()
       setPerfil(null)
       setUsuario(null)
@@ -181,45 +169,57 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dados),
       })
-      if (!r.ok) {
-        const c = await r.json().catch(() => ({}))
-        throw new Error(c.erro ?? "Falha ao salvar o perfil.")
-      }
-      await carregarPerfil()
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao salvar o perfil."))
+      await carregarConta()
     },
 
-    async trocarSenha(novaSenha) {
-      const supabase = supabaseNavegador()
-      const { error } = await supabase.auth.updateUser({ password: novaSenha })
-      if (error) throw new Error(traduzirErro(error.message))
+    async trocarSenha(senhaAtual, novaSenha) {
+      const r = await fetch("/api/auth/trocar-senha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ atual: senhaAtual, nova: novaSenha }),
+      })
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao alterar a senha."))
     },
 
     async trocarEmail(novoEmail) {
-      const supabase = supabaseNavegador()
-      const { error } = await supabase.auth.updateUser({ email: novoEmail })
-      if (error) throw new Error(traduzirErro(error.message))
+      const r = await fetch("/api/auth/trocar-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ novoEmail }),
+      })
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao enviar a confirmação."))
     },
 
     async pedirRedefinicao(email) {
-      const supabase = supabaseNavegador()
-      const origem = typeof window !== "undefined" ? window.location.origin : undefined
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: origem ? `${origem}/` : undefined,
+      const r = await fetch("/api/auth/redefinir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       })
-      if (error) throw new Error(traduzirErro(error.message))
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao pedir a redefinição."))
     },
 
     async reenviarConfirmacao(email) {
-      const supabase = supabaseNavegador()
-      const { error } = await supabase.auth.resend({ type: "signup", email })
-      if (error) throw new Error(traduzirErro(error.message))
+      const r = await fetch("/api/auth/reenviar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao reenviar."))
     },
 
     async concluirRedefinicao(novaSenha) {
-      const supabase = supabaseNavegador()
-      const { error } = await supabase.auth.updateUser({ password: novaSenha })
-      if (error) throw new Error(traduzirErro(error.message))
+      if (!tokenRecuperacao) throw new Error("Link inválido ou expirado.")
+      const r = await fetch("/api/auth/concluir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: tokenRecuperacao, novaSenha }),
+      })
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao redefinir a senha."))
       setModoRecuperacao(false)
+      setTokenRecuperacao(null)
+      await carregarConta()
     },
 
     async solicitarExclusao(senha, confirmacao) {
@@ -228,10 +228,7 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ senha, confirmacao }),
       })
-      if (!r.ok) {
-        const c = await r.json().catch(() => ({}))
-        throw new Error(c.erro ?? "Falha ao solicitar exclusão.")
-      }
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao solicitar exclusão."))
       const d = (await r.json()) as { expiraEm: string }
       return d
     },
@@ -242,29 +239,24 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ senha, confirmacao }),
       })
-      if (!r.ok) {
-        const c = await r.json().catch(() => ({}))
-        throw new Error(c.erro ?? "Falha ao excluir a conta.")
-      }
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao excluir a conta."))
     },
 
     async restaurarConta() {
       const r = await fetch("/api/conta/restaurar", { method: "POST" })
-      if (!r.ok) {
-        const c = await r.json().catch(() => ({}))
-        throw new Error(c.erro ?? "Falha ao restaurar a conta.")
-      }
-      await carregarPerfil()
+      if (!r.ok) throw new Error(await lerErro(r, "Falha ao restaurar a conta."))
+      await carregarConta()
     },
 
     async recarregarPerfil() {
-      await carregarPerfil()
+      await carregarConta()
     },
   }
 
   return <ContextoSessao.Provider value={valor}>{children}</ContextoSessao.Provider>
 }
 
+/** Sessão do professor. Lança erro fora do ProvedorSessao. */
 export function useSessao(): SessaoValor {
   const ctx = useContext(ContextoSessao)
   if (!ctx) throw new Error("useSessao precisa do ProvedorSessao.")

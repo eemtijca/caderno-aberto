@@ -1,7 +1,7 @@
-import { test, expect } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 import { confirmarEEntrar } from "./helpers/auth"
 
-async function loginNovo(page, baseURL) {
+async function loginNovo(page: Page, baseURL: string | undefined) {
   const email = `notas_${Date.now()}_${Math.random().toString(36).slice(2, 4)}@exemplo.br`
   await page.goto("/#/cadastro")
   await page.getByLabel("Seu nome").fill("Prof Notas")

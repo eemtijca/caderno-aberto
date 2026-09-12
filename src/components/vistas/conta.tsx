@@ -158,6 +158,7 @@ function SecaoPerfil() {
 
 function SecaoSeguranca() {
   const { usuario, trocarSenha, trocarEmail } = useSessao()
+  const [senhaAtual, setSenhaAtual] = useState("")
   const [senha, setSenha] = useState("")
   const [senha2, setSenha2] = useState("")
   const [novoEmail, setNovoEmail] = useState("")
@@ -178,9 +179,17 @@ function SecaoSeguranca() {
           <p className="text-sm font-bold">Trocar senha</p>
           <Input
             type="password"
+            value={senhaAtual}
+            onChange={(e) => setSenhaAtual(e.target.value)}
+            placeholder="Senha atual"
+            className="rounded-lg"
+            aria-label="Senha atual para trocar a senha"
+          />
+          <Input
+            type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
-            placeholder="Nova senha (mín. 6 caracteres)"
+            placeholder="Nova senha (mín. 8 caracteres)"
             className="rounded-lg"
             aria-label="Nova senha"
           />
@@ -195,11 +204,12 @@ function SecaoSeguranca() {
           <Button
             variant="outline"
             className="gap-2 rounded-lg"
-            disabled={salvandoSenha || senha.length < 6 || senha !== senha2}
+            disabled={salvandoSenha || !senhaAtual || senha.length < 8 || senha !== senha2}
             onClick={async () => {
               setSalvandoSenha(true)
               try {
-                await trocarSenha(senha)
+                await trocarSenha(senhaAtual, senha)
+                setSenhaAtual("")
                 setSenha("")
                 setSenha2("")
                 toast.success("Senha alterada")
@@ -790,7 +800,7 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
           <p className="text-sm font-bold">Importar</p>
           <p className="text-muted-foreground text-[0.8rem] leading-snug">
             Restaure um backup (substitui tudo) ou importe uma nota única (.md ou .json gerados pelo
-            app, incluindo o formato antigo "Notas de Aula").
+            app, incluindo o formato "Notas de Aula").
           </p>
           <input
             ref={inputBackup}

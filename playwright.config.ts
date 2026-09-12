@@ -14,13 +14,14 @@ import { defineConfig, devices } from "@playwright/test"
 // Playwright com 3 browsers, headless, baseURL dinâmica e servidor local.
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  // Serial: o servidor de desenvolvimento não aguenta navegadores em paralelo.
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: [["html"], ["list"]],
   use: {
-    baseURL: process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000",
+    baseURL: process.env.TEST_BASE_URL || "http://127.0.0.1:3000",
     trace: "on-first-retry",
     headless: true,
   },
@@ -68,5 +69,19 @@ export default defineConfig({
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
+    // Ambiente completo para quando o próprio Playwright sobe o app.
+    // A suíte cria dezenas de contas do mesmo IP; sem teto alto o
+    // limite de tentativas responderia 429 no meio dos cenários.
+    env: {
+      DATABASE_URL:
+        process.env.DATABASE_URL || "postgresql://caderno:caderno@localhost:5432/caderno",
+      AUTH_SECRET: process.env.AUTH_SECRET || "segredo-dummy-de-32-bytes-para-testes-00",
+      CRON_SECRET: process.env.CRON_SECRET || "segredo-cron-dummy-de-32-bytes-para-ci00",
+      ALLOW_TEST_OUTBOX: "1",
+      TESTES_CI: "1",
+      AUTH_LIMITE_TENTATIVAS: "1000",
+      AUTH_LIMITE_EMAIL: "1000",
+      UPLOAD_DIR: process.env.UPLOAD_DIR || "./.tmp/imagens-teste",
+    },
   },
 })

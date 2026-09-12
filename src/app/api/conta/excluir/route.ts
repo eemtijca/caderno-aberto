@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
-import { clienteAdmin } from "@/lib/supabase/admin"
-import { SUPABASE_URL, SUPABASE_CHAVE_ANON } from "@/lib/supabase/ambiente"
+import { confereSenha } from "@/lib/auth/senha"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(req: NextRequest) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
   const { usuario } = sessao
 
@@ -16,35 +16,33 @@ export async function POST(req: NextRequest) {
   if (!senha) return erroApi("Confirme com a senha para solicitar a exclusão.")
   if (confirmacao !== "EXCLUIR") return erroApi("Digite EXCLUIR para confirmar.")
 
-  const resposta = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_CHAVE_ANON,
-      Authorization: `Bearer ${SUPABASE_CHAVE_ANON}`,
-    },
-    body: JSON.stringify({ email: usuario.email, password: senha }),
-  })
-  if (!resposta.ok) return erroApi("Senha incorreta.", 403)
+  const db = await banco()
+  const linha = await db.usuarios.findFirst({ where: { id: usuario.id } })
+  if (!linha || !(await confereSenha(senha, linha.senhaHash))) {
+    return erroApi("Senha incorreta.", 403)
+  }
 
-  const admin = clienteAdmin()
   const agora = new Date()
   const expira = new Date(agora.getTime() + 24 * 60 * 60 * 1000)
 
-  const { error } = await admin
-    .from("profiles")
-    .update({
-      exclusao_solicitada_em: agora.toISOString(),
-      expira_em: expira.toISOString(),
-    } as never)
-    .eq("id", usuario.id)
-
-  if (error) return erroApi("Falha ao solicitar exclusão: " + error.message)
-
-  await admin
-    .from("links")
-    .update({ ativo: false } as never)
-    .eq("professor_id", usuario.id)
+  await db.$transaction(async (tx) => {
+    await tx.profiles.update({
+      where: { id: usuario.id },
+      data: {
+        exclusaoSolicitadaEm: agora.toISOString(),
+        expiraEm: expira.toISOString(),
+      },
+    })
+    const links = await tx.links.findMany({ where: { professorId: usuario.id } })
+    for (const link of links) {
+      // Só pausa os ativos; os já pausados continuam pausados na restauração.
+      if (link.ativo)
+        await tx.links.update({
+          where: { id: link.id },
+          data: { ativo: false, pausadoNaExclusao: true },
+        })
+    }
+  })
 
   return json({ ok: true, expiraEm: expira.toISOString() })
 }

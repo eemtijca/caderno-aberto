@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server"
+import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
-import { linhaParaNota, mapaTurmasProfessor, camposDenormalizados } from "@/lib/api/serializacao"
+import {
+  linhaParaNota,
+  mapaTurmasProfessor,
+  camposDenormalizados,
+  paraJson,
+} from "@/lib/api/serializacao"
+import type { DisciplinaLinha, NotaLinha, TurmaLinha } from "@/lib/banco/tipos"
 import { normalizarAparencia, normalizarBlocos, type Bloco } from "@/lib/notas/tipos"
 import { normalizar, textoDeBusca } from "@/lib/notas/texto"
 
@@ -8,80 +15,89 @@ export const dynamic = "force-dynamic"
 
 type Ctx = { params: Promise<{ id: string }> }
 
-export async function GET(_req: NextRequest, ctx: Ctx) {
-  const sessao = await sessaoProfessor()
+async function buscarNota(id: string, professorId: string): Promise<NotaLinha | null> {
+  const db = await banco()
+  const linha = await db.notas.findFirst({ where: { id, professorId } })
+  return (linha as unknown as NotaLinha | null) ?? null
+}
+
+export async function GET(req: NextRequest, ctx: Ctx) {
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente } = sessao
+  const { usuario } = sessao
   const { id } = await ctx.params
 
-  const { data: linha } = await cliente
-    .from("notas")
-    .select("*, disciplina:disciplinas(*)")
-    .eq("id", id)
-    .maybeSingle()
-
+  const linha = await buscarNota(id, usuario.id)
   if (!linha) return erroApi("Nota não encontrada.", 404)
 
-  const mapaTurmas = await mapaTurmasProfessor(cliente, linha.professor_id)
-  return json({ nota: linhaParaNota(linha, mapaTurmas) })
+  const db = await banco()
+  const disciplina = linha.disciplinaId
+    ? await db.disciplinas.findFirst({ where: { id: linha.disciplinaId } })
+    : null
+  const mapaTurmas = await mapaTurmasProfessor(usuario.id)
+  return json({
+    nota: linhaParaNota(
+      { ...linha, disciplina: (disciplina as unknown as DisciplinaLinha | null) ?? null },
+      mapaTurmas,
+    ),
+  })
 }
 
 export async function PUT(req: NextRequest, ctx: Ctx) {
-  const sessao = await sessaoProfessor()
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente, usuario } = sessao
+  const { usuario } = sessao
   const { id } = await ctx.params
 
   const corpo = await req.json().catch(() => null)
   if (!corpo || typeof corpo !== "object") return erroApi("Corpo inválido.")
 
-  const { data: atual } = await cliente.from("notas").select("*").eq("id", id).maybeSingle()
+  const db = await banco()
+  const atual = await buscarNota(id, usuario.id)
   if (!atual) return erroApi("Nota não encontrada.", 404)
 
-  const dados: Partial<Omit<import("@/lib/supabase/tipos").NotaLinha, "id">> = {}
+  const dados: Record<string, unknown> = {}
 
   if (typeof corpo.titulo === "string" && corpo.titulo.trim()) {
     dados.titulo = corpo.titulo.trim()
   }
 
-  let disciplina: import("@/lib/supabase/tipos").DisciplinaLinha | null = null
-  if (atual.disciplina_id) {
-    const { data: d } = await cliente
-      .from("disciplinas")
-      .select("*")
-      .eq("id", atual.disciplina_id)
-      .maybeSingle()
-    disciplina = d ?? null
+  let disciplina: DisciplinaLinha | null = null
+  if (atual.disciplinaId) {
+    const d = await db.disciplinas.findFirst({ where: { id: atual.disciplinaId } })
+    disciplina = (d as unknown as DisciplinaLinha | null) ?? null
   }
-  let turmas: import("@/lib/supabase/tipos").TurmaLinha[] = []
-  if (atual.turmas_ids.length > 0) {
-    const { data: t } = await cliente.from("turmas").select("*").in("id", atual.turmas_ids)
-    turmas = t ?? []
+  let turmas: TurmaLinha[] = []
+  if (atual.turmasIds.length > 0) {
+    const todas = await db.turmas.findMany({ where: { professorId: usuario.id } })
+    const porId = new Map(todas.map((t) => [t.id, t]))
+    turmas = atual.turmasIds
+      .map((tid) => porId.get(tid))
+      .filter((t): t is (typeof todas)[number] => Boolean(t)) as unknown as TurmaLinha[]
   }
 
   if (typeof corpo.disciplinaId === "string") {
     if (corpo.disciplinaId) {
-      const { data: d } = await cliente
-        .from("disciplinas")
-        .select("*")
-        .eq("id", corpo.disciplinaId)
-        .eq("professor_id", usuario.id)
-        .maybeSingle()
+      const d = await db.disciplinas.findFirst({
+        where: {
+          id: corpo.disciplinaId,
+          professorId: usuario.id,
+        },
+      })
       if (!d) return erroApi("Disciplina não encontrada.", 404)
-      disciplina = d
+      disciplina = d as unknown as DisciplinaLinha
     } else {
       disciplina = null
     }
   }
 
   if (Array.isArray(corpo.turmasIds)) {
-    const ids = corpo.turmasIds.filter((t: unknown) => typeof t === "string")
-    const { data: t } = await cliente
-      .from("turmas")
-      .select("*")
-      .eq("professor_id", usuario.id)
-      .in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"])
-    turmas = t ?? []
+    const ids = (corpo.turmasIds as unknown[]).filter((t): t is string => typeof t === "string")
+    const todas = await db.turmas.findMany({ where: { professorId: usuario.id } })
+    const porId = new Map(todas.map((t) => [t.id, t]))
+    turmas = ids
+      .map((tid) => porId.get(tid))
+      .filter((t): t is (typeof todas)[number] => Boolean(t)) as unknown as TurmaLinha[]
   }
 
   if (
@@ -94,20 +110,21 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
   if (corpo.anoLetivo !== undefined) {
     const ano = Number(corpo.anoLetivo)
-    if (Number.isFinite(ano) && ano >= 2000 && ano <= 2100) dados.ano_letivo = ano
+    if (Number.isFinite(ano) && ano >= 2000 && ano <= 2100) dados.anoLetivo = ano
   }
   if (corpo.mes !== undefined) dados.mes = Math.min(12, Math.max(1, Number(corpo.mes) || 1))
   if (typeof corpo.sobre === "string") dados.sobre = corpo.sobre
   if (typeof corpo.habilidades === "string") dados.habilidades = corpo.habilidades
-  if (corpo.status === "publicada" || corpo.status === "rascunho")
-    dados.status = corpo.status as "publicada" | "rascunho"
-  if (corpo.blocos !== undefined) dados.blocos = normalizarBlocos(corpo.blocos)
-  if (corpo.aparencia !== undefined) dados.aparencia = normalizarAparencia(corpo.aparencia)
+  if (corpo.status === "publicada" || corpo.status === "rascunho") dados.status = corpo.status
+  if (corpo.blocos !== undefined) dados.blocos = paraJson(normalizarBlocos(corpo.blocos))
+  if (corpo.aparencia !== undefined)
+    dados.aparencia = paraJson(normalizarAparencia(corpo.aparencia))
 
-  const tituloFinal = dados.titulo ?? atual.titulo
-  const sobreFinal = dados.sobre ?? atual.sobre
-  const habilidadesFinal = dados.habilidades ?? atual.habilidades
-  const blocosFinais = (dados.blocos as Bloco[] | undefined) ?? normalizarBlocos(atual.blocos)
+  const tituloFinal = (dados.titulo as string | undefined) ?? atual.titulo
+  const sobreFinal = (dados.sobre as string | undefined) ?? atual.sobre
+  const habilidadesFinal = (dados.habilidades as string | undefined) ?? atual.habilidades
+  const blocosFinais =
+    (dados.blocos as Bloco[] | undefined) ?? (normalizarBlocos(atual.blocos) as Bloco[])
   dados.busca = normalizar(
     textoDeBusca({
       titulo: tituloFinal,
@@ -119,26 +136,25 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     }),
   )
 
-  const { data: linha, error } = await cliente
-    .from("notas")
-    .update(dados)
-    .eq("id", id)
-    .select("*, disciplina:disciplinas(*)")
-    .single()
+  // Carga validada campo a campo acima.
+  const linha = (await db.notas.update({
+    where: { id },
+    data: dados as never,
+  })) as unknown as NotaLinha | null
 
-  if (error || !linha) return erroApi("Falha ao salvar a nota.")
+  if (!linha) return erroApi("Falha ao salvar a nota.")
 
-  const mapaTurmas = await mapaTurmasProfessor(cliente, usuario.id)
-  return json({ nota: linhaParaNota(linha, mapaTurmas) })
+  const mapaTurmas = await mapaTurmasProfessor(usuario.id)
+  return json({ nota: linhaParaNota({ ...linha, disciplina }, mapaTurmas) })
 }
 
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
-  const sessao = await sessaoProfessor()
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+  const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
-  const { cliente } = sessao
+  const { usuario } = sessao
   const { id } = await ctx.params
 
-  const { error } = await cliente.from("notas").delete().eq("id", id)
-  if (error) return erroApi("Falha ao excluir a nota.")
+  const db = await banco()
+  await db.notas.deleteMany({ where: { id, professorId: usuario.id } })
   return json({ ok: true })
 }
