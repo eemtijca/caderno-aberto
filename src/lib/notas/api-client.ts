@@ -1,9 +1,11 @@
 "use client"
 
+// Hooks React Query que falam com a API de notas, turmas e links.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { AparenciaNota, Bloco, DisciplinaInfo, NotaDados, TurmaInfo } from "./tipos"
 
 async function pedir<T>(url: string, init?: RequestInit): Promise<T> {
+  // Sem cache para que mutações recém-feitas apareçam de imediato.
   let r: Response
   try {
     r = await fetch(url, {
@@ -16,6 +18,7 @@ async function pedir<T>(url: string, init?: RequestInit): Promise<T> {
   }
   if (!r.ok) {
     const corpo = await r.json().catch(() => null)
+    // A API devolve a mensagem legível no campo "erro".
     throw new Error(corpo?.erro ?? `Erro ${r.status}`)
   }
   return r.json() as Promise<T>
@@ -263,6 +266,7 @@ export function useBusca(q: string) {
   return useQuery({
     queryKey: ["busca", q],
     queryFn: () => pedir<{ resultados: ResultadoBusca[] }>(`/api/busca?q=${encodeURIComponent(q)}`),
+    // Evita disparar busca a cada tecla em consultas curtas.
     enabled: q.trim().length >= 2,
     select: (d) => d.resultados,
   })
@@ -287,6 +291,7 @@ export interface LinkInfo {
 }
 
 export function urlDoLink(token: string): string {
+  // No cliente usa a origem real; no servidor cai no caminho relativo.
   return typeof window !== "undefined" ? `${window.location.origin}/l/${token}` : `/l/${token}`
 }
 
@@ -362,6 +367,7 @@ export async function enviarImagem(
 }
 
 export async function comprimirImagem(arquivo: File, maxLado = 1600): Promise<Blob> {
+  // Se o navegador não decodificar, envia o original sem tratamento.
   const bitmap = await createImageBitmap(arquivo).catch(() => null)
   if (!bitmap) return arquivo
   const escala = Math.min(1, maxLado / Math.max(bitmap.width, bitmap.height))
@@ -373,6 +379,7 @@ export async function comprimirImagem(arquivo: File, maxLado = 1600): Promise<Bl
   if (!ctx) return arquivo
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
   return new Promise((resolver) => {
+    // WebP 0.9 mantém legibilidade com bom tamanho de arquivo.
     canvas.toBlob((blob) => resolver(blob ?? arquivo), "image/webp", 0.9)
   })
 }

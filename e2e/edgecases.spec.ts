@@ -1,3 +1,4 @@
+// Casos limite de interface: textos formais, tokens inválidos e confirmações.
 import { test, expect } from "@playwright/test"
 import { confirmarEEntrar } from "./helpers/auth"
 

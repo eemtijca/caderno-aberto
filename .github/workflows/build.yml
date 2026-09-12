@@ -1,3 +1,4 @@
+# Build do Next.js em push na main e em pull requests.
 name: Build
 
 on:

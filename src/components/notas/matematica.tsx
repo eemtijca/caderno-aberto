@@ -1,5 +1,8 @@
 "use client"
 
+// Renderiza LaTeX com KaTeX e mhchem. A saída é HTML confiável, restrito a
+// comandos seguros e com fallback em texto quando a fórmula falha.
+
 import { useMemo } from "react"
 import katex from "katex"
 import "katex/contrib/mhchem"
@@ -24,6 +27,7 @@ export function Matematica({ latex, bloco = false, className }: PropsMatematica)
         output: "htmlAndMathml",
       })
     } catch {
+      // Exibe o LaTeX original escapado em vez de quebrar a renderização.
       return `<span class="text-rose-600 dark:text-rose-400">${latex
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")}</span>`

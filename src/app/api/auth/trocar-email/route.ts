@@ -1,3 +1,5 @@
+// Solicita a troca de e-mail, que será confirmada no endereço novo.
+
 import { NextRequest, NextResponse } from "next/server"
 import { createHash } from "crypto"
 import { banco } from "@/lib/banco"
@@ -17,10 +19,12 @@ export async function POST(req: NextRequest) {
   const corpo = await req.json().catch(() => null)
   const novoEmail = normalizarEmail(corpo?.novoEmail)
   if (!novoEmail) return erroApi("E-mail inválido. Confira o endereço digitado.")
+  // Rejeita troca para o mesmo endereço.
   if (novoEmail === sessao.usuario.email) return erroApi("O novo e-mail é igual ao atual.")
 
   const db = await banco()
   const ocupado = await db.usuarios.findFirst({ where: { email: novoEmail } })
+  // Endereço já em uso recebe resposta genérica.
   if (ocupado) return erroApi("Não foi possível usar este e-mail.")
 
   const usuario = await db.usuarios.findFirst({ where: { id: sessao.usuario.id } })

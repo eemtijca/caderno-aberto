@@ -1,5 +1,8 @@
 "use client"
 
+// Vista Links: cria e gerencia links de nota, turma ou disciplina, com cópia,
+// pausa, expiração, regeneração e exclusão.
+
 import { useMemo, useState } from "react"
 import {
   BookOpenText,
@@ -252,6 +255,7 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
   )
 
   const url = useMemo(() => urlDoLink(link.token), [link.token])
+  // Um link só está disponível se estiver ativo e dentro do prazo.
   const expirado = link.expiraEm ? new Date(link.expiraEm).getTime() < Date.now() : false
   const disponivel = link.ativo && !expirado
   const aviso =

@@ -1,3 +1,5 @@
+// Conclui a recuperação de senha e invalida as sessões existentes.
+
 import { NextRequest } from "next/server"
 import { createHash } from "crypto"
 import { banco } from "@/lib/banco"
@@ -10,6 +12,7 @@ export const dynamic = "force-dynamic"
 
 // POST /api/auth/concluir {token, novaSenha}. Troca a senha e invalida as sessões.
 export async function POST(req: NextRequest) {
+  // Limita tentativas de conclusão por IP.
   const limite = await cabeNoLimite(chavePorIp(req, "concluir"))
   if (!limite.permitido)
     return erroApi("Muitas tentativas. Aguarde um momento e tente novamente.", 429)
@@ -17,6 +20,7 @@ export async function POST(req: NextRequest) {
   const corpo = await req.json().catch(() => null)
   const token = typeof corpo?.token === "string" ? corpo.token : ""
   const novaSenha = typeof corpo?.novaSenha === "string" ? corpo.novaSenha : ""
+  // Exige o token no formato hexadecimal emitido.
   if (!/^[0-9a-f]{64}$/.test(token)) return erroApi("Link inválido ou expirado.", 400)
   if (!senhaValida(novaSenha)) return erroApi("A senha deve ter pelo menos 8 caracteres.")
 
@@ -35,6 +39,7 @@ export async function POST(req: NextRequest) {
     return erroApi("Link inválido ou expirado.", 400)
   }
 
+  // Marca o token como usado, troca a senha e derruba as sessões antigas.
   const agora = new Date().toISOString()
   await db.$transaction(async (tx) => {
     await tx.tokensVerificacao.update({ where: { id: registro.id }, data: { usadoEm: agora } })

@@ -1,3 +1,5 @@
+// Lista e cria notas do professor autenticado.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -27,8 +29,6 @@ export async function GET(req: NextRequest) {
   const turma = sp.get("turma") ?? ""
   const status = sp.get("status") ?? ""
 
-  const db = await banco()
-  void db
   // Busca textual no banco; demais filtros em memória.
   const base = q ? await filtrarBusca(usuario.id, q) : await notasDoProfessor(usuario.id)
 
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 
   const mapaTurmas = await mapaTurmasProfessor(usuario.id)
   return json({
-    notas: notas.map((linha) => linhaParaNota(comDisciplinaLinha(linha), mapaTurmas)),
+    notas: notas.map((linha) => linhaParaNota(linha, mapaTurmas)),
   })
 }
 
@@ -65,10 +65,6 @@ async function filtrarBusca(professorId: string, q: string): Promise<NotaLinha[]
   return linhas as unknown as NotaLinha[]
 }
 
-function comDisciplinaLinha(linha: NotaLinha) {
-  return linha
-}
-
 export async function POST(req: NextRequest) {
   const sessao = await sessaoProfessor(req)
   if (!sessao) return naoAutenticado()
@@ -83,6 +79,7 @@ export async function POST(req: NextRequest) {
   if (!disciplinaId) return erroApi("Selecione a disciplina.")
 
   const db = await banco()
+  // Confirma que a disciplina pertence ao professor.
   const disciplina = await db.disciplinas.findFirst({
     where: {
       id: disciplinaId,
@@ -114,6 +111,7 @@ export async function POST(req: NextRequest) {
   const sobre: string = typeof corpo.sobre === "string" ? corpo.sobre : ""
   const habilidades: string = typeof corpo.habilidades === "string" ? corpo.habilidades : ""
 
+  // Grava também o índice de busca denormalizado.
   const linha = (await db.notas.create({
     data: {
       professorId: usuario.id,

@@ -1,3 +1,5 @@
+// Lista e cria links públicos de compartilhamento do professor autenticado.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -46,6 +48,17 @@ export async function GET(req: NextRequest) {
   const turmaPorId = new Map(turmas.map((t) => [t.id, t]))
   const disciplinaPorId = new Map(disciplinas.map((d) => [d.id, d]))
 
+  // Notas publicadas por disciplina: são as que o link de disciplina expõe.
+  const publicadasPorDisciplina = new Map<string, number>()
+  for (const n of notas) {
+    if (n.status !== "publicada" || !n.disciplinaId) continue
+    publicadasPorDisciplina.set(
+      n.disciplinaId,
+      (publicadasPorDisciplina.get(n.disciplinaId) ?? 0) + 1,
+    )
+  }
+
+  // Resolve o nome e o estado do alvo de cada link para a listagem.
   const lista = links.map((l) => {
     let alvo = ""
     let alvoDetalhe = ""
@@ -60,7 +73,8 @@ export async function GET(req: NextRequest) {
     } else if (l.tipo === "disciplina" && l.disciplinaId) {
       const d = disciplinaPorId.get(l.disciplinaId)
       alvo = d?.nome ?? "(disciplina excluída)"
-      alvoDetalhe = d ? String(disciplinaPorId.size) : ""
+      const total = publicadasPorDisciplina.get(l.disciplinaId) ?? 0
+      alvoDetalhe = total > 0 ? `${total} ${total === 1 ? "nota" : "notas"}` : ""
     }
     return paraResposta(l, alvo, alvoDetalhe)
   })
@@ -93,6 +107,7 @@ export async function POST(req: NextRequest) {
         : await db.disciplinas.findFirst({ where: { id: alvoId, professorId: usuario.id } })
   if (!alvo) return erroApi("Destino não encontrado.", 404)
 
+  // O token é gerado no servidor e não pode ser escolhido pelo cliente.
   const link = (await db.links.create({
     data: {
       professorId: usuario.id,

@@ -1,7 +1,7 @@
 "use client"
 
 // Diálogo de nova nota. Metadados para organização automática.
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Loader2, Plus, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -61,10 +61,19 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
   const [novaDisciplinaNome, setNovaDisciplinaNome] = useState("")
   const [novaDisciplinaCor, setNovaDisciplinaCor] = useState("verde")
   const [novaDisciplinaIcone, setNovaDisciplinaIcone] = useState("BookOpen")
+  // Só turmas do ano letivo escolhido podem ser vinculadas.
   const turmasDoAno = useMemo(
     () => (turmas ?? []).filter((t) => t.anoLetivo === anoLetivo),
     [turmas, anoLetivo],
   )
+
+  // Ao trocar o ano, descarta seleções que não pertencem ao ano corrente.
+  useEffect(() => {
+    setTurmasSel((prev) => {
+      const validos = prev.filter((id) => turmasDoAno.some((t) => t.id === id))
+      return validos.length === prev.length ? prev : validos
+    })
+  }, [turmasDoAno])
 
   const podeCriar = titulo.trim().length >= 2 && disciplinaId !== ""
 
@@ -75,7 +84,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
         disciplinaId,
         anoLetivo,
         mes,
-        turmasIds: turmasSel,
+        turmasIds: turmasSel.filter((id) => turmasDoAno.some((t) => t.id === id)),
         comModelo,
       })
       toast.success("Nota criada", { description: `"${r.nota.titulo}" está pronta para editar.` })

@@ -1,3 +1,4 @@
+// Nota de exemplo estática usada na landing sem tocar no banco.
 import type { NotaDados } from "./tipos"
 
 export const DEMO_NOTA: NotaDados = {

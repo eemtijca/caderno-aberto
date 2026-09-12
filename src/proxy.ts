@@ -1,9 +1,13 @@
+// Middleware da aplicação: bloqueio de mutações cross-site (CSRF), cabeçalhos de
+// segurança com CSP por nonce e propagação do usuário do JWT na requisição.
+
 import { NextResponse, type NextRequest } from "next/server"
 import * as jose from "jose"
 import { AUTH_SECRET } from "@/lib/ambiente"
 
 const SEGREDO = new TextEncoder().encode(AUTH_SECRET)
 
+// Lê o usuário do cookie de sessão sem consultar o banco.
 async function lerUsuarioId(req: NextRequest): Promise<string | null> {
   const token = req.cookies.get("sessao")?.value
   if (!token) return null
@@ -40,6 +44,7 @@ export async function proxy(request: NextRequest) {
     return new NextResponse("Origem não confiável.", { status: 403 })
   }
 
+  // Nonce por requisição libera apenas os scripts marcados pelo layout.
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64")
   const isDev = process.env.NODE_ENV === "development"
 

@@ -1,5 +1,8 @@
 "use client"
 
+// Vista Conta: perfil, segurança, disciplinas, turmas, backup/importação e
+// exclusão de conta com carência de 24 horas.
+
 import { useRef, useState } from "react"
 import {
   Download,
@@ -91,6 +94,7 @@ function SecaoPerfil() {
   const [escola, setEscola] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
 
+  // null funciona como sentinela: só sobrescreve o valor do perfil após edição.
   const valorNome = nome ?? perfil?.nome ?? ""
   const valorEscola = escola ?? perfil?.escola ?? ""
   const sujo = nome !== null || escola !== null
@@ -730,6 +734,7 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
   const inputNota = useRef<HTMLInputElement>(null)
   const [importando, setImportando] = useState(false)
 
+  // Após importar, limpa o cache e recarrega para refletir os dados novos.
   const recarregar = () => {
     qc.invalidateQueries()
     window.location.reload()
@@ -1003,6 +1008,7 @@ function SecaoExcluirConta() {
                   className="bg-destructive hover:bg-destructive/90 text-white"
                   disabled={confirmacao !== "EXCLUIR" || !senha || excluindo}
                   onClick={async (e) => {
+                    // Evita o fechamento automático para poder tratar o erro no diálogo.
                     e.preventDefault()
                     setExcluindo(true)
                     try {

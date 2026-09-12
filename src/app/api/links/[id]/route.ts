@@ -1,3 +1,5 @@
+// Edita e remove links públicos do professor dono.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -47,6 +49,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
       dados.expiraEm = d.toISOString()
     }
   }
+  // Regenerar troca o token antigo por um novo.
   if (corpo.regenerar === true) dados.token = gerarToken()
 
   if (Object.keys(dados).length === 0) return erroApi("Nada para atualizar.")

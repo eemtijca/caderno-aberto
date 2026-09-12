@@ -1,3 +1,4 @@
+// Sessão de professor e helpers de resposta JSON para rotas privadas.
 import "server-only"
 
 import { NextRequest, NextResponse } from "next/server"
@@ -13,6 +14,7 @@ export interface SessaoProfessor {
 // Guarda única de sessão para rotas privadas.
 /** Sessão da requisição com perfil. Null sem sessão válida. */
 export async function sessaoProfessor(req?: NextRequest): Promise<SessaoProfessor | null> {
+  // Permite chamar sem Request (ex.: Server Components) criando uma vazia.
   const requisicao =
     req ?? ({ cookies: { get: () => undefined }, headers: new Headers() } as unknown as NextRequest)
   const usuario = await sessaoRequisicao(requisicao).catch(() => null)

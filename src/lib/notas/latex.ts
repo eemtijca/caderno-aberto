@@ -1,5 +1,7 @@
+// Parser leve de LaTeX próprio do app e conversões para KaTeX e .tex.
 export function varrerChaves(s: string, abre: number): { fim: number; conteudo: string } | null {
   if (s[abre] !== "{") return null
+  // Conta chaves respeitando escapes para achar o fecha correspondente.
   let profundidade = 0
   for (let i = abre; i < s.length; i++) {
     const c = s[i]
@@ -52,11 +54,13 @@ export function substituirComando(
 }
 
 function decParaKatex(conteudo: string): string {
+  // KaTeX trata a vírgula decimal como pontuação; agrupar evita o espaço.
   const i = conteudo.indexOf(",")
   if (i === -1) return conteudo
   return `${conteudo.slice(0, i)}{,}${conteudo.slice(i + 1)}`
 }
 
+// Expande os macros do app para HTML/classe usada na leitura.
 export function preprocessarLatex(latex: string): string {
   let r = latex
   r = substituirComando(r, "dec", decParaKatex)
@@ -66,6 +70,7 @@ export function preprocessarLatex(latex: string): string {
   return r
 }
 
+// Mesma expansão, porém com comandos aceitos pelo KaTeX.
 export function prepararMatematicaTex(latex: string): string {
   let r = latex
   r = substituirComando(r, "dec", (c) => c.replace(/,/g, "{,}"))
@@ -74,6 +79,7 @@ export function prepararMatematicaTex(latex: string): string {
   return r
 }
 
+// Nomes em português que o KaTeX não reconhece por padrão.
 export const MACROS_KATEX: Record<string, string> = {
   "\\sen": "\\operatorname{sen}",
   "\\tg": "\\operatorname{tg}",
@@ -97,6 +103,7 @@ export function escaparLatex(texto: string): string {
   return texto.replace(/[\\&%#_{}~^]/g, (ch) => MAPA_ESCAPE_LATEX[ch])
 }
 
+// Converte o subconjunto markdown suportado (negrito, itálico, código e $...$).
 export function inlineParaLatex(texto: string): string {
   if (!texto) return ""
   let saida = ""
@@ -167,6 +174,7 @@ export function inlineParaLatex(texto: string): string {
   return saida
 }
 
+// Ignora $ escapado ao procurar o fecha da expressão matemática.
 function acharFimMatematica(texto: string, ini: number): number {
   const n = texto.length
   let i = ini + 1

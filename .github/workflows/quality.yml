@@ -1,3 +1,4 @@
+# Verificações de qualidade: formatação, lint, tipos e testes unitários.
 name: Quality
 
 on:

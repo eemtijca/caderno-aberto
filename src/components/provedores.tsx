@@ -6,6 +6,7 @@ import { useState } from "react"
 import { ProvedorSessao } from "@/hooks/use-sessao"
 
 export function Provedores({ children }: { children: React.ReactNode }) {
+  // Cliente único por sessão, criado uma vez via inicializador preguiçoso.
   const [cliente] = useState(
     () =>
       new QueryClient({

@@ -1,3 +1,5 @@
+// Importa uma nota em Markdown ou JSON para o professor autenticado.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -21,6 +23,7 @@ export async function POST(req: NextRequest) {
 
   const corpo = await req.json().catch(() => null)
   if (!corpo || typeof corpo.conteudo !== "string") return erroApi("Conteúdo inválido.")
+  // Formato ausente ou desconhecido cai em Markdown.
   const formato = corpo.formato === "json" ? "json" : "md"
 
   let dados: {
@@ -149,6 +152,7 @@ export async function POST(req: NextRequest) {
   }
 
   const blocos = normalizarBlocos(dados.blocos)
+  // Cria a nota com o índice de busca denormalizado.
   const linha = (await db.notas
     .create({
       data: {

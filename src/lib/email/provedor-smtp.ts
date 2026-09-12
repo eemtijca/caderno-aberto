@@ -11,6 +11,7 @@ function obterTransporte(): Transporter {
     const url = new URL(SMTP_URL)
     transporte = nodemailer.createTransport({
       host: url.hostname,
+      // Porta ausente assume 587; smtps: implica TLS direto.
       port: Number(url.port) || 587,
       secure: url.protocol === "smtps:",
       auth:

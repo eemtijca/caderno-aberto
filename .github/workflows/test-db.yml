@@ -1,3 +1,4 @@
+# Sobe app e banco via Docker Compose e roda testes de isolamento e contratos.
 name: Testes de Banco
 
 on:

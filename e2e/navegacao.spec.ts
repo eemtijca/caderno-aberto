@@ -1,3 +1,4 @@
+// Roteamento por hash e navegação entre as telas principais.
 import { expect, test, type Page } from "@playwright/test"
 import { confirmarEEntrar } from "./helpers/auth"
 

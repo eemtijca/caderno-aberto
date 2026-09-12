@@ -1,3 +1,5 @@
+// Lê e atualiza os dados de perfil do professor autenticado.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -6,6 +8,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(req: NextRequest) {
   const sessao = await sessaoProfessor(req)
+  // Sem sessão, devolve nulos em vez de erro para o app decidir a navegação.
   if (!sessao) {
     return json({ usuario: null, perfil: null })
   }
@@ -37,6 +40,7 @@ export async function PATCH(req: NextRequest) {
   const corpo = await req.json().catch(() => null)
   if (!corpo) return erroApi("Corpo inválido.")
 
+  // Nome e escola são aparados e limitados em tamanho.
   const dados: { nome?: string; escola?: string } = {}
   if (typeof corpo.nome === "string") dados.nome = corpo.nome.trim().slice(0, 120)
   if (typeof corpo.escola === "string") dados.escola = corpo.escola.trim().slice(0, 160)

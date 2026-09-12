@@ -1,3 +1,4 @@
+// Fluxos de autenticação: cadastro, confirmação por e-mail, login e redefinição.
 import { test, expect } from "@playwright/test"
 import { buscarEmail, corrigirRedirect } from "./helpers/outbox"
 import { entrarSeNecessario, confirmarEEntrar } from "./helpers/auth"

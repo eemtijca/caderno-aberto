@@ -1,7 +1,9 @@
+// Entrega os dados de um link público a partir do token, sem exigir login.
+
 import { NextRequest } from "next/server"
 import { json, erroApi } from "@/lib/api/sessao"
 import { registrarAcesso, resolverLinkPublico } from "@/lib/api/publico"
-import type { AparenciaNota, Bloco } from "@/lib/notas/tipos"
+import type { AparenciaNota, Bloco, BlocoFilho } from "@/lib/notas/tipos"
 import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
 import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo"
 
@@ -26,6 +28,7 @@ export interface NotaPublica {
 
 export async function GET(_req: NextRequest, ctx: Ctx) {
   const { token } = await ctx.params
+  // Token de demonstração é servido sem consultar o banco.
   if (token === DEMO_TOKEN) {
     const nota = DEMO_NOTA
     const notas: NotaPublica[] = [
@@ -56,6 +59,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   }
 
   const resolvido = await resolverLinkPublico(token)
+  // Link inexistente, revogado ou expirado respondem de forma idêntica.
   if (!resolvido || (resolvido.link.tipo === "nota" && resolvido.notas.length === 0)) {
     return erroApi("Este link não existe, foi revogado ou expirou.", 404)
   }
@@ -91,16 +95,14 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 }
 
 function reescreverImagens(blocos: Bloco[], token: string): Bloco[] {
-  const visita = (lista: Bloco[]): Bloco[] =>
+  // Figuras ficam no nível raiz, mas a recursão em filhos espelha caminhosReferenciados.
+  const visita = <T extends Bloco | BlocoFilho>(lista: T[]): T[] =>
     lista.map((b) => {
       if (b.tipo === "figura") {
-        return {
-          ...b,
-          url: urlImagemPublica(b.url, token),
-        }
+        return { ...b, url: urlImagemPublica(b.url, token) } as T
       }
       if (b.tipo === "copiar" || b.tipo === "exemplo" || b.tipo === "dica") {
-        return { ...b, filhos: b.filhos.map((f) => f) }
+        return { ...b, filhos: visita(b.filhos) } as T
       }
       return b
     })

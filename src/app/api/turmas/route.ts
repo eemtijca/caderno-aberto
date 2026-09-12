@@ -1,3 +1,5 @@
+// Lista e cria turmas do professor autenticado.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -5,6 +7,7 @@ import type { TurmaLinha } from "@/lib/banco/tipos"
 
 export const dynamic = "force-dynamic"
 
+// Detecta a violação de unicidade de turma por professor e ano letivo.
 function ehConflito(erro: unknown): boolean {
   const e = erro as { code?: string; constraint?: string; message?: string } | null
   if (!e) return false

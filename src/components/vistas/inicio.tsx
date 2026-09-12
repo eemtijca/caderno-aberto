@@ -1,5 +1,7 @@
 "use client"
 
+// Painel inicial do professor: saudação, contadores, notas do mês e últimas edições.
+
 import { ArrowRight, BookOpenText, CalendarRange, Eye, Link2, Plus, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -25,12 +27,14 @@ export function VistaInicio({
   const anoAtual = new Date().getFullYear()
   const publicadas = (notas ?? []).filter((n) => n.status === "publicada").length
   const doMes = (notas ?? []).filter((n) => n.mes === mesAtual && n.anoLetivo === anoAtual)
+  // Ordena por atualização decrescente sem mutar a lista original.
   const recentes = [...(notas ?? [])]
     .sort((a, b) => (a.atualizadoEm < b.atualizadoEm ? 1 : -1))
     .slice(0, 4)
 
   const hora = new Date().getHours()
   const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite"
+  // Remove o tratamento Prof. do nome para não repetir na saudação.
   const professor = perfil?.nome?.trim()
 
   return (

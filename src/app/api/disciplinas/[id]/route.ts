@@ -1,3 +1,5 @@
+// Edita e remove uma disciplina, restrito ao professor dono.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -34,6 +36,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
   const db = await banco()
   try {
+    // Só permite editar disciplina do próprio professor.
     const existe = await db.disciplinas.findFirst({ where: { id, professorId: usuario.id } })
     if (!existe) return erroApi("Disciplina não encontrada.", 404)
     const disciplina = (await db.disciplinas.update({
@@ -57,6 +60,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params
 
   const db = await banco()
+  // Exclusão escopada ao professor.
   await db.disciplinas.deleteMany({ where: { id, professorId: usuario.id } })
   return json({ ok: true })
 }

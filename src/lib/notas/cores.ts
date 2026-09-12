@@ -1,3 +1,4 @@
+// Paleta de cores e ícones das disciplinas, derivada do tema institucional.
 export interface CorDisciplina {
   chave: string
   nome: string
@@ -129,6 +130,7 @@ export const CORES: CorDisciplina[] = [
   },
 ]
 
+// A primeira cor é o padrão para chaves desconhecidas ou vazias.
 export function corDisciplina(chave: string | undefined | null): CorDisciplina {
   return CORES.find((c) => c.chave === chave) ?? CORES[0]
 }

@@ -1,5 +1,8 @@
 "use client"
 
+// Peças reutilizáveis do editor: textarea que cresce sozinha e barra de
+// formatação inline que envolve a seleção atual.
+
 import { useEffect, useRef } from "react"
 import { Bold, Italic, Percent, Sigma, Highlighter } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -25,6 +28,7 @@ export function TextareaAuto({
 }) {
   const ref = useRef<HTMLTextAreaElement>(null)
 
+  // Recalcula a altura a cada mudança de valor para acompanhar o conteúdo.
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -48,6 +52,8 @@ export function TextareaAuto({
   )
 }
 
+// Envolve o trecho selecionado (ou um placeholder) com marcadores e devolve o
+// novo texto e a posição do cursor após a inserção.
 export function inserirNoTextarea(
   el: HTMLTextAreaElement | null,
   antes: string,
@@ -77,6 +83,7 @@ export function BarraInline({
     const r = inserirNoTextarea(el, antes, depois, placeholder)
     if (r) {
       onAplicar(r.valor, r.pos)
+      // Reposiciona o cursor depois que o React aplica o novo valor.
       requestAnimationFrame(() => {
         el.focus()
         if (r.pos >= 0) el.setSelectionRange(r.pos, r.pos)

@@ -1,5 +1,8 @@
 "use client"
 
+// Porta de entrada sem sessão: landing estática com demo e painéis de entrar,
+// cadastrar e redefinir senha (inclusive conclusão via token no hash).
+
 import { useEffect, useState } from "react"
 import {
   ArrowRight,
@@ -35,6 +38,7 @@ export function VistaAutenticação({
 }) {
   const { modoRecuperacao } = useSessao()
 
+  // Token de recuperação válido tem prioridade sobre a rota atual.
   if (modoRecuperacao) return <PainelAuth modo="redefinir" navegar={navegar} />
   if (rota.vista === "entrar") return <PainelAuth modo="entrar" navegar={navegar} />
   if (rota.vista === "cadastro") return <PainelAuth modo="cadastro" navegar={navegar} />
@@ -399,6 +403,7 @@ function Recurso({
 
 type Modo = "entrar" | "cadastro" | "redefinir"
 
+// Força relativa da senha a partir de comprimento e mistura de letras e números.
 function forcaSenha(senha: string): { nivel: 0 | 1 | 2 | 3; rotulo: string; cor: string } {
   let pontos = 0
   if (senha.length >= 6) pontos++
@@ -475,6 +480,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
     }
   }
 
+  // Diferencia o pedido do link de redefinição da definição da nova senha.
   const emRecuperacao = Boolean(modo === "redefinir" && sessao.modoRecuperacao)
 
   return (

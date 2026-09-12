@@ -5,3 +5,4 @@ public/vendor/
 tests/unit/build/
 coverage/
 .agents/
+.devcontainer/devcontainer-lock.json

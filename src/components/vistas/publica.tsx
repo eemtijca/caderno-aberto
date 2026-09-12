@@ -70,6 +70,7 @@ export function VistaPublica({
   const [busca, setBusca] = useState("")
 
   useEffect(() => {
+    // Token de demonstração monta os dados localmente, sem chamar a API.
     if (token === DEMO_TOKEN) {
       const demo: DadosPublicos = {
         link: {
@@ -101,6 +102,7 @@ export function VistaPublica({
       setErro("")
       return
     }
+    // A flag evita atualizar o estado se o token mudar antes da resposta.
     let vivo = true
     setCarregando(true)
     setErro("")
@@ -421,7 +423,7 @@ export function VistaPublica({
         </div>
       )}
 
-      {/* aviso de expiração */}
+      {/* aviso de expiração aparece na reta final de 3 dias */}
       {expira && expira.getTime() - Date.now() < 3 * 24 * 3600 * 1000 ? (
         <p className="na-imprime-esconder fixed inset-x-0 bottom-0 z-30 mx-auto mb-0 flex w-fit items-center gap-1.5 rounded-t-xl border border-b-0 border-amber-300 bg-amber-50 px-3.5 py-1.5 text-[0.72rem] font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
           <Hourglass className="h-3 w-3" aria-hidden />

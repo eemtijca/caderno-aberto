@@ -4,6 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { DATABASE_URL } from "./ambiente"
 
 const globalComBanco = globalThis as unknown as {
+  // Reaproveita a instância entre recarregamentos do servidor em dev.
   prisma?: PrismaClient
 }
 

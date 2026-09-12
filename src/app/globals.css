@@ -1,3 +1,5 @@
+/* Estilos globais: tema (claro/escuro), marca, tipografia da nota, animações e regras de impressão A4. */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 

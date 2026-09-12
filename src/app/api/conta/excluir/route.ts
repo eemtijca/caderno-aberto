@@ -1,3 +1,5 @@
+// Solicita a exclusão da conta do professor, com carência de 24 horas.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -13,6 +15,7 @@ export async function POST(req: NextRequest) {
   const corpo = await req.json().catch(() => null)
   const senha = typeof corpo?.senha === "string" ? corpo.senha : ""
   const confirmacao = typeof corpo?.confirmacao === "string" ? corpo.confirmacao : ""
+  // Exige senha e a palavra EXCLUIR para evitar exclusões acidentais.
   if (!senha) return erroApi("Confirme com a senha para solicitar a exclusão.")
   if (confirmacao !== "EXCLUIR") return erroApi("Digite EXCLUIR para confirmar.")
 

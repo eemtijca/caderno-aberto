@@ -1,5 +1,8 @@
 "use client"
 
+// Moldura do app autenticado: navegação lateral (desktop), topbar e barra inferior
+// (mobile), além da busca global com atalho de teclado.
+
 import { useEffect, useRef, useState } from "react"
 import { useTheme } from "next-themes"
 import { VERSAO_CURTA } from "@/lib/versao"
@@ -54,6 +57,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
   const [buscaAberta, setBuscaAberta] = useState(false)
   const [saindo, setSaindo] = useState(false)
 
+  // Atalho global Ctrl/Cmd+K abre a busca.
   useEffect(() => {
     const aoTeclar = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -66,6 +70,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
   }, [])
 
   const vistaAtual = rota.vista
+  // Iniciais do avatar: duas primeiras palavras do nome ou do e-mail.
   const iniciais = (perfil?.nome ?? usuario?.email ?? "?")
     .split(/\s+/)
     .filter(Boolean)
@@ -325,11 +330,13 @@ function BuscaGlobal({
   const { data: resultados, isFetching } = useBusca(debounce)
   const { perfil } = useSessao()
 
+  // Espera a digitação parar antes de consultar a API de busca.
   useEffect(() => {
     const t = setTimeout(() => setDebounce(termo), 250)
     return () => clearTimeout(t)
   }, [termo])
 
+  // Foca o campo após a animação de abertura do diálogo.
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus(), 60)
     return () => clearTimeout(t)

@@ -1,3 +1,4 @@
+# Atualizações semanais de dependências npm, GitHub Actions e Docker.
 version: 2
 updates:
   - package-ecosystem: "npm"

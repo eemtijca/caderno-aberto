@@ -1,3 +1,4 @@
+// Gera um .tex autocontido a partir da nota para exportação/impressão.
 import {
   AparenciaNota,
   Bloco,
@@ -12,6 +13,7 @@ import { escaparLatex, inlineParaLatex, prepararMatematicaTex } from "./latex"
 import { MESES_CAP } from "./texto"
 
 function nomeArquivoImagem(url: string): { arquivo: string | null; comentario: string } {
+  // Imagens do app entram em imagens/; o .tex não embute os bytes.
   if (url.startsWith("/api/imagens?path=")) {
     const caminho = decodeURIComponent(url.slice("/api/imagens?path=".length))
     const nome = caminho.split("/").pop() ?? "imagem"
@@ -48,6 +50,7 @@ function filhoParaLatex(f: BlocoFilho): string {
         .join("\n")}\n\\end{itens}\n\n`
     case "tabela": {
       const nCol = Math.max(1, ...f.linhas.map((l) => l.length))
+      // Primeira coluna à esquerda, demais centralizadas.
       const spec = Array.from({ length: nCol }, (_, i) => (i === 0 ? "l" : "c")).join("")
       const linhas = f.linhas
         .map((linha) => linha.map((c) => inlineParaLatex(c)).join(" & "))
@@ -64,6 +67,7 @@ function filhoParaLatex(f: BlocoFilho): string {
 }
 
 function garantirTikz(codigo: string): string {
+  // Aceita código solto e o envolve no ambiente tikzpicture.
   const c = codigo.trim()
   if (!c) return ""
   if (c.includes("\\begin{tikzpicture}") || c.includes("\\begin{axis}")) return c
@@ -84,6 +88,7 @@ function blocoParaLatex(b: Bloco): string {
       if (!b.url) return ""
       const { arquivo, comentario } = nomeArquivoImagem(b.url)
       if (arquivo) {
+        // Marcador visível quando o arquivo de imagem não veio no pacote.
         return `% ${comentario}\n\\begin{figuranota}{${inlineParaLatex(b.legenda)}}\n\\IfFileExists{${escaparLatex(
           arquivo,
         )}}{\\includegraphics[width=0.85\\linewidth]{${escaparLatex(arquivo)}}}{\\imagemfaltando{${escaparLatex(
@@ -176,12 +181,15 @@ function opcoesDocumento(aparencia: AparenciaNota | null | undefined): {
 } {
   const escala = aparencia?.escala ?? "m"
   const entrelinha = aparencia?.entrelinha ?? "normal"
+  // Converte a escala da web em classes de tamanho do LaTeX.
   const pt = { p: "9pt", m: "10pt", g: "11pt", gg: "12pt" }[escala] ?? "10pt"
   const altura = ENTRELINHAS_NOTA.find((e) => e.chave === entrelinha)?.altura ?? 1.65
+  // \linespread parte de 1.2, então normaliza pela altura escolhida.
   const spread = (altura / 1.2).toFixed(2)
   return { pt, spread }
 }
 
+// Só carrega pgfplots quando há gráficos de eixo, aliviando a compilação.
 function usaPgfplots(blocos: Bloco[]): boolean {
   return blocos.some((b) => b.tipo === "tikz" && b.codigo.includes("\\begin{axis}"))
 }
@@ -372,6 +380,7 @@ export function gerarTex(nota: NotaDados, professor: string): string {
     : ""
   const corpo = nota.blocos.map(blocoParaLatex).join("").trimEnd()
 
+  // O preâmbulo é um template com marcadores; a ordem das trocas importa.
   const preambulo = PREAMBULO_TEX.replace("__PT__", pt)
     .replace("__SPREAD__", spread)
     .replace(

@@ -1,3 +1,5 @@
+// Encerra a sessão do professor e limpa os cookies.
+
 import { NextRequest } from "next/server"
 import { json } from "@/lib/api/sessao"
 import { encerrarSessao } from "@/lib/auth/sessao"

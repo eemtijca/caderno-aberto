@@ -1,5 +1,8 @@
 "use client"
 
+// Vista Turmas e calendário: agrupa as notas por ano, turma e disciplina, tudo
+// derivado dos metadados (nada é cadastrado aqui).
+
 import { useMemo, useState } from "react"
 import { ChevronDown, ChevronRight, Pencil, Plus, Settings } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -93,6 +96,7 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
   const { data: turmas, isLoading: carregandoTurmas } = turmasQ
   const { data: notas } = notasQ
 
+  // Índice de turma para notas; notas sem turma ficam de fora e ganham seção própria.
   const porTurma = useMemo(() => {
     const mapa = new Map<string, typeof notas>()
     for (const n of notas ?? []) {

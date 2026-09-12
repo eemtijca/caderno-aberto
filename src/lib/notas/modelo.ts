@@ -1,8 +1,10 @@
+// Esboços de blocos usados ao criar uma nota nova.
 import { Bloco, idBloco } from "./tipos"
 
+/** Modelo guiado com todos os tipos de bloco. */
 export function notaModelo(titulo: string): Bloco[] {
   return [
-    { id: idBloco(), tipo: "secao", titulo: "Primeiro tópico" },
+    { id: idBloco(), tipo: "secao", titulo: titulo || "Primeiro tópico" },
     {
       id: idBloco(),
       tipo: "copiar",
@@ -80,9 +82,10 @@ export function notaModelo(titulo: string): Bloco[] {
   ]
 }
 
+/** Versão mínima: apenas uma seção e um parágrafo. */
 export function notaVazia(titulo: string): Bloco[] {
   return [
-    { id: idBloco(), tipo: "secao", titulo: "Primeiro tópico" },
+    { id: idBloco(), tipo: "secao", titulo: titulo || "Primeiro tópico" },
     { id: idBloco(), tipo: "paragrafo", texto: "", rotulo: null },
   ]
 }

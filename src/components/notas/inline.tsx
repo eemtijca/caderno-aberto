@@ -1,8 +1,12 @@
 "use client"
 
+// Renderização de texto inline: separa fórmulas entre $...$ e converte a
+// marcação leve (negrito, itálico, código, \resultado, \dest) em React.
+
 import { Fragment, type ReactNode } from "react"
 import { Matematica } from "./matematica"
 
+// Varre o texto isolando os trechos entre cifrões, respeitando escapes com \.
 function dividirMatematica(texto: string): { tipo: "texto" | "math"; valor: string }[] {
   const segmentos: { tipo: "texto" | "math"; valor: string }[] = []
   let buffer = ""
@@ -30,6 +34,7 @@ function dividirMatematica(texto: string): { tipo: "texto" | "math"; valor: stri
   return segmentos
 }
 
+// Lê o argumento de um comando entre chaves, respeitando aninhamento de { }.
 function argumentoBalanceado(s: string, idx: number): { fim: number; conteudo: string } | null {
   let profundidade = 0
   for (let i = idx; i < s.length; i++) {

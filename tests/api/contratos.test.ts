@@ -58,11 +58,13 @@ describe("contratos.test", () => {
     }
   }
 
+  // Sufixo aleatório evita colisão de e-mails entre execuções.
   const sufixo = Math.random().toString(36).slice(2, 8)
   const emailA = `api_a_${sufixo}@exemplo.br`
   const emailB = `api_b_${sufixo}@exemplo.br`
   const senha = "senha123"
 
+  // A caixa de teste é assíncrona; aguarda até 20 s pelo e-mail.
   async function tokenOutbox(email: string) {
     let ultimoStatus = null
     let ultimoCorpo = null

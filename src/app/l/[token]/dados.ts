@@ -1,6 +1,6 @@
 import "server-only"
 
-// Conteúdo da visão pública para metadados.
+// Conteúdo da visão pública consumido por metadados e imagem OG (exclusivo do servidor).
 
 import { cache } from "react"
 import { resolverLinkPublico } from "@/lib/api/publico"
@@ -31,6 +31,7 @@ export interface DadosOg {
 
 /** Busca link + primeira nota (cacheado por requisição). Null se inválido. */
 export const buscarDadosOg = cache(async (token: string): Promise<DadosOg | null> => {
+  // Token de demonstração evita consulta ao banco no ambiente público.
   if (token === DEMO_TOKEN) {
     return {
       link: {

@@ -21,6 +21,7 @@ let cliente: S3Client | null = null
 function obterCliente(): S3Client {
   if (!cliente) {
     cliente = new S3Client({
+      // Path-style amplia a compatibilidade com serviços S3 alternativos.
       forcePathStyle: true,
       region: STORAGE_S3_REGION,
       endpoint: STORAGE_S3_ENDPOINT,
@@ -34,6 +35,7 @@ function obterCliente(): S3Client {
 }
 
 async function lerCorpo(corpo: unknown): Promise<Buffer> {
+  // O SDK pode devolver Uint8Array ou stream assíncrono.
   if (corpo instanceof Uint8Array) return Buffer.from(corpo)
   const partes: Uint8Array[] = []
   for await (const parte of corpo as AsyncIterable<Uint8Array>) partes.push(parte)

@@ -1,4 +1,7 @@
+// Solicita recuperação de senha e informa se um token de recuperação é válido.
+
 import { NextRequest } from "next/server"
+import { createHash } from "crypto"
 import { banco } from "@/lib/banco"
 import { erroApi, json } from "@/lib/api/sessao"
 import { LIMITE_EMAIL, cabeNoLimite, chavePorIp } from "@/lib/api/limite"
@@ -11,6 +14,7 @@ export const dynamic = "force-dynamic"
 
 // POST /api/auth/redefinir {email}. Responde sempre 200, sem distinguir contas existentes.
 export async function POST(req: NextRequest) {
+  // Limite próprio para envio de e-mails.
   const limite = await cabeNoLimite(chavePorIp(req, "redefinir"), LIMITE_EMAIL)
   if (!limite.permitido)
     return erroApi("Muitos e-mails enviados em pouco tempo. Tente de novo em alguns minutos.", 429)
@@ -21,6 +25,7 @@ export async function POST(req: NextRequest) {
 
   const db = await banco()
   const usuario = await db.usuarios.findFirst({ where: { email } })
+  // Conta inexistente recebe a mesma resposta.
   if (!usuario) return json({ ok: true })
 
   const perfil = await db.profiles.findFirst({ where: { id: usuario.id } })
@@ -59,13 +64,13 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token") ?? ""
   if (!/^[0-9a-f]{64}$/.test(token)) return json({ valido: false })
-  const { createHash } = await import("crypto")
   const db = await banco()
   const registro = await db.tokensVerificacao.findFirst({
     where: {
       tokenHash: createHash("sha256").update(token).digest("hex"),
     },
   })
+  // Apenas informa se o token é válido, sem consumi-lo.
   const valido =
     Boolean(registro) &&
     registro!.tipo === "recuperacao" &&

@@ -41,7 +41,7 @@ interface SessaoValor {
 
 const ContextoSessao = createContext<SessaoValor | null>(null)
 
-// Token de recuperação lido do hash da URL.
+// Token de recuperação lido do hash da URL. Só aceita o formato hexadecimal de 64.
 function tokenRecuperacaoDoHash(): string | null {
   if (typeof window === "undefined") return null
   const hash = window.location.hash
@@ -76,6 +76,7 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
       setUsuario(novo)
       usuarioRef.current = novo?.id ?? null
       setPerfil(conta.perfil)
+      // Troca de conta descarta o cache de consultas do usuário anterior.
       if (trocou) qc.clear()
     },
     [qc],
@@ -91,6 +92,7 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
       }
     }
     let conta = await ler().catch(() => null)
+    // Sem sessão válida, tenta renovar o token uma vez antes de desistir.
     if (!conta?.usuario) {
       await fetch("/api/auth/renovar", { method: "POST" }).catch(() => null)
       conta = await ler().catch(() => null)

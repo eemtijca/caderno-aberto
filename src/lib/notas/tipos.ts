@@ -1,3 +1,4 @@
+// Modelo de dados do caderno: blocos, aparência e normalização do JSON persistido.
 export type RotuloTipo = "definicao" | "formulas" | "relacoes" | "modelo" | "resolucao" | "livre"
 
 export interface Rotulo {
@@ -190,6 +191,7 @@ export const ENTRELINHAS_NOTA: { chave: EntrelinhaNota; nome: string; altura: nu
   { chave: "ampla", nome: "Ampla", altura: 1.85 },
 ]
 
+// Aceita apenas chaves conhecidas; valores estranhos viram padrão.
 export function normalizarAparencia(entrada: unknown): AparenciaNota {
   if (!entrada || typeof entrada !== "object") return {}
   const a = entrada as Record<string, unknown>
@@ -206,6 +208,7 @@ export function normalizarAparencia(entrada: unknown): AparenciaNota {
   return saida
 }
 
+// Vira custom properties CSS (--na-*) consumidas pelo leitor.
 export function variaveisAparencia(ap: AparenciaNota | null | undefined): Record<string, string> {
   const fonte = ap?.fonte ?? APARENCIA_PADRAO.fonte
   const escala = ap?.escala ?? APARENCIA_PADRAO.escala
@@ -271,6 +274,7 @@ function normalizarQuestao(v: unknown): Questao {
   const q = (v && typeof v === "object" ? v : {}) as Record<string, unknown>
   const alternativas = Array.isArray(q.alternativas) ? q.alternativas.map((a) => comoTexto(a)) : []
   const correta = typeof q.correta === "number" ? q.correta : null
+  // Só aceita índice que aponte para uma alternativa existente.
   return {
     id: comoTexto(q.id) || novoId("q"),
     enunciado: comoTexto(q.enunciado),
@@ -292,6 +296,7 @@ function normalizarNivel(v: unknown): Nivel {
   }
 }
 
+// Reconstrói blocos a partir de JSON externo, preenchendo campos ausentes.
 export function normalizarBlocos(entrada: unknown): Bloco[] {
   if (!Array.isArray(entrada)) return []
   const resultado: Bloco[] = []

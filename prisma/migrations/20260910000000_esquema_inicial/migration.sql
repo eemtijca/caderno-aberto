@@ -285,6 +285,8 @@ create trigger on_profiles_nome_updated
 -- Backstop RLS: segunda barreira com escopo por transação.
 -- Sem contexto definido, nenhuma linha é visível. Papéis com
 -- bypassrls não são filtrados.
+-- `force` aplica o RLS também ao dono da tabela; as políticas usam
+-- `nullif` para tratar o contexto vazio como nulo.
 
 alter table public.usuarios enable row level security;
 alter table public.usuarios force row level security;

@@ -1,5 +1,8 @@
 "use client"
 
+// Editor da nota: metadados, aparência, blocos arrastáveis e prévia ao vivo.
+// O salvamento é automático após um intervalo de inatividade.
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
   DndContext,
@@ -251,6 +254,7 @@ function FormularioNota({
   const [paletaEm, setPaletaEm] = useState<number | null>(null)
   const timerAutoSave = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Autosave: espera 900ms do último campo alterado antes de persistir.
   useEffect(() => {
     if (!sujo) return
     if (timerAutoSave.current) clearTimeout(timerAutoSave.current)
@@ -292,6 +296,7 @@ function FormularioNota({
     sujo,
   ])
 
+  // Envolve um setter para sinalizar que a nota passou a ter alterações pendentes.
   const marcar =
     <T,>(fn: (v: T) => void) =>
     (valor: T) => {
@@ -314,6 +319,7 @@ function FormularioNota({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
+  // Converte o resultado do arraste em reordenação imutável da lista.
   const aoArrastarFim = (e: DragEndEvent) => {
     const { active, over } = e
     if (active.id !== over?.id && over) {
@@ -766,6 +772,7 @@ function ListaBlocos({
   sensores: ReturnType<typeof useSensors>
   aoArrastarFim: (e: DragEndEvent) => void
 }) {
+  // Numeração das seções é acumulada na ordem de exibição, ignorando outros tipos.
   let numeroSecao = 0
 
   return (

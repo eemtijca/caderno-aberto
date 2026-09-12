@@ -1,3 +1,5 @@
+// Copia os assets do TikZJax de node_modules para public/vendor.
+// Roda no postinstall; sem a pasta de origem, encerra sem erro.
 import { cpSync, rmSync, mkdirSync, existsSync } from "fs"
 import { join } from "path"
 

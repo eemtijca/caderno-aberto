@@ -1,3 +1,5 @@
+// Cancela exclusões pendentes e remove definitivamente contas com carência vencida.
+
 import { NextRequest } from "next/server"
 import { timingSafeEqual } from "node:crypto"
 import { banco } from "@/lib/banco"

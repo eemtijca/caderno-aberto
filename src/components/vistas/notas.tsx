@@ -37,6 +37,7 @@ export function VistaNotas({
     [notas],
   )
 
+  // Busca local por título, resumo e habilidades, somada aos filtros de chips.
   const filtradas = useMemo(() => {
     let lista = notas ?? []
     if (busca.trim()) {

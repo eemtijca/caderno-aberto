@@ -1,3 +1,5 @@
+// Caixa de e-mails em memória para testes, ativa apenas com a flag e fora de produção.
+
 import { PERMITE_OUTBOX_TESTE } from "@/lib/ambiente"
 import { json } from "@/lib/api/sessao"
 import { limparOutbox, listarOutbox } from "@/lib/email/outbox"

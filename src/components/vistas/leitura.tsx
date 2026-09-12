@@ -58,7 +58,7 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
 
   return (
     <div className="bg-background min-h-screen">
-      {/* toolbar fixa */}
+      {/* toolbar fixa; na impressão some e só a área da nota permanece */}
       <div className="na-imprime-esconder border-border bg-background/90 sticky top-0 z-40 border-b backdrop-blur">
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-1.5 px-3 sm:px-4">
           <Button

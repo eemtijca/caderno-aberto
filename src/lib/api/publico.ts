@@ -28,6 +28,7 @@ export async function registrarAcesso(linkId: string, acessos: number): Promise<
 export async function resolverLinkPublico(token: string): Promise<LinkPublico | null> {
   if (!token || token.length > 120) return null
   const db = banco()
+  // Busca por token, mas ainda valida ativo, expiração e exclusão do dono.
   const link = (await db.links.findFirst({ where: { token } })) as LinkLinha | null
   if (!link || !link.ativo) return null
   if (link.expiraEm && link.expiraEm < new Date()) return null
@@ -45,6 +46,7 @@ export async function resolverLinkPublico(token: string): Promise<LinkPublico | 
   })
 
   notas = notas.sort((a, b) => {
+    // Ordena por período e, no empate, pela data de criação.
     if (a.anoLetivo !== b.anoLetivo) return a.anoLetivo - b.anoLetivo
     if (a.mes !== b.mes) return a.mes - b.mes
     return a.criadoEm < b.criadoEm ? -1 : 1
@@ -55,6 +57,7 @@ export async function resolverLinkPublico(token: string): Promise<LinkPublico | 
 
 /** Confere se a imagem aparece nos blocos alcançáveis pelo link. */
 export async function imagemAlunosAlcança(link: LinkLinha, caminho: string): Promise<boolean> {
+  // Varredura textual do JSON evita percorrer a árvore de blocos.
   const resolvido = await resolverLinkPublico(link.token)
   if (!resolvido) return false
   return resolvido.notas.some((n) => JSON.stringify(n.blocos ?? []).includes(caminho))
