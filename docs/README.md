@@ -27,6 +27,7 @@ As decisões estruturais ficam registradas como ADRs (Architecture Decision Reco
 - [ADR-001: Prisma Client v7](adr/001-prisma-v7.md)
 - [ADR-002: provedores agnósticos de e-mail e imagens](adr/002-provedores-agnosticos.md)
 - [ADR-003: isolamento pelo dono com RLS de barreira](adr/003-isolamento.md)
+- [ADR-004: acesso por código gerido pela administração](adr/004-acesso-por-codigo.md)
 
 Novas decisões seguem o formato descrito em [../CONTRIBUTING.md](../CONTRIBUTING.md).
 

@@ -51,7 +51,7 @@ O professor cria uma conta, escreve no editor visual de blocos (caixas COPIAR, e
 ### Conta
 
 - Perfil com nome e escola (exibidos nas notas e na impressão) e e-mail.
-- Segurança com troca de senha (mínimo de 8 caracteres, com confirmação e senha atual) e troca de e-mail com confirmação por link no novo endereço.
+- Segurança com troca de senha (mínimo de 8 caracteres, com confirmação e senha atual); o e-mail da conta só é alterado pela administração.
 - Disciplinas com nome, cor e ícone gráfico, contador de notas e renomeação; excluir preserva as notas (apenas desvincula).
 - Turmas com nome, série e ano letivo, agrupadas por ano; excluir preserva as notas.
 - Backup completo em um único arquivo JSON (disciplinas, turmas, notas, links e imagens em base64), com restauração substitutiva e importação de nota única (`.md` ou `.json`).
@@ -66,9 +66,10 @@ O professor cria uma conta, escreve no editor visual de blocos (caixas COPIAR, e
 
 ### Acesso e conta de professor
 
-- Página inicial com proposta, recursos, passo a passo em 3 etapas, perguntas frequentes e código aberto (licença MIT).
-- Cadastro com nome, e-mail e senha, confirmação por e-mail com reenvio, medidor de força e exibição da senha; login com bloqueio até a confirmação; recuperação em 2 fases (pedir link e definir nova senha); sessão persistente.
-- Temas claro, escuro e sistema; aplicativo somente em português; navegação por rotas hash (`#/`, `#/notas`, `#/organizacao`, `#/links`, `#/conta`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/cadastro`, `#/redefinir`) com retorno ao início em rota desconhecida.
+- Página inicial é a tela de login (aplicação de uma escola, sem landing page).
+- Primeiro acesso e recuperação de senha por código de 8 caracteres gerado pela administração; o professor solicita o código, a administração entrega e o professor define a senha.
+- Console de administração com fila de solicitações, emissão e revogação de códigos, gestão de contas e auditoria dos eventos sensíveis.
+- Temas claro, escuro e sistema; aplicativo somente em português; navegação por rotas hash (`#/`, `#/notas`, `#/organizacao`, `#/links`, `#/conta`, `#/admin`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/codigo`, `#/solicitar`) com retorno ao início em rota desconhecida.
 - Layout responsivo com barra lateral no desktop e navegação inferior no celular; notificações toast em todas as ações, com mensagens de erro em português.
 - Estados de carregamento independentes por elemento (esqueletos por cartão, filtro, número e seção) e animações sutis que respeitam `prefers-reduced-motion`.
 
@@ -84,16 +85,16 @@ cp .env.example .env
 docker compose up --build
 ```
 
-O Compose sobe o PostgreSQL 17 (`db:5432`, volume `pgdata`), aplica as migrações na partida e inicia o aplicativo em http://localhost:3000. Com `STORAGE_DRIVER=disk` (padrão), as imagens ficam no volume `uploads`.
+O Compose sobe o PostgreSQL 17 (`db:5432`, volume `pgdata`), aplica as migrações na partida e inicia o aplicativo em http://localhost:3000. Com `STORAGE_DRIVER=disk` (padrão), as imagens ficam no volume `uploads`. Defina `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME` no `.env` para criar o administrador na partida, ou rode `npm run criar-admin` depois.
 
-Instruções sem Docker, configuração de e-mail e demais variáveis: [docs/ambiente.md](docs/ambiente.md). Publicação: [docs/deploy.md](docs/deploy.md).
+Instruções sem Docker e demais variáveis: [docs/ambiente.md](docs/ambiente.md). Publicação: [docs/deploy.md](docs/deploy.md).
 
 ## Stack
 
 - Next.js 16 (App Router) com TypeScript e Node 24.
-- PostgreSQL 15 ou superior com Prisma ORM v7 (`prisma/schema.prisma`, migration única em `prisma/migrations/`).
+- PostgreSQL 15 ou superior com Prisma ORM v7 (`prisma/schema.prisma`, migrações em `prisma/migrations/`).
 - Conexões separadas no Supabase e em ambientes serverless: `DATABASE_URL` (runtime, pooler de transação `:6543`) e `DIRECT_URL` (CLI e migrações, pooler de sessão ou conexão direta `:5432`); local e CI usam apenas `DATABASE_URL`.
-- Autenticação própria (scrypt e JWT em cookies HttpOnly); e-mails via Resend, SMTP genérico ou log local.
+- Autenticação própria (scrypt e JWT em cookies HttpOnly); acesso por código de 8 caracteres gerado pela administração, sem dependência de e-mail.
 - Imagens atrás de interface agnóstica: disco local (`disk`, volume Docker) ou API compatível com S3 (`s3`: MinIO, R2 ou similar).
 - Tailwind CSS 4 com shadcn/ui, KaTeX com mhchem, dnd-kit (editor) e TanStack Query.
 

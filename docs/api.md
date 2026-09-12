@@ -1,57 +1,61 @@
 # Referência da API
 
-Rotas HTTP do Caderno Aberto. Todas ficam sob `/api` e respondem JSON, exceto links de e-mail, downloads e imagens. As rotas dinâmicas recebem o parâmetro `id` no caminho.
+Rotas HTTP do Caderno Aberto. Todas ficam sob `/api` e respondem JSON, exceto downloads e imagens. As rotas dinâmicas recebem o parâmetro `id` no caminho.
 
 ## Convenções
 
-- **Sessão:** as rotas privadas resolvem o professor pelo cookie `sessao` (JWT de 1 hora) e, se necessário, renovam pelo cookie `sessao_refresh` (30 dias). Sem sessão válida, respondem `401` com `{ "erro": "Faça login como professor para continuar." }`.
-- **Erros:** no formato `{ "erro": "mensagem" }`, com texto em português. O status indica a categoria: `400` para entrada inválida, `401` para falta de sessão, `403` para credencial ou segredo incorreto, `404` para recurso ausente, `410` para prazo expirado, `429` para excesso de tentativas e `503` para agendador não configurado.
+- **Sessão:** as rotas privadas resolvem o usuário pelo cookie `sessao` (JWT de 1 hora) e, se necessário, renovam pelo cookie `sessao_refresh` (30 dias). Sem sessão válida, respondem `401` com `{ "erro": "Faça login para continuar." }`. As rotas administrativas exigem `usuarios.papel = 'admin'` e respondem `403` com `{ "erro": "Acesso restrito à administração." }` quando o papel não confere.
+- **Erros:** no formato `{ "erro": "mensagem" }`, com texto em português. O status indica a categoria: `400` para entrada inválida, `401` para falta de sessão, `403` para credencial ou segredo incorreto, `404` para recurso ausente, `409` para conflito, `410` para prazo expirado, `429` para excesso de tentativas e `503` para agendador não configurado.
 - **Cache:** respostas JSON usam `Cache-Control: private, no-store`. Imagens usam `private, max-age=3600`.
 - **Isolamento:** toda consulta filtra pelo professor dono. Recursos de outro professor se comportam como inexistentes (`404`).
-- **Limite de tentativas:** rotas de autenticação limitam por IP em janela de 5 minutos (`AUTH_LIMITE_TENTATIVAS`, padrão 30; envio de e-mail `AUTH_LIMITE_EMAIL`, padrão 10). Ao exceder, respondem `429`.
+- **Limite de tentativas:** rotas de autenticação limitam por IP em janela de 5 minutos (`AUTH_LIMITE_TENTATIVAS`, padrão 30); a verificação de código também limita por e-mail (`AUTH_LIMITE_CODIGO`, padrão 5). Ao exceder, respondem `429`.
 - **Corpo:** `Content-Type: application/json`, salvo upload de imagem, que usa `multipart/form-data`.
 - **Datas:** trafegam como ISO 8601 no JSON.
 
 ## Resumo das rotas
 
-| Método            | Caminho                        | Acesso            | Descrição                           |
-| ----------------- | ------------------------------ | ----------------- | ----------------------------------- |
-| GET               | `/api`                         | Público           | Nome e versão da aplicação          |
-| POST              | `/api/auth/cadastro`           | Público           | Cria conta e envia verificação      |
-| POST              | `/api/auth/entrar`             | Público           | Inicia sessão                       |
-| POST              | `/api/auth/sair`               | Público           | Encerra sessão                      |
-| POST              | `/api/auth/renovar`            | Público (refresh) | Renova a sessão                     |
-| POST              | `/api/auth/concluir`           | Público           | Define nova senha e inicia sessão   |
-| GET               | `/api/auth/verificar`          | Público           | Confirma e-mail (redirect)          |
-| POST              | `/api/auth/reenviar`           | Público           | Reenvia verificação                 |
-| POST              | `/api/auth/redefinir`          | Público           | Solicita recuperação                |
-| GET               | `/api/auth/redefinir`          | Público           | Valida token de recuperação         |
-| POST              | `/api/auth/trocar-senha`       | Sessão            | Troca a senha                       |
-| POST              | `/api/auth/trocar-email`       | Sessão            | Solicita troca de e-mail            |
-| GET               | `/api/auth/confirmar-troca`    | Público           | Confirma troca de e-mail (redirect) |
-| GET               | `/api/conta`                   | Sessão opcional   | Sessão, usuário e perfil            |
-| PATCH             | `/api/conta`                   | Sessão            | Atualiza nome e escola              |
-| POST              | `/api/conta/excluir`           | Sessão            | Solicita exclusão com carência      |
-| POST              | `/api/conta/restaurar`         | Sessão            | Cancela a exclusão pendente         |
-| GET, DELETE       | `/api/conta/restaurar`         | Segredo           | Purga contas vencidas (Cron)        |
-| GET               | `/api/notas`                   | Sessão            | Lista e filtra notas                |
-| POST              | `/api/notas`                   | Sessão            | Cria nota                           |
-| GET, PUT, DELETE  | `/api/notas/[id]`              | Sessão            | Consulta, atualiza ou exclui nota   |
-| POST              | `/api/notas/[id]/duplicar`     | Sessão            | Duplica nota como rascunho          |
-| GET               | `/api/notas/[id]/exportar`     | Sessão            | Exporta em `json`, `md` ou `tex`    |
-| GET, POST         | `/api/disciplinas`             | Sessão            | Lista ou cria disciplinas           |
-| PUT, DELETE       | `/api/disciplinas/[id]`        | Sessão            | Atualiza ou exclui disciplina       |
-| GET, POST         | `/api/turmas`                  | Sessão            | Lista ou cria turmas                |
-| PUT, DELETE       | `/api/turmas/[id]`             | Sessão            | Atualiza ou exclui turma            |
-| GET, POST         | `/api/links`                   | Sessão            | Lista ou cria links                 |
-| PUT, DELETE       | `/api/links/[id]`              | Sessão            | Atualiza ou exclui link             |
-| GET               | `/api/busca`                   | Sessão opcional   | Busca global                        |
-| GET, POST         | `/api/backup`                  | Sessão            | Exporta ou restaura backup          |
-| POST              | `/api/importar`                | Sessão            | Importa uma nota `.md` ou `.json`   |
-| POST, GET, DELETE | `/api/imagens`                 | Sessão            | Envia, serve ou exclui imagens      |
-| GET               | `/api/publico/[token]`         | Público           | Dados da vista do aluno             |
-| GET               | `/api/publico/[token]/imagens` | Público           | Imagens referenciadas por um link   |
-| GET, DELETE       | `/api/teste/outbox`            | Restrito          | Caixa de e-mails de teste           |
+| Método            | Caminho                                 | Acesso            | Descrição                         |
+| ----------------- | --------------------------------------- | ----------------- | --------------------------------- |
+| GET               | `/api`                                  | Público           | Nome e versão da aplicação        |
+| POST              | `/api/auth/solicitar`                   | Público           | Solicita código de acesso         |
+| POST              | `/api/auth/usar-codigo`                 | Público           | Define a senha com o código       |
+| POST              | `/api/auth/entrar`                      | Público           | Inicia sessão                     |
+| POST              | `/api/auth/sair`                        | Público           | Encerra sessão                    |
+| POST              | `/api/auth/renovar`                     | Público (refresh) | Renova a sessão                   |
+| POST              | `/api/auth/trocar-senha`                | Sessão            | Troca a senha                     |
+| GET               | `/api/admin/resumo`                     | Admin             | Contadores do painel              |
+| GET               | `/api/admin/solicitacoes`               | Admin             | Lista solicitações                |
+| POST              | `/api/admin/solicitacoes/[id]/atender`  | Admin             | Gera código e atende o pedido     |
+| POST              | `/api/admin/solicitacoes/[id]/cancelar` | Admin             | Recusa o pedido                   |
+| GET, POST         | `/api/admin/codigos`                    | Admin             | Lista ou emite código             |
+| DELETE            | `/api/admin/codigos/[id]`               | Admin             | Revoga um código                  |
+| GET, POST         | `/api/admin/usuarios`                   | Admin             | Lista ou cria contas              |
+| PATCH, DELETE     | `/api/admin/usuarios/[id]`              | Admin             | Edita ou exclui conta             |
+| POST              | `/api/admin/usuarios/[id]/codigo`       | Admin             | Reemite código                    |
+| DELETE            | `/api/admin/usuarios/[id]/sessoes`      | Admin             | Encerra sessões da conta          |
+| GET               | `/api/admin/auditoria`                  | Admin             | Lista eventos de segurança        |
+| GET               | `/api/conta`                            | Sessão opcional   | Sessão, usuário e perfil          |
+| PATCH             | `/api/conta`                            | Sessão            | Atualiza nome e escola            |
+| POST              | `/api/conta/excluir`                    | Sessão            | Solicita exclusão com carência    |
+| POST              | `/api/conta/restaurar`                  | Sessão            | Cancela a exclusão pendente       |
+| GET, DELETE       | `/api/conta/restaurar`                  | Segredo           | Purga contas vencidas (Cron)      |
+| GET               | `/api/notas`                            | Sessão            | Lista e filtra notas              |
+| POST              | `/api/notas`                            | Sessão            | Cria nota                         |
+| GET, PUT, DELETE  | `/api/notas/[id]`                       | Sessão            | Consulta, atualiza ou exclui nota |
+| POST              | `/api/notas/[id]/duplicar`              | Sessão            | Duplica nota como rascunho        |
+| GET               | `/api/notas/[id]/exportar`              | Sessão            | Exporta em `json`, `md` ou `tex`  |
+| GET, POST         | `/api/disciplinas`                      | Sessão            | Lista ou cria disciplinas         |
+| PUT, DELETE       | `/api/disciplinas/[id]`                 | Sessão            | Atualiza ou exclui disciplina     |
+| GET, POST         | `/api/turmas`                           | Sessão            | Lista ou cria turmas              |
+| PUT, DELETE       | `/api/turmas/[id]`                      | Sessão            | Atualiza ou exclui turma          |
+| GET, POST         | `/api/links`                            | Sessão            | Lista ou cria links               |
+| PUT, DELETE       | `/api/links/[id]`                       | Sessão            | Atualiza ou exclui link           |
+| GET               | `/api/busca`                            | Sessão opcional   | Busca global                      |
+| GET, POST         | `/api/backup`                           | Sessão            | Exporta ou restaura backup        |
+| POST              | `/api/importar`                         | Sessão            | Importa uma nota `.md` ou `.json` |
+| POST, GET, DELETE | `/api/imagens`                          | Sessão            | Envia, serve ou exclui imagens    |
+| GET               | `/api/publico/[token]`                  | Público           | Dados da vista do aluno           |
+| GET               | `/api/publico/[token]/imagens`          | Público           | Imagens referenciadas por um link |
 
 ## Saúde
 
@@ -59,25 +63,19 @@ Rotas HTTP do Caderno Aberto. Todas ficam sob `/api` e respondem JSON, exceto li
 
 Resposta `200` com `{ "app": "Caderno Aberto", "versao": "0.1.0" }`.
 
-## Autenticação
+## Acesso por código
 
-### `POST /api/auth/cadastro`
+### `POST /api/auth/solicitar`
 
-Cria a conta e envia o e-mail de verificação. Responde sempre `201` com `{ "estado": "confirmar" }`, sem revelar se o e-mail já existe.
+Corpo: `email` (formato válido), `tipo` (`primeiro_acesso` ou `recuperacao`) e `nome` (opcional, mínimo de 2 caracteres). Cria ou renova uma solicitação pendente na fila da administração quando a conta é elegível. Responde sempre `200` com `{ "ok": true }`, sem revelar a existência da conta.
 
-Corpo:
+### `POST /api/auth/usar-codigo`
 
-| Campo   | Tipo   | Regra                                  |
-| ------- | ------ | -------------------------------------- |
-| `nome`  | string | Mínimo de 2 e máximo de 120 caracteres |
-| `email` | string | Formato válido, até 254 caracteres     |
-| `senha` | string | Entre 8 e 256 caracteres               |
-
-Efeitos: cria `usuarios` e `profiles` em transação, invalida tokens de verificação anteriores e emite token válido por 24 horas.
+Corpo: `email`, `codigo` (8 caracteres) e `novaSenha` (8 a 256). Localiza um código ativo, consome de forma atômica e define a senha. No primeiro acesso, ativa a conta; na recuperação, invalida todas as sessões. Responde `200` com `{ "ok": true }` e inicia sessão. Código inválido ou expirado responde `400` com `{ "erro": "Código inválido ou expirado." }`; excesso de tentativas responde `429`.
 
 ### `POST /api/auth/entrar`
 
-Corpo: `email` e `senha`. Responde `200` com `{ "ok": true }` e grava os cookies de sessão. Exige `emailVerificadoEm` preenchido. Credenciais inválidas, conta inexistente ou conta com carência vencida respondem `401` com `{ "erro": "E-mail ou senha incorretos." }`.
+Corpo: `email` e `senha`. Responde `200` com `{ "ok": true }` e grava os cookies de sessão. Exige a conta ativada. Credenciais inválidas, conta inexistente, conta não ativada ou conta com carência vencida respondem `401` com `{ "erro": "E-mail ou senha incorretos." }`.
 
 ### `POST /api/auth/sair`
 
@@ -87,37 +85,57 @@ Apaga a sessão correspondente ao refresh e limpa os cookies. Responde `200` com
 
 Usa o cookie `sessao_refresh`. Responde `200` com `{ "ok": true }` e rotação do refresh, ou `401` com `{ "ok": false }`.
 
-### `POST /api/auth/concluir`
-
-Define a nova senha a partir de um token de recuperação. Corpo: `token` (64 caracteres hexadecimais) e `novaSenha` (8 a 256). Responde `200` com `{ "ok": true }` e inicia sessão; invalida todas as sessões anteriores. Token inválido ou expirado responde `400` com `{ "erro": "Link inválido ou expirado." }`.
-
-### `GET /api/auth/verificar?token=`
-
-Consome o token de verificação e grava `emailVerificadoEm`. Responde com redirecionamento para `/#/entrar?verificado=1` ou `/#/entrar?erro=expirado`.
-
-### `POST /api/auth/reenviar`
-
-Corpo: `email`. Reenvia a verificação quando a conta existe e ainda não foi confirmada. Responde `200` com `{ "ok": true }` em qualquer caso.
-
-### `POST /api/auth/redefinir`
-
-Corpo: `email`. Gera token de recuperação válido por 1 hora e envia o link. Responde `200` com `{ "ok": true }` sempre, para não revelar a existência da conta.
-
-### `GET /api/auth/redefinir?token=`
-
-Responde `200` com `{ "valido": true | false }`.
-
 ### `POST /api/auth/trocar-senha`
 
 Corpo: `atual` e `nova`. Responde `200` com `{ "ok": true }` e reemite a sessão. Senha atual incorreta responde `403` com `{ "erro": "Senha incorreta." }`. A nova senha não pode ser igual à atual.
 
-### `POST /api/auth/trocar-email`
+## Administração
 
-Corpo: `novoEmail`. Envia a confirmação para o novo endereço e responde `200` com `{ "ok": true }`. E-mail indisponível responde `400` com `{ "erro": "Não foi possível usar este e-mail." }`.
+Todas as rotas abaixo exigem `papel = 'admin'`. Respondem `401` sem sessão e `403` para outros papéis.
 
-### `GET /api/auth/confirmar-troca?token=`
+### `GET /api/admin/resumo`
 
-Efetiva a troca em `usuarios` e `profiles`. Redireciona para `/#/conta?email=ok` ou `/#/conta?erro=email`.
+Resposta `200` com `{ solicitacoesPendentes, codigosAtivos, usuarios, usuariosInativos }`.
+
+### `GET /api/admin/solicitacoes?status=`
+
+Lista as solicitações (até 200), filtrando por `status` (`pendente`, `atendida` ou `cancelada`) quando informado. Cada item traz `id`, `nome`, `email`, `tipo`, `status`, `criadoEm` e `atendidaEm`.
+
+### `POST /api/admin/solicitacoes/[id]/atender`
+
+Cria a conta inativa quando necessário e emite o código, marcando a solicitação como atendida. Resposta `200` com `{ codigo, expiraEm, email, nome, tipo }`. O código é exibido uma única vez.
+
+### `POST /api/admin/solicitacoes/[id]/cancelar`
+
+Marca a solicitação como cancelada. Resposta `200` com `{ "ok": true }`.
+
+### `GET` e `POST /api/admin/codigos`
+
+`GET` lista os códigos recentes com o status derivado (`ativo`, `usado` ou `expirado`). `POST` recebe `email`, `tipo` e `nome` (opcional) e emite o código, criando a conta inativa no primeiro acesso. Resposta `200` com `{ codigo, expiraEm, email, tipo }`.
+
+### `DELETE /api/admin/codigos/[id]`
+
+Revoga um código pendente. Código já utilizado responde `409`.
+
+### `GET` e `POST /api/admin/usuarios`
+
+`GET` lista até 300 contas com perfil, papel e estado de ativação. `POST` recebe `nome`, `email` e `papel` (`admin` ou `professor`), cria a conta inativa e devolve `{ usuario, codigo, expiraEm }` com status `201`. E-mail já cadastrado responde `400`.
+
+### `PATCH` e `DELETE /api/admin/usuarios/[id]`
+
+`PATCH` recebe `nome`, `email`, `papel` e `ativado`, todos opcionais. Mudar o papel ou desativar encerra as sessões; desativar também revoga códigos pendentes e passa a recusar o acesso imediatamente. `DELETE` remove a conta em cascata. A própria conta não pode ser excluída, desativada nem rebaixada.
+
+### `POST /api/admin/usuarios/[id]/codigo`
+
+Reemite o código da conta. `tipo` é opcional e assume `primeiro_acesso` para contas inativas e `recuperacao` para ativas.
+
+### `DELETE /api/admin/usuarios/[id]/sessoes`
+
+Encerra todas as sessões da conta. Resposta `200` com `{ "ok": true, "removidas": n }`.
+
+### `GET /api/admin/auditoria?acao=`
+
+Lista até 200 eventos de segurança, do mais recente ao mais antigo, com e-mail mascarado. `detalhe` carrega dados específicos do evento.
 
 ## Conta
 
@@ -127,7 +145,13 @@ Sessão opcional. Responde `200` com:
 
 ```json
 {
-  "usuario": { "id": "uuid", "email": "...", "emailConfirmado": true, "criadoEm": "ISO" },
+  "usuario": {
+    "id": "uuid",
+    "email": "...",
+    "papel": "professor",
+    "ativado": true,
+    "criadoEm": "ISO"
+  },
   "perfil": {
     "nome": "...",
     "escola": "...",
@@ -284,9 +308,3 @@ Link inexistente, pausado, expirado ou de professor em exclusão responde `404` 
 ### `GET /api/publico/[token]/imagens?caminho=`
 
 Serve imagens apenas quando referenciadas pelos blocos das notas alcançáveis pelo link. Caso contrário, responde `404` com `{ "erro": "Link indisponível." }`.
-
-## Caixa de e-mails de teste
-
-### `GET` e `DELETE /api/teste/outbox`
-
-Disponível apenas com `ALLOW_TEST_OUTBOX=1` e fora de produção, ou com `TESTES_CI=1`. Caso contrário, responde `404`. `GET` lista os e-mails registrados e `DELETE` limpa a caixa.

@@ -46,7 +46,7 @@ Claro, escuro e sistema, com `next-themes` (`attribute="class"`, padrão sistema
 
 ## Navegação
 
-- Rotas hash: `#/`, `#/notas`, `#/organizacao`, `#/links`, `#/conta`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/cadastro` e `#/redefinir`. Rota desconhecida volta ao início.
+- Rotas hash: `#/`, `#/notas`, `#/organizacao`, `#/links`, `#/conta`, `#/admin`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/codigo` e `#/solicitar`. Rota desconhecida volta ao início. A raiz anônima é a tela de login.
 - Rotas reais: `/` (shell), `/l/[token]` (página pública com metadados e OpenGraph) e `/api/**`.
 - Busca global com `Ctrl` ou `Cmd` mais `K`, com debounce, mínimo de 2 caracteres e tolerância a acentos.
 
