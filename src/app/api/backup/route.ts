@@ -1,3 +1,5 @@
+// Exporta e restaura o backup completo do professor autenticado, incluindo imagens.
+
 import { NextRequest, NextResponse } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -26,9 +28,10 @@ export async function GET(req: NextRequest) {
   const notas = await db.notas.findMany({ where: { professorId: usuario.id } })
   const links = await db.links.findMany({ where: { professorId: usuario.id } })
 
+  // Anexa as imagens do professor em base64 ao arquivo de backup.
   const objetos = await obterArmazenamento().listar(usuario.id)
   const imagens: { nome: string; mime: string; dados: string; caminho: string }[] = []
-  for (const obj of objetos.slice(0, 1000)) {
+  for (const obj of objetos.slice(0, MAX_IMAGENS)) {
     const arquivo = await obterArmazenamento().ler(obj.caminho)
     if (!arquivo) continue
     imagens.push({
@@ -110,11 +113,13 @@ export async function POST(req: NextRequest) {
   }
 
   const db = await banco()
+  // A restauração substitui todos os dados atuais do professor.
   await db.links.deleteMany({ where: { professorId: usuario.id } })
   await db.notas.deleteMany({ where: { professorId: usuario.id } })
   await db.turmas.deleteMany({ where: { professorId: usuario.id } })
   await db.disciplinas.deleteMany({ where: { professorId: usuario.id } })
 
+  // Mapeia referências antigas de imagem para os novos caminhos salvos.
   const mapaImagens = new Map<string, string>()
   const armazenamento = obterArmazenamento()
   for (const img of loteImagens) {
@@ -295,6 +300,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Restaura nome e escola quando presentes no backup.
   const dadosPerfil: { nome?: string; escola?: string } = {}
   if (versao === 1 && corpo.config && typeof corpo.config === "object") {
     const cfg = corpo.config as Record<string, unknown>

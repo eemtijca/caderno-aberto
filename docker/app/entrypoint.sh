@@ -7,6 +7,7 @@ echo "[entrada] Aguardando o banco..."
 # O endereço é mascarado para não expor a senha nos logs.
 mascarado=$(echo "$DATABASE_URL" | sed -E 's#(://[^:]+:)[^@]+@#\1***@#')
 echo "[entrada] Destino: $mascarado"
+# Até 120 s de espera (60 tentativas de 2 s).
 for i in $(seq 1 60); do
   if node ./docker/app/migrar.mjs; then
     break
@@ -17,9 +18,6 @@ for i in $(seq 1 60); do
   fi
   sleep 2
 done
-
-echo "[entrada] Preparando o papel de teste do RLS (local/CI)..."
-node ./prisma/scripts/aplicar-rls-teste.mjs
 
 echo "[entrada] Iniciando o servidor..."
 exec node server.js

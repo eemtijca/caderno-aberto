@@ -1,3 +1,4 @@
+// Serializa e interpreta o Markdown da nota, incluindo extensões ::bloco.
 import {
   AparenciaNota,
   APARENCIA_PADRAO,
@@ -13,9 +14,9 @@ import {
   normalizarAparencia,
   normalizarBlocos,
 } from "./tipos"
-import { MESES_CAP } from "./texto"
 
 function inlineParaMd(texto: string): string {
+  // Marcadores próprios do app viram realces compatíveis com Markdown.
   return texto.replace(/\\resultado\{([^}]*)\}/g, "==$1==").replace(/\\dest\{([^}]*)\}/g, "**$1**")
 }
 
@@ -49,6 +50,7 @@ function dividirCelulasTabela(conteudo: string): string[] {
 }
 
 function mdParaInline(texto: string): string {
+  // Caminho inverso de inlineParaMd ao importar Markdown.
   return texto.replace(/==([^=]+)==/g, "\\resultado{$1}")
 }
 
@@ -83,10 +85,12 @@ function filhoParaMd(f: BlocoFilho): string {
       })
       const sep = `|${Array.from({ length: nCol }, () => "---").join("|")}|`
       const linhas = norm.map((l) => `| ${l.join(" | ")} |`)
+      // Com cabeçalho a linha separadora vai depois da primeira linha.
       if (f.comCabecalho) return [linhas[0], sep, ...linhas.slice(1)].join("\n")
       return [sep, ...linhas].join("\n")
     }
     case "chamada":
+      // Delimitador :: usado pelos contêineres de bloco.
       return `:: ${f.estilo}\n${inlineParaMd(f.texto)}\n::`
   }
 }
@@ -144,6 +148,7 @@ function blocoParaMd(b: Bloco): string {
       }
       const gabAuto: string[] = []
       let n = 0
+      // Reproduz o gabarito objetivo (1a, 2c) na mesma ordem das questões.
       for (const nivel of b.niveis) {
         for (const q of nivel.questoes) {
           n++
@@ -183,6 +188,7 @@ function aparenciaParaMd(ap: AparenciaNota | null | undefined): string[] {
 }
 
 export function gerarMarkdown(nota: NotaDados): string {
+  // Frontmatter YAML simplificado; o parser aceita chaves com acento.
   const fm: string[] = [
     "---",
     `titulo: ${nota.titulo}`,
@@ -205,6 +211,7 @@ export function gerarMarkdown(nota: NotaDados): string {
     .replace(/\n{3,}/g, "\n\n")
 }
 
+// Mapeia rótulos em texto (com e sem acento) para o tipo canônico.
 const ROTULO_MD: Record<string, RotuloTipo> = {
   "definição.": "definicao",
   "definicao.": "definicao",
@@ -226,6 +233,7 @@ function extrairRotuloMd(linha: string): { rotulo: Rotulo | null; resto: string 
   return { rotulo: { tipo: "livre", texto: m[1] }, resto: m[2] }
 }
 
+// Estado dos contêineres abertos com ::, resolvidos por uma pilha.
 interface PilhaContainer {
   tipo: "copiar" | "exemplo" | "dica" | "exercicios" | "raiz"
   rotulo?: string
@@ -238,6 +246,7 @@ interface PilhaContainer {
 }
 
 export function analisarMarkdown(md: string): MarkdownNota {
+  // Normaliza quebras CRLF antes de dividir as linhas.
   const linhas = md.replace(/\r\n/g, "\n").split("\n")
   const meta: Record<string, string> = {}
   let i = 0
@@ -267,6 +276,7 @@ export function analisarMarkdown(md: string): MarkdownNota {
 
   const sobreLinhas: string[] = []
   let emCite = false
+  // O "sobre" da nota é a citação em bloco logo após o título.
   while (i < linhas.length) {
     const l = linhas[i]
     if (!emCite && /^#\s+/.test(l.trim())) {
@@ -574,6 +584,7 @@ export function analisarMarkdown(md: string): MarkdownNota {
     pilha[pilha.length - 1].buffer.push(linha)
     i++
   }
+  // Fecha contêineres que ficaram abertos até o fim do arquivo.
   while (pilha.length > 1) {
     const topo = pilha.pop()
     if (topo && topo.tipo !== "raiz") {

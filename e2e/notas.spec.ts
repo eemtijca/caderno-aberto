@@ -1,3 +1,4 @@
+// Fluxos de notas: criação com disciplina inline, validação e autosave.
 import { expect, test, type Page } from "@playwright/test"
 import { confirmarEEntrar } from "./helpers/auth"
 
@@ -57,7 +58,7 @@ test.describe("Notas", () => {
     await page.getByRole("button", { name: "Criar nota" }).click()
     await expect(page).toHaveURL(/#\/editor\//, { timeout: 10000 })
     await page.waitForTimeout(1500)
-    const tituloEditor = page.locator('input[value="Nota Autosave"]')
+    const tituloEditor = page.getByRole("textbox", { name: "Título da nota" })
     if (await tituloEditor.isVisible()) {
       await tituloEditor.fill("Nota Autosave Editada")
       await page.waitForTimeout(1500)

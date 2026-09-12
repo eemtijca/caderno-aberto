@@ -1,5 +1,12 @@
 // Esquema do banco. Fonte da verdade para o Prisma Client.
 // As políticas RLS e os gatilhos vivem nas migrações SQL.
+//
+// Objetos mantidos apenas no SQL, porque o Prisma Migrate não os representa:
+// - Restrições CHECK (notas.status, links.tipo, tokens.tipo e alvo de links).
+// - Índice único funcional usuarios_email_unico em lower(email).
+// - Extensões pgcrypto e citext.
+// - Funções, gatilhos e políticas RLS.
+// Não "corrija" essas divergências no schema: elas são intencionais.
 
 generator client {
   provider = "prisma-client"
@@ -24,17 +31,18 @@ model Usuarios {
   @@map("usuarios")
 }
 
+// Perfil 1:1 com Usuarios; expira_em marca a exclusão programada.
 model Profiles {
-  id                   String       @id @db.Uuid
-  nome                 String       @default("")
-  email                String       @default("")
-  escola               String       @default("")
-  preferencias         Json         @default("{}") @db.JsonB
-  criadoEm             DateTime     @default(now()) @map("criado_em") @db.Timestamptz
-  atualizadoEm         DateTime     @default(now()) @map("atualizado_em") @db.Timestamptz
-  exclusaoSolicitadaEm DateTime?    @map("exclusao_solicitada_em") @db.Timestamptz
-  expiraEm             DateTime?    @map("expira_em") @db.Timestamptz
-  usuario              Usuarios     @relation(fields: [id], references: [id], onDelete: Cascade)
+  id                   String        @id @db.Uuid
+  nome                 String        @default("")
+  email                String        @default("")
+  escola               String        @default("")
+  preferencias         Json          @default("{}") @db.JsonB
+  criadoEm             DateTime      @default(now()) @map("criado_em") @db.Timestamptz
+  atualizadoEm         DateTime      @default(now()) @map("atualizado_em") @db.Timestamptz
+  exclusaoSolicitadaEm DateTime?     @map("exclusao_solicitada_em") @db.Timestamptz
+  expiraEm             DateTime?     @map("expira_em") @db.Timestamptz
+  usuario              Usuarios      @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   disciplinas          Disciplinas[]
   turmas               Turmas[]
   notas                Notas[]
@@ -44,17 +52,17 @@ model Profiles {
 }
 
 model Disciplinas {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  professorId String    @map("professor_id") @db.Uuid
-  nome        String
-  cor         String    @default("verde")
-  icone       String    @default("BookOpen")
-  ordem       Int       @default(0)
-  criadoEm    DateTime  @default(now()) @map("criado_em") @db.Timestamptz
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professorId  String   @map("professor_id") @db.Uuid
+  nome         String
+  cor          String   @default("verde")
+  icone        String   @default("BookOpen")
+  ordem        Int      @default(0)
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz
   atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz
-  professor   Profiles  @relation(fields: [professorId], references: [id], onDelete: Cascade)
-  notas       Notas[]
-  links       Links[]
+  professor    Profiles @relation(fields: [professorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notas        Notas[]
+  links        Links[]
 
   @@unique([professorId, nome], map: "disciplinas_professor_nome_unico")
   @@index([professorId], map: "disciplinas_professor_idx")
@@ -62,21 +70,22 @@ model Disciplinas {
 }
 
 model Turmas {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  professorId String    @map("professor_id") @db.Uuid
-  nome        String
-  serie       String    @default("Outro")
-  anoLetivo   Int       @map("ano_letivo")
-  criadoEm    DateTime  @default(now()) @map("criado_em") @db.Timestamptz
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professorId  String   @map("professor_id") @db.Uuid
+  nome         String
+  serie        String   @default("Outro")
+  anoLetivo    Int      @default(dbgenerated("(EXTRACT(year FROM now()))::integer")) @map("ano_letivo")
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz
   atualizadoEm DateTime @default(now()) @map("atualizado_em") @db.Timestamptz
-  professor   Profiles  @relation(fields: [professorId], references: [id], onDelete: Cascade)
-  links       Links[]
+  professor    Profiles @relation(fields: [professorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  links        Links[]
 
   @@unique([professorId, nome, anoLetivo], map: "turmas_professor_ano_unico")
   @@index([professorId, anoLetivo], map: "turmas_professor_idx")
   @@map("turmas")
 }
 
+// Campos de disciplina e turma são denormalizados para a vista pública.
 model Notas {
   id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   professorId    String       @map("professor_id") @db.Uuid
@@ -86,8 +95,8 @@ model Notas {
   disciplinaCor  String       @default("verde") @map("disciplina_cor")
   turmasIds      String[]     @default([]) @map("turmas_ids")
   turmasNomes    String[]     @default([]) @map("turmas_nomes")
-  anoLetivo      Int          @map("ano_letivo")
-  mes            Int
+  anoLetivo      Int          @default(dbgenerated("(EXTRACT(year FROM now()))::integer")) @map("ano_letivo")
+  mes            Int          @default(dbgenerated("(EXTRACT(month FROM now()))::integer"))
   sobre          String       @default("")
   habilidades    String       @default("")
   status         String       @default("rascunho")
@@ -96,36 +105,38 @@ model Notas {
   busca          String       @default("")
   criadoEm       DateTime     @default(now()) @map("criado_em") @db.Timestamptz
   atualizadoEm   DateTime     @default(now()) @map("atualizado_em") @db.Timestamptz
-  disciplina     Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: SetNull)
-  professor      Profiles     @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  disciplina     Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  professor      Profiles     @relation(fields: [professorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   links          Links[]
 
-  @@index([professorId, anoLetivo, mes], map: "notas_professor_ano_mes_idx")
-  @@index([professorId, atualizadoEm], map: "notas_professor_atualizado_idx")
+  @@index([professorId, anoLetivo(sort: Desc), mes(sort: Desc)], map: "notas_professor_ano_mes_idx")
+  @@index([professorId, atualizadoEm(sort: Desc)], map: "notas_professor_atualizado_idx")
   @@index([professorId, disciplinaId], map: "notas_professor_disciplina_idx")
   @@index([professorId, status], map: "notas_professor_status_idx")
+  @@index([turmasIds], type: Gin, map: "notas_turmas_ids_idx")
   @@map("notas")
 }
 
+// token é o segredo do link público; o índice cobre a busca por token.
 model Links {
-  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  professorId      String       @map("professor_id") @db.Uuid
-  tipo             String
-  notaId           String?      @map("nota_id") @db.Uuid
-  turmaId          String?      @map("turma_id") @db.Uuid
-  disciplinaId     String?      @map("disciplina_id") @db.Uuid
-  token            String       @unique(map: "links_token_key")
-  professorNome    String       @default("") @map("professor_nome")
-  nome             String       @default("")
-  ativo            Boolean      @default(true)
-  pausadoNaExclusao Boolean     @default(false) @map("pausado_na_exclusao")
-  expiraEm         DateTime?    @map("expira_em") @db.Timestamptz
-  acessos          Int          @default(0)
-  criadoEm         DateTime     @default(now()) @map("criado_em") @db.Timestamptz
-  professor        Profiles     @relation(fields: [professorId], references: [id], onDelete: Cascade)
-  nota             Notas?       @relation(fields: [notaId], references: [id], onDelete: Cascade)
-  turma            Turmas?      @relation(fields: [turmaId], references: [id], onDelete: Cascade)
-  disciplina       Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: Cascade)
+  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professorId       String       @map("professor_id") @db.Uuid
+  tipo              String
+  notaId            String?      @map("nota_id") @db.Uuid
+  turmaId           String?      @map("turma_id") @db.Uuid
+  disciplinaId      String?      @map("disciplina_id") @db.Uuid
+  token             String       @unique(map: "links_token_key")
+  professorNome     String       @default("") @map("professor_nome")
+  nome              String       @default("")
+  ativo             Boolean      @default(true)
+  pausadoNaExclusao Boolean      @default(false) @map("pausado_na_exclusao")
+  expiraEm          DateTime?    @map("expira_em") @db.Timestamptz
+  acessos           Int          @default(0)
+  criadoEm          DateTime     @default(now()) @map("criado_em") @db.Timestamptz
+  professor         Profiles     @relation(fields: [professorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  nota              Notas?       @relation(fields: [notaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  turma             Turmas?      @relation(fields: [turmaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  disciplina        Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([professorId], map: "links_professor_idx")
   @@index([notaId], map: "links_nota_idx")
@@ -136,15 +147,15 @@ model Links {
 }
 
 model Sessoes {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  usuarioId  String   @map("usuario_id") @db.Uuid
-  tokenHash  String   @unique(map: "sessoes_token_hash_key") @map("token_hash")
-  criadoEm   DateTime @default(now()) @map("criado_em") @db.Timestamptz
-  expiraEm   DateTime @map("expira_em") @db.Timestamptz
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId   String   @map("usuario_id") @db.Uuid
+  tokenHash   String   @unique(map: "sessoes_token_hash_key") @map("token_hash")
+  criadoEm    DateTime @default(now()) @map("criado_em") @db.Timestamptz
+  expiraEm    DateTime @map("expira_em") @db.Timestamptz
   ultimoUsoEm DateTime @default(now()) @map("ultimo_uso_em") @db.Timestamptz
-  ip         String   @default("")
-  agente     String   @default("")
-  usuario    Usuarios @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ip          String   @default("")
+  agente      String   @default("")
+  usuario     Usuarios @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([usuarioId], map: "sessoes_usuario_idx")
   @@index([expiraEm], map: "sessoes_expira_idx")
@@ -160,15 +171,16 @@ model TokensVerificacao {
   expiraEm  DateTime  @map("expira_em") @db.Timestamptz
   usadoEm   DateTime? @map("usado_em") @db.Timestamptz
   criadoEm  DateTime  @default(now()) @map("criado_em") @db.Timestamptz
-  usuario   Usuarios  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario   Usuarios  @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([usuarioId], map: "tokens_usuario_idx")
   @@index([expiraEm], map: "tokens_expira_idx")
   @@map("tokens_verificacao")
 }
 
+// Janela do limite de tentativas por (chave, feita_em); a chave une rota e IP.
 model TentativasLimite {
-  chave  String   @map("chave")
+  chave   String   @map("chave")
   feitaEm DateTime @default(now()) @map("feita_em") @db.Timestamptz
 
   @@id([chave, feitaEm], map: "tentativas_limite_pkey")
