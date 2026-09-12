@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
 // Moldura do app autenticado: navegação lateral (desktop), topbar e barra inferior
 // (mobile), além da busca global com atalho de teclado.
 
-import { useEffect, useRef, useState } from "react"
-import { useTheme } from "next-themes"
-import { VERSAO_CURTA } from "@/lib/versao"
+import { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
+import { VERSAO_CURTA } from "@/lib/versao";
 import {
   BookOpenText,
   CalendarRange,
@@ -13,28 +13,38 @@ import {
   Link2,
   Loader2,
   LogOut,
+  Menu,
   Moon,
   NotebookPen,
   Plus,
   Search,
   Settings,
+  ShieldCheck,
   Sun,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { useBusca } from "@/lib/notas/api-client"
-import { useSessao } from "@/hooks/use-sessao"
-import { corDisciplina } from "@/lib/notas/cores"
-import { MESES_CAP } from "@/lib/notas/texto"
-import type { Rota } from "@/lib/rota"
+} from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { useBusca } from "@/lib/notas/api-client";
+import { useSessao } from "@/hooks/use-sessao";
+import { corDisciplina } from "@/lib/notas/cores";
+import { MESES_CAP } from "@/lib/notas/texto";
+import type { Rota } from "@/lib/rota";
 
 const ITENS_NAV: { rotulo: string; icone: typeof Home; hash: string; vistas: Rota["vista"][] }[] = [
   { rotulo: "Início", icone: Home, hash: "/", vistas: ["inicio"] },
@@ -42,47 +52,57 @@ const ITENS_NAV: { rotulo: string; icone: typeof Home; hash: string; vistas: Rot
   { rotulo: "Turmas", icone: CalendarRange, hash: "/organizacao", vistas: ["organizacao"] },
   { rotulo: "Links", icone: Link2, hash: "/links", vistas: ["links"] },
   { rotulo: "Conta", icone: Settings, hash: "/conta", vistas: ["conta"] },
-]
+];
+
+const ITEM_ADMIN: (typeof ITENS_NAV)[number] = {
+  rotulo: "Administração",
+  icone: ShieldCheck,
+  hash: "/admin",
+  vistas: ["admin"],
+};
 
 interface PropsShell {
-  rota: Rota
-  navegar: (para: string) => void
-  onNovaNota: () => void
-  children: React.ReactNode
+  rota: Rota;
+  navegar: (para: string) => void;
+  onNovaNota: () => void;
+  children: React.ReactNode;
 }
 
 export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
-  const { setTheme } = useTheme()
-  const { perfil, usuario, sair } = useSessao()
-  const [buscaAberta, setBuscaAberta] = useState(false)
-  const [saindo, setSaindo] = useState(false)
+  const { setTheme } = useTheme();
+  const { perfil, usuario, sair, ehAdmin } = useSessao();
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const [saindo, setSaindo] = useState(false);
+  const [menuAberto, setMenuAberto] = useState(false);
+
+  const itensNav = ehAdmin ? [...ITENS_NAV, ITEM_ADMIN] : ITENS_NAV;
 
   // Atalho global Ctrl/Cmd+K abre a busca.
   useEffect(() => {
     const aoTeclar = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault()
-        setBuscaAberta(true)
+        e.preventDefault();
+        setBuscaAberta(true);
       }
-    }
-    window.addEventListener("keydown", aoTeclar)
-    return () => window.removeEventListener("keydown", aoTeclar)
-  }, [])
+    };
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, []);
 
-  const vistaAtual = rota.vista
+  const vistaAtual = rota.vista;
   // Iniciais do avatar: duas primeiras palavras do nome ou do e-mail.
   const iniciais = (perfil?.nome ?? usuario?.email ?? "?")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((p) => p[0]?.toUpperCase())
-    .join("")
+    .join("");
 
   const sairDaConta = async () => {
-    setSaindo(true)
-    await sair()
-    navegar("/entrar")
-  }
+    setSaindo(true);
+    await sair();
+    navegar("/entrar");
+  };
 
   return (
     <div className="bg-background min-h-screen">
@@ -111,8 +131,8 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
         </div>
 
         <nav className="mt-5 flex-1 space-y-1 px-3" aria-label="Navegação principal">
-          {ITENS_NAV.map((item) => {
-            const ativo = item.vistas.includes(vistaAtual)
+          {itensNav.map((item) => {
+            const ativo = item.vistas.includes(vistaAtual);
             return (
               <button
                 key={item.hash}
@@ -128,7 +148,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
                 <item.icone className="h-[1.1rem] w-[1.1rem]" aria-hidden />
                 {item.rotulo}
               </button>
-            )
+            );
           })}
           <button
             type="button"
@@ -212,6 +232,43 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
             <LogOut className="h-5 w-5" aria-hidden />
           </Button>
           <BotaoTema setTheme={setTheme} />
+          <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Mais opções">
+                <Menu className="h-5 w-5" aria-hidden />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetHeader>
+                <SheetTitle className="fonte-display">Menu</SheetTitle>
+                <SheetDescription className="sr-only">Navegação da aplicação</SheetDescription>
+              </SheetHeader>
+              <nav className="mt-4 space-y-1 px-4" aria-label="Menu da aplicação">
+                {itensNav.map((item) => {
+                  const ativo = item.vistas.includes(vistaAtual);
+                  return (
+                    <button
+                      key={item.hash}
+                      type="button"
+                      onClick={() => {
+                        setMenuAberto(false);
+                        navegar(item.hash);
+                      }}
+                      aria-current={ativo ? "page" : undefined}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[0.95rem] font-medium transition-colors ${
+                        ativo
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      <item.icone className="h-[1.1rem] w-[1.1rem]" aria-hidden />
+                      {item.rotulo}
+                    </button>
+                  );
+                })}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 
@@ -268,7 +325,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
         <BuscaGlobal aberta aoFechar={() => setBuscaAberta(false)} navegar={navegar} />
       ) : null}
     </div>
-  )
+  );
 }
 
 function BotaoTema({ setTheme }: { setTheme: (t: string) => void }) {
@@ -277,8 +334,8 @@ function BotaoTema({ setTheme }: { setTheme: (t: string) => void }) {
       variant="outline"
       size="icon"
       onClick={() => {
-        const escuro = document.documentElement.classList.contains("dark")
-        setTheme(escuro ? "light" : "dark")
+        const escuro = document.documentElement.classList.contains("dark");
+        setTheme(escuro ? "light" : "dark");
       }}
       aria-label="Alternar tema claro/escuro"
       className="rounded-lg"
@@ -286,7 +343,7 @@ function BotaoTema({ setTheme }: { setTheme: (t: string) => void }) {
       <Sun className="hidden h-[1.1rem] w-[1.1rem] dark:block" aria-hidden />
       <Moon className="h-[1.1rem] w-[1.1rem] dark:hidden" aria-hidden />
     </Button>
-  )
+  );
 }
 
 function ItemNavBaixo({
@@ -295,10 +352,10 @@ function ItemNavBaixo({
   ativo,
   onClick,
 }: {
-  icone: typeof Home
-  rotulo: string
-  ativo: boolean
-  onClick: () => void
+  icone: typeof Home;
+  rotulo: string;
+  ativo: boolean;
+  onClick: () => void;
 }) {
   return (
     <button
@@ -312,7 +369,7 @@ function ItemNavBaixo({
       <Icone className={`h-5 w-5 ${ativo ? "" : "opacity-70"}`} aria-hidden />
       {rotulo}
     </button>
-  )
+  );
 }
 
 function BuscaGlobal({
@@ -320,27 +377,27 @@ function BuscaGlobal({
   aoFechar,
   navegar,
 }: {
-  aberta: boolean
-  aoFechar: () => void
-  navegar: (para: string) => void
+  aberta: boolean;
+  aoFechar: () => void;
+  navegar: (para: string) => void;
 }) {
-  const [termo, setTermo] = useState("")
-  const [debounce, setDebounce] = useState("")
-  const inputRef = useRef<HTMLInputElement>(null)
-  const { data: resultados, isFetching } = useBusca(debounce)
-  const { perfil } = useSessao()
+  const [termo, setTermo] = useState("");
+  const [debounce, setDebounce] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { data: resultados, isFetching } = useBusca(debounce);
+  const { perfil } = useSessao();
 
   // Espera a digitação parar antes de consultar a API de busca.
   useEffect(() => {
-    const t = setTimeout(() => setDebounce(termo), 250)
-    return () => clearTimeout(t)
-  }, [termo])
+    const t = setTimeout(() => setDebounce(termo), 250);
+    return () => clearTimeout(t);
+  }, [termo]);
 
   // Foca o campo após a animação de abertura do diálogo.
   useEffect(() => {
-    const t = setTimeout(() => inputRef.current?.focus(), 60)
-    return () => clearTimeout(t)
-  }, [])
+    const t = setTimeout(() => inputRef.current?.focus(), 60);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <Dialog open={aberta} onOpenChange={(v) => !v && aoFechar()}>
@@ -374,14 +431,14 @@ function BuscaGlobal({
           ) : resultados && resultados.length > 0 ? (
             <ul className="space-y-1">
               {resultados.map((r) => {
-                const cor = corDisciplina(r.cor)
+                const cor = corDisciplina(r.cor);
                 return (
                   <li key={r.id}>
                     <button
                       type="button"
                       onClick={() => {
-                        aoFechar()
-                        navegar(`/nota/${r.id}`)
+                        aoFechar();
+                        navegar(`/nota/${r.id}`);
                       }}
                       className="hover:bg-accent w-full rounded-xl px-3 py-2.5 text-left transition-colors"
                     >
@@ -409,7 +466,7 @@ function BuscaGlobal({
                       </p>
                     </button>
                   </li>
-                )
+                );
               })}
             </ul>
           ) : !isFetching ? (
@@ -425,5 +482,5 @@ function BuscaGlobal({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

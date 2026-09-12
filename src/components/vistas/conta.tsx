@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
 // Vista Conta: perfil, segurança, disciplinas, turmas, backup/importação e
 // exclusão de conta com carência de 24 horas.
 
-import { useRef, useState } from "react"
+import { useRef, useState } from "react";
 import {
   Download,
   FileJson,
@@ -18,19 +18,19 @@ import {
   Trash2,
   Upload,
   UserRound,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,9 +41,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { toast } from "sonner"
-import { useQueryClient } from "@tanstack/react-query"
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   importarBackup,
   importarNotaArquivo,
@@ -55,8 +55,8 @@ import {
   useExcluirDisciplina,
   useExcluirTurma,
   useTurmas,
-} from "@/lib/notas/api-client"
-import { useSessao } from "@/hooks/use-sessao"
+} from "@/lib/notas/api-client";
+import { useSessao } from "@/hooks/use-sessao";
 import {
   CORES,
   corDisciplina,
@@ -64,9 +64,9 @@ import {
   MAPA_ICONES,
   nomeIconeValido,
   obterIconeDisciplina,
-} from "@/lib/notas/cores"
+} from "@/lib/notas/cores";
 
-const SERIES = ["1º ano", "2º ano", "3º ano", "Outro"]
+const SERIES = ["1º ano", "2º ano", "3º ano", "Outro"];
 
 export function VistaConta({ navegar }: { navegar: (para: string) => void }) {
   return (
@@ -85,19 +85,19 @@ export function VistaConta({ navegar }: { navegar: (para: string) => void }) {
       <SecaoBackup navegar={navegar} />
       <SecaoExcluirConta />
     </div>
-  )
+  );
 }
 
 function SecaoPerfil() {
-  const { usuario, perfil, atualizarPerfil } = useSessao()
-  const [nome, setNome] = useState<string | null>(null)
-  const [escola, setEscola] = useState<string | null>(null)
-  const [salvando, setSalvando] = useState(false)
+  const { usuario, perfil, atualizarPerfil } = useSessao();
+  const [nome, setNome] = useState<string | null>(null);
+  const [escola, setEscola] = useState<string | null>(null);
+  const [salvando, setSalvando] = useState(false);
 
   // null funciona como sentinela: só sobrescreve o valor do perfil após edição.
-  const valorNome = nome ?? perfil?.nome ?? ""
-  const valorEscola = escola ?? perfil?.escola ?? ""
-  const sujo = nome !== null || escola !== null
+  const valorNome = nome ?? perfil?.nome ?? "";
+  const valorEscola = escola ?? perfil?.escola ?? "";
+  const sujo = nome !== null || escola !== null;
 
   return (
     <section className="na-cascata border-border bg-card rounded-2xl border p-5">
@@ -136,16 +136,16 @@ function SecaoPerfil() {
           className="gap-2 rounded-xl"
           disabled={!sujo || salvando}
           onClick={async () => {
-            setSalvando(true)
+            setSalvando(true);
             try {
-              await atualizarPerfil({ nome: valorNome, escola: valorEscola })
-              setNome(null)
-              setEscola(null)
-              toast.success("Perfil salvo")
+              await atualizarPerfil({ nome: valorNome, escola: valorEscola });
+              setNome(null);
+              setEscola(null);
+              toast.success("Perfil salvo");
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Não foi possível salvar.")
+              toast.error(e instanceof Error ? e.message : "Não foi possível salvar.");
             } finally {
-              setSalvando(false)
+              setSalvando(false);
             }
           }}
         >
@@ -157,17 +157,15 @@ function SecaoPerfil() {
         </span>
       </div>
     </section>
-  )
+  );
 }
 
 function SecaoSeguranca() {
-  const { usuario, trocarSenha, trocarEmail } = useSessao()
-  const [senhaAtual, setSenhaAtual] = useState("")
-  const [senha, setSenha] = useState("")
-  const [senha2, setSenha2] = useState("")
-  const [novoEmail, setNovoEmail] = useState("")
-  const [salvandoSenha, setSalvandoSenha] = useState(false)
-  const [salvandoEmail, setSalvandoEmail] = useState(false)
+  const { usuario, trocarSenha } = useSessao();
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [senha, setSenha] = useState("");
+  const [senha2, setSenha2] = useState("");
+  const [salvandoSenha, setSalvandoSenha] = useState(false);
 
   return (
     <section
@@ -210,19 +208,19 @@ function SecaoSeguranca() {
             className="gap-2 rounded-lg"
             disabled={salvandoSenha || !senhaAtual || senha.length < 8 || senha !== senha2}
             onClick={async () => {
-              setSalvandoSenha(true)
+              setSalvandoSenha(true);
               try {
-                await trocarSenha(senhaAtual, senha)
-                setSenhaAtual("")
-                setSenha("")
-                setSenha2("")
-                toast.success("Senha alterada")
+                await trocarSenha(senhaAtual, senha);
+                setSenhaAtual("");
+                setSenha("");
+                setSenha2("");
+                toast.success("Senha alterada");
               } catch (e) {
                 toast.error("Não foi possível alterar a senha.", {
                   description: e instanceof Error ? e.message : undefined,
-                })
+                });
               } finally {
-                setSalvandoSenha(false)
+                setSalvandoSenha(false);
               }
             }}
           >
@@ -232,61 +230,33 @@ function SecaoSeguranca() {
         </div>
 
         <div className="space-y-2.5">
-          <p className="text-sm font-bold">Trocar e-mail</p>
+          <p className="text-sm font-bold">Dados de acesso</p>
           <p className="text-muted-foreground text-[0.78rem] leading-snug">
-            Atual: {usuario?.email}. O novo endereço recebe um e-mail de confirmação. A troca
-            somente será efetivada após confirmação.
+            E-mail: {usuario?.email}. O e-mail da conta só pode ser alterado pela administração da
+            escola.
           </p>
-          <Input
-            type="email"
-            value={novoEmail}
-            onChange={(e) => setNovoEmail(e.target.value)}
-            placeholder="novo@email.br"
-            className="rounded-lg"
-            aria-label="Novo e-mail"
-          />
-          <Button
-            variant="outline"
-            className="gap-2 rounded-lg"
-            disabled={salvandoEmail || !novoEmail.includes("@") || novoEmail === usuario?.email}
-            onClick={async () => {
-              setSalvandoEmail(true)
-              try {
-                await trocarEmail(novoEmail.trim())
-                setNovoEmail("")
-                toast.success("Confirmação enviada", {
-                  description: "Siga as instruções no novo e-mail para concluir.",
-                })
-              } catch (e) {
-                toast.error("Não foi possível enviar a confirmação.", {
-                  description: e instanceof Error ? e.message : undefined,
-                })
-              } finally {
-                setSalvandoEmail(false)
-              }
-            }}
-          >
-            {salvandoEmail ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-            Enviar confirmação
-          </Button>
+          <p className="text-muted-foreground text-[0.78rem] leading-snug">
+            Esqueceu a senha? Saia e use a opção &ldquo;Esqueci minha senha&rdquo; na tela de login
+            para receber um código da administração.
+          </p>
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 function SecaoDisciplinas() {
-  const disciplinasQ = useDisciplinas()
-  const { data: disciplinas, isLoading: carregando } = disciplinasQ
-  const criar = useCriarDisciplina()
-  const editar = useEditarDisciplina()
-  const excluir = useExcluirDisciplina()
+  const disciplinasQ = useDisciplinas();
+  const { data: disciplinas, isLoading: carregando } = disciplinasQ;
+  const criar = useCriarDisciplina();
+  const editar = useEditarDisciplina();
+  const excluir = useExcluirDisciplina();
 
-  const [nome, setNome] = useState("")
-  const [cor, setCor] = useState("verde")
-  const [icone, setIcone] = useState("BookOpen")
-  const [editando, setEditando] = useState<string | null>(null)
-  const [nomeEditado, setNomeEditado] = useState("")
+  const [nome, setNome] = useState("");
+  const [cor, setCor] = useState("verde");
+  const [icone, setIcone] = useState("BookOpen");
+  const [editando, setEditando] = useState<string | null>(null);
+  const [nomeEditado, setNomeEditado] = useState("");
 
   return (
     <section
@@ -308,8 +278,8 @@ function SecaoDisciplinas() {
           </>
         ) : (
           (disciplinas ?? []).map((d) => {
-            const c = corDisciplina(d.cor)
-            const emEdicao = editando === d.id
+            const c = corDisciplina(d.cor);
+            const emEdicao = editando === d.id;
             return (
               <div
                 key={d.id}
@@ -349,13 +319,13 @@ function SecaoDisciplinas() {
                           await editar.mutateAsync({
                             id: d.id,
                             dados: { nome: nomeEditado, cor },
-                          })
-                          setEditando(null)
-                          toast.success("Disciplina atualizada")
+                          });
+                          setEditando(null);
+                          toast.success("Disciplina atualizada");
                         } catch (e) {
                           toast.error("Não foi possível salvar a disciplina.", {
                             description: e instanceof Error ? e.message : undefined,
-                          })
+                          });
                         }
                       }}
                     >
@@ -381,9 +351,9 @@ function SecaoDisciplinas() {
                       <button
                         type="button"
                         onClick={() => {
-                          setEditando(d.id)
-                          setNomeEditado(d.nome)
-                          setCor(d.cor)
+                          setEditando(d.id);
+                          setNomeEditado(d.nome);
+                          setCor(d.cor);
                         }}
                         className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
                         aria-label={`Editar ${d.nome}`}
@@ -417,12 +387,12 @@ function SecaoDisciplinas() {
                               className="bg-destructive hover:bg-destructive/90 text-white"
                               onClick={async () => {
                                 try {
-                                  await excluir.mutateAsync(d.id)
-                                  toast.success("Disciplina excluída")
+                                  await excluir.mutateAsync(d.id);
+                                  toast.success("Disciplina excluída");
                                 } catch (e) {
                                   toast.error("Não foi possível excluir a disciplina.", {
                                     description: e instanceof Error ? e.message : undefined,
-                                  })
+                                  });
                                 }
                               }}
                             >
@@ -435,7 +405,7 @@ function SecaoDisciplinas() {
                   </>
                 )}
               </div>
-            )
+            );
           })
         )}
       </div>
@@ -467,25 +437,25 @@ function SecaoDisciplinas() {
           <SelectTrigger size="sm" className="h-9 w-40 rounded-lg">
             <SelectValue>
               {(() => {
-                const Icon = MAPA_ICONES[icone] ?? MAPA_ICONES.BookOpen
+                const Icon = MAPA_ICONES[icone] ?? MAPA_ICONES.BookOpen;
                 return (
                   <span className="flex items-center gap-2">
                     <Icon className="h-4 w-4" aria-hidden /> {icone}
                   </span>
-                )
+                );
               })()}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {ICONES_DISCIPLINA.map((i) => {
-              const Icon = MAPA_ICONES[i] ?? MAPA_ICONES.BookOpen
+              const Icon = MAPA_ICONES[i] ?? MAPA_ICONES.BookOpen;
               return (
                 <SelectItem key={i} value={i}>
                   <span className="flex items-center gap-2">
                     <Icon className="h-4 w-4" aria-hidden /> {i}
                   </span>
                 </SelectItem>
-              )
+              );
             })}
           </SelectContent>
         </Select>
@@ -494,11 +464,11 @@ function SecaoDisciplinas() {
           disabled={!nome.trim() || criar.isPending}
           onClick={async () => {
             try {
-              await criar.mutateAsync({ nome: nome.trim(), cor, icone: nomeIconeValido(icone) })
-              setNome("")
-              toast.success("Disciplina criada")
+              await criar.mutateAsync({ nome: nome.trim(), cor, icone: nomeIconeValido(icone) });
+              setNome("");
+              toast.success("Disciplina criada");
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Erro ao criar.")
+              toast.error(e instanceof Error ? e.message : "Erro ao criar.");
             }
           }}
         >
@@ -506,24 +476,24 @@ function SecaoDisciplinas() {
         </Button>
       </div>
     </section>
-  )
+  );
 }
 
 function SecaoTurmas() {
-  const turmasQ = useTurmas()
-  const { data: turmas, isLoading: carregando } = turmasQ
-  const criar = useCriarTurma()
-  const editar = useEditarTurma()
-  const excluir = useExcluirTurma()
+  const turmasQ = useTurmas();
+  const { data: turmas, isLoading: carregando } = turmasQ;
+  const criar = useCriarTurma();
+  const editar = useEditarTurma();
+  const excluir = useExcluirTurma();
 
-  const [nome, setNome] = useState("")
-  const [serie, setSerie] = useState("1º ano")
-  const [anoLetivo, setAnoLetivo] = useState(new Date().getFullYear())
-  const [editando, setEditando] = useState<string | null>(null)
-  const [nomeEditado, setNomeEditado] = useState("")
-  const [serieEditada, setSerieEditada] = useState("")
+  const [nome, setNome] = useState("");
+  const [serie, setSerie] = useState("1º ano");
+  const [anoLetivo, setAnoLetivo] = useState(new Date().getFullYear());
+  const [editando, setEditando] = useState<string | null>(null);
+  const [nomeEditado, setNomeEditado] = useState("");
+  const [serieEditada, setSerieEditada] = useState("");
 
-  const anos = [...new Set((turmas ?? []).map((t) => t.anoLetivo))].sort((a, b) => b - a)
+  const anos = [...new Set((turmas ?? []).map((t) => t.anoLetivo))].sort((a, b) => b - a);
 
   return (
     <section
@@ -554,7 +524,7 @@ function SecaoTurmas() {
                   .filter((t) => t.anoLetivo === ano)
                   .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
                   .map((t) => {
-                    const emEdicao = editando === t.id
+                    const emEdicao = editando === t.id;
                     return emEdicao ? (
                       <div
                         key={t.id}
@@ -586,13 +556,13 @@ function SecaoTurmas() {
                               await editar.mutateAsync({
                                 id: t.id,
                                 dados: { nome: nomeEditado, serie: serieEditada },
-                              })
-                              setEditando(null)
-                              toast.success("Turma atualizada")
+                              });
+                              setEditando(null);
+                              toast.success("Turma atualizada");
                             } catch (e) {
                               toast.error("Não foi possível salvar a turma.", {
                                 description: e instanceof Error ? e.message : undefined,
-                              })
+                              });
                             }
                           }}
                         >
@@ -620,9 +590,9 @@ function SecaoTurmas() {
                         <button
                           type="button"
                           onClick={() => {
-                            setEditando(t.id)
-                            setNomeEditado(t.nome)
-                            setSerieEditada(t.serie)
+                            setEditando(t.id);
+                            setNomeEditado(t.nome);
+                            setSerieEditada(t.serie);
                           }}
                           className="text-muted-foreground/70 hover:bg-accent hover:text-foreground flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
                           aria-label={`Editar turma ${t.nome}`}
@@ -656,12 +626,12 @@ function SecaoTurmas() {
                                 className="bg-destructive hover:bg-destructive/90 text-white"
                                 onClick={async () => {
                                   try {
-                                    await excluir.mutateAsync(t.id)
-                                    toast.success("Turma excluída")
+                                    await excluir.mutateAsync(t.id);
+                                    toast.success("Turma excluída");
                                   } catch (e) {
                                     toast.error("Não foi possível excluir a turma.", {
                                       description: e instanceof Error ? e.message : undefined,
-                                    })
+                                    });
                                   }
                                 }}
                               >
@@ -671,7 +641,7 @@ function SecaoTurmas() {
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                    )
+                    );
                   })}
               </div>
             </div>
@@ -713,11 +683,11 @@ function SecaoTurmas() {
           disabled={!nome.trim() || criar.isPending}
           onClick={async () => {
             try {
-              await criar.mutateAsync({ nome: nome.trim(), serie, anoLetivo })
-              setNome("")
-              toast.success("Turma criada")
+              await criar.mutateAsync({ nome: nome.trim(), serie, anoLetivo });
+              setNome("");
+              toast.success("Turma criada");
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Erro ao criar.")
+              toast.error(e instanceof Error ? e.message : "Erro ao criar.");
             }
           }}
         >
@@ -725,53 +695,53 @@ function SecaoTurmas() {
         </Button>
       </div>
     </section>
-  )
+  );
 }
 
 function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
-  const qc = useQueryClient()
-  const inputBackup = useRef<HTMLInputElement>(null)
-  const inputNota = useRef<HTMLInputElement>(null)
-  const [importando, setImportando] = useState(false)
+  const qc = useQueryClient();
+  const inputBackup = useRef<HTMLInputElement>(null);
+  const inputNota = useRef<HTMLInputElement>(null);
+  const [importando, setImportando] = useState(false);
 
   // Após importar, limpa o cache e recarrega para refletir os dados novos.
   const recarregar = () => {
-    qc.invalidateQueries()
-    window.location.reload()
-  }
+    qc.invalidateQueries();
+    window.location.reload();
+  };
 
   const importarTudo = async (arquivo: File) => {
-    setImportando(true)
+    setImportando(true);
     try {
-      const conteudo = await arquivo.text()
-      await importarBackup(conteudo)
-      toast.success("Backup importado", { description: "Os dados anteriores foram substituídos." })
-      setTimeout(recarregar, 900)
+      const conteudo = await arquivo.text();
+      await importarBackup(conteudo);
+      toast.success("Backup importado", { description: "Os dados anteriores foram substituídos." });
+      setTimeout(recarregar, 900);
     } catch (e) {
       toast.error("Falha na importação", {
         description: e instanceof Error ? e.message : "Arquivo inválido.",
-      })
+      });
     } finally {
-      setImportando(false)
+      setImportando(false);
     }
-  }
+  };
 
   const importarNota = async (arquivo: File) => {
-    setImportando(true)
+    setImportando(true);
     try {
-      const conteudo = await arquivo.text()
-      const formato = arquivo.name.endsWith(".json") ? "json" : "md"
-      const nota = await importarNotaArquivo(conteudo, formato)
-      toast.success("Nota importada", { description: nota.titulo })
-      navegar(`/editor/${nota.id}`)
+      const conteudo = await arquivo.text();
+      const formato = arquivo.name.endsWith(".json") ? "json" : "md";
+      const nota = await importarNotaArquivo(conteudo, formato);
+      toast.success("Nota importada", { description: nota.titulo });
+      navegar(`/editor/${nota.id}`);
     } catch (e) {
       toast.error("Falha na importação", {
         description: e instanceof Error ? e.message : "Verifique o formato do arquivo.",
-      })
+      });
     } finally {
-      setImportando(false)
+      setImportando(false);
     }
-  }
+  };
 
   return (
     <section
@@ -813,8 +783,8 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
             accept="application/json,.json"
             className="hidden"
             onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) void importarTudo(f)
+              const f = e.target.files?.[0];
+              if (f) void importarTudo(f);
             }}
           />
           <input
@@ -823,8 +793,8 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
             accept=".md,.json,text/markdown,application/json"
             className="hidden"
             onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) void importarNota(f)
+              const f = e.target.files?.[0];
+              if (f) void importarNota(f);
             }}
           />
           <div className="flex flex-wrap gap-2">
@@ -853,23 +823,23 @@ function SecaoBackup({ navegar }: { navegar: (para: string) => void }) {
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 // Exclusão com carência de 24 horas
 function SecaoExcluirConta() {
-  const { perfil, solicitarExclusao, restaurarConta, recarregarPerfil } = useSessao()
-  const [senha, setSenha] = useState("")
-  const [confirmacao, setConfirmacao] = useState("")
-  const [aceita, setAceita] = useState(false)
-  const [etapa, setEtapa] = useState<1 | 2>(1)
-  const [excluindo, setExcluindo] = useState(false)
-  const [aberto, setAberto] = useState(false)
+  const { perfil, solicitarExclusao, restaurarConta, recarregarPerfil } = useSessao();
+  const [senha, setSenha] = useState("");
+  const [confirmacao, setConfirmacao] = useState("");
+  const [aceita, setAceita] = useState(false);
+  const [etapa, setEtapa] = useState<1 | 2>(1);
+  const [excluindo, setExcluindo] = useState(false);
+  const [aberto, setAberto] = useState(false);
 
   const pendente = Boolean(
     (perfil as unknown as { exclusaoSolicitadaEm?: string })?.exclusaoSolicitadaEm,
-  )
-  const expiraEm = (perfil as unknown as { expiraEm?: string })?.expiraEm
+  );
+  const expiraEm = (perfil as unknown as { expiraEm?: string })?.expiraEm;
 
   if (pendente) {
     return (
@@ -886,10 +856,10 @@ function SecaoExcluirConta() {
           <Button
             onClick={async () => {
               try {
-                await restaurarConta()
-                toast.success("Conta restaurada. O acesso foi restabelecido.")
+                await restaurarConta();
+                toast.success("Conta restaurada. O acesso foi restabelecido.");
               } catch (err) {
-                toast.error(err instanceof Error ? err.message : "Falha ao restaurar.")
+                toast.error(err instanceof Error ? err.message : "Falha ao restaurar.");
               }
             }}
             className="rounded-xl"
@@ -898,7 +868,7 @@ function SecaoExcluirConta() {
           </Button>
         </div>
       </section>
-    )
+    );
   }
 
   return (
@@ -917,10 +887,10 @@ function SecaoExcluirConta() {
             variant="destructive"
             className="mt-4 gap-2 rounded-xl"
             onClick={() => {
-              setEtapa(1)
-              setAceita(false)
-              setSenha("")
-              setConfirmacao("")
+              setEtapa(1);
+              setAceita(false);
+              setSenha("");
+              setConfirmacao("");
             }}
           >
             <Trash2 className="h-4 w-4" aria-hidden /> Excluir minha conta
@@ -983,10 +953,10 @@ function SecaoExcluirConta() {
           <AlertDialogFooter>
             <AlertDialogCancel
               onClick={() => {
-                setAceita(false)
-                setSenha("")
-                setConfirmacao("")
-                setEtapa(1)
+                setAceita(false);
+                setSenha("");
+                setConfirmacao("");
+                setEtapa(1);
               }}
             >
               Cancelar
@@ -1009,22 +979,22 @@ function SecaoExcluirConta() {
                   disabled={confirmacao !== "EXCLUIR" || !senha || excluindo}
                   onClick={async (e) => {
                     // Evita o fechamento automático para poder tratar o erro no diálogo.
-                    e.preventDefault()
-                    setExcluindo(true)
+                    e.preventDefault();
+                    setExcluindo(true);
                     try {
-                      const r = await solicitarExclusao(senha, confirmacao)
+                      const r = await solicitarExclusao(senha, confirmacao);
                       toast.success("Solicitação registrada", {
                         description: `Expira em ${new Date(r.expiraEm).toLocaleString("pt-BR")}`,
-                      })
-                      setAberto(false)
-                      await recarregarPerfil()
+                      });
+                      setAberto(false);
+                      await recarregarPerfil();
                     } catch (err) {
-                      toast.error(err instanceof Error ? err.message : "Erro ao solicitar.")
+                      toast.error(err instanceof Error ? err.message : "Erro ao solicitar.");
                     } finally {
-                      setExcluindo(false)
-                      setSenha("")
-                      setConfirmacao("")
-                      setEtapa(1)
+                      setExcluindo(false);
+                      setSenha("");
+                      setConfirmacao("");
+                      setEtapa(1);
                     }
                   }}
                 >
@@ -1042,5 +1012,5 @@ function SecaoExcluirConta() {
         </AlertDialogContent>
       </AlertDialog>
     </section>
-  )
+  );
 }

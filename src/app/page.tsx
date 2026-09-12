@@ -1,36 +1,34 @@
-"use client"
+"use client";
 
 // Ponto de entrada do app do professor. Escolhe a vista a partir da rota hash e
 // protege o acesso quando não há sessão ou quando a conta está em recuperação.
 
-import { useEffect, useState } from "react"
-import { AppShell } from "@/components/app-shell"
-import { DialogoNovaNota } from "@/components/dialogo-nova-nota"
-import { VistaAutenticação } from "@/components/vistas/autenticacao"
-import { VistaPublica } from "@/components/vistas/publica"
-import { VistaInicio } from "@/components/vistas/inicio"
-import { VistaNotas } from "@/components/vistas/notas"
-import { VistaOrganizacao } from "@/components/vistas/organizacao"
-import { VistaLeitura } from "@/components/vistas/leitura"
-import { VistaLinks } from "@/components/vistas/links"
-import { VistaConta } from "@/components/vistas/conta"
-import { VistaEditor } from "@/components/editor/editor-nota"
-import { useRota } from "@/lib/rota"
-import { useSessao } from "@/hooks/use-sessao"
-import { Skeleton } from "@/components/ui/skeleton"
-import { toast } from "sonner"
+import { useEffect, useState } from "react";
+import { AppShell } from "@/components/app-shell";
+import { DialogoNovaNota } from "@/components/dialogo-nova-nota";
+import { VistaAutenticação } from "@/components/vistas/autenticacao";
+import { VistaPublica } from "@/components/vistas/publica";
+import { VistaInicio } from "@/components/vistas/inicio";
+import { VistaNotas } from "@/components/vistas/notas";
+import { VistaOrganizacao } from "@/components/vistas/organizacao";
+import { VistaLeitura } from "@/components/vistas/leitura";
+import { VistaLinks } from "@/components/vistas/links";
+import { VistaConta } from "@/components/vistas/conta";
+import { VistaEditor } from "@/components/editor/editor-nota";
+import { VistaAdmin } from "@/components/vistas/admin/painel";
+import { useRota } from "@/lib/rota";
+import { useSessao } from "@/hooks/use-sessao";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export default function Home() {
-  const { rota, navegar } = useRota()
-  const [novaNotaAberta, setNovaNotaAberta] = useState(false)
-  const { usuario, perfil, carregando, modoRecuperacao, restaurarConta } = useSessao()
-  const [restaurando, setRestaurando] = useState(false)
+  const { rota, navegar } = useRota();
+  const [novaNotaAberta, setNovaNotaAberta] = useState(false);
+  const { usuario, perfil, carregando, ehAdmin, restaurarConta } = useSessao();
+  const [restaurando, setRestaurando] = useState(false);
 
   if (rota.vista === "publica") {
-    return <VistaPublica token={rota.token} navegar={navegar} />
-  }
-  if (modoRecuperacao) {
-    return <VistaAutenticação rota={rota} navegar={navegar} />
+    return <VistaPublica token={rota.token} navegar={navegar} />;
   }
 
   if (carregando) {
@@ -45,23 +43,24 @@ export default function Home() {
         </div>
         <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
-    )
+    );
   }
 
   if (!usuario) {
-    return <VistaAutenticação rota={rota} navegar={navegar} />
+    return <VistaAutenticação rota={rota} navegar={navegar} />;
   }
   if (rota.vista === "leitura") {
-    return <VistaLeitura id={rota.id} navegar={navegar} />
+    return <VistaLeitura id={rota.id} navegar={navegar} />;
   }
   const rotaDeAuth =
-    rota.vista === "entrar" || rota.vista === "cadastro" || rota.vista === "redefinir"
-  if (rotaDeAuth) return <Redirecionar ao={"/"} navegar={navegar} />
+    rota.vista === "entrar" || rota.vista === "codigo" || rota.vista === "solicitar";
+  if (rotaDeAuth) return <Redirecionar ao={"/"} navegar={navegar} />;
+  if (rota.vista === "admin" && !ehAdmin) return <Redirecionar ao={"/"} navegar={navegar} />;
   // Campos de carência de exclusão não fazem parte do tipo público do perfil.
   const exclusaoPendente = Boolean(
     (perfil as unknown as { exclusaoSolicitadaEm?: string })?.exclusaoSolicitadaEm,
-  )
-  const expiraEm = (perfil as unknown as { expiraEm?: string })?.expiraEm
+  );
+  const expiraEm = (perfil as unknown as { expiraEm?: string })?.expiraEm;
 
   const conteudo =
     rota.vista === "inicio" ? (
@@ -76,10 +75,12 @@ export default function Home() {
       <VistaConta navegar={navegar} />
     ) : rota.vista === "editor" ? (
       <VistaEditor id={rota.id} navegar={navegar} />
-    ) : null
+    ) : rota.vista === "admin" ? (
+      <VistaAdmin />
+    ) : null;
 
   // A chave inclui o id no editor para forçar a remontagem ao trocar de nota.
-  const chaveVista = rota.vista === "editor" ? `${rota.vista}:${rota.id}` : rota.vista
+  const chaveVista = rota.vista === "editor" ? `${rota.vista}:${rota.id}` : rota.vista;
 
   return (
     <AppShell rota={rota} navegar={navegar} onNovaNota={() => setNovaNotaAberta(true)}>
@@ -96,14 +97,14 @@ export default function Home() {
             <div className="mt-3 flex gap-2">
               <button
                 onClick={async () => {
-                  setRestaurando(true)
+                  setRestaurando(true);
                   try {
-                    await restaurarConta()
-                    toast.success("Conta restaurada. O acesso foi restabelecido.")
+                    await restaurarConta();
+                    toast.success("Conta restaurada. O acesso foi restabelecido.");
                   } catch (err) {
-                    toast.error(err instanceof Error ? err.message : "Falha ao restaurar.")
+                    toast.error(err instanceof Error ? err.message : "Falha ao restaurar.");
                   } finally {
-                    setRestaurando(false)
+                    setRestaurando(false);
                   }
                 }}
                 disabled={restaurando}
@@ -130,16 +131,16 @@ export default function Home() {
         />
       ) : null}
     </AppShell>
-  )
+  );
 }
 
 function Redirecionar({ ao, navegar }: { ao: string; navegar: (para: string) => void }) {
   useEffect(() => {
-    navegar(ao)
-  }, [ao, navegar])
+    navegar(ao);
+  }, [ao, navegar]);
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <Skeleton className="h-16 w-2/3 rounded-2xl" />
     </div>
-  )
+  );
 }

@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
 // Roteador SPA por hash. Funciona em qualquer hospedagem e permite links públicos diretos (#/l/<token> para alunos).
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react";
 
 export type Rota =
   | { vista: "inicio" }
@@ -14,68 +14,71 @@ export type Rota =
   | { vista: "publica"; token: string }
   | { vista: "conta" }
   | { vista: "entrar" }
-  | { vista: "cadastro" }
-  | { vista: "redefinir" }
+  | { vista: "codigo" }
+  | { vista: "solicitar" }
+  | { vista: "admin" };
 
 export function analisarHash(hash: string): Rota {
   // Descarta "#/", a query e segmentos vazios antes de rotear.
-  const limpo = hash.replace(/^#\/?/, "").split("?")[0]
-  const partes = limpo.split("/").filter(Boolean)
-  if (partes.length === 0) return { vista: "inicio" }
+  const limpo = hash.replace(/^#\/?/, "").split("?")[0];
+  const partes = limpo.split("/").filter(Boolean);
+  if (partes.length === 0) return { vista: "inicio" };
   switch (partes[0]) {
     case "notas":
-      return { vista: "notas" }
+      return { vista: "notas" };
     case "organizacao":
-      return { vista: "organizacao" }
+      return { vista: "organizacao" };
     case "links":
-      return { vista: "links" }
+      return { vista: "links" };
     case "editor":
-      return partes[1] ? { vista: "editor", id: partes[1] } : { vista: "notas" }
+      return partes[1] ? { vista: "editor", id: partes[1] } : { vista: "notas" };
     case "nota":
-      return partes[1] ? { vista: "leitura", id: partes[1] } : { vista: "notas" }
+      return partes[1] ? { vista: "leitura", id: partes[1] } : { vista: "notas" };
     case "l":
-      return partes[1] ? { vista: "publica", token: partes[1] } : { vista: "inicio" }
+      return partes[1] ? { vista: "publica", token: partes[1] } : { vista: "inicio" };
     case "conta":
-      return { vista: "conta" }
+      return { vista: "conta" };
     case "entrar":
-      return { vista: "entrar" }
-    case "cadastro":
-      return { vista: "cadastro" }
-    case "redefinir":
-      return { vista: "redefinir" }
+      return { vista: "entrar" };
+    case "codigo":
+      return { vista: "codigo" };
+    case "solicitar":
+      return { vista: "solicitar" };
+    case "admin":
+      return { vista: "admin" };
     default:
-      return { vista: "inicio" }
+      return { vista: "inicio" };
   }
 }
 
 export function useRota(): {
-  rota: Rota
-  navegar: (para: string) => void
+  rota: Rota;
+  navegar: (para: string) => void;
 } {
   const [rota, setRota] = useState<Rota>(() =>
     typeof window === "undefined" ? { vista: "inicio" } : analisarHash(window.location.hash),
-  )
+  );
 
   useEffect(() => {
     const aoMudar = () => {
       // Ao trocar de vista, volta ao topo da página.
-      setRota(analisarHash(window.location.hash))
-      window.scrollTo({ top: 0 })
-    }
-    window.addEventListener("hashchange", aoMudar)
-    return () => window.removeEventListener("hashchange", aoMudar)
-  }, [])
+      setRota(analisarHash(window.location.hash));
+      window.scrollTo({ top: 0 });
+    };
+    window.addEventListener("hashchange", aoMudar);
+    return () => window.removeEventListener("hashchange", aoMudar);
+  }, []);
 
   const navegar = useCallback((para: string) => {
     // Normaliza para "#/..." e força re-render quando o hash não muda.
-    const alvo = para.startsWith("#") ? para : `#${para.startsWith("/") ? para : `/${para}`}`
+    const alvo = para.startsWith("#") ? para : `#${para.startsWith("/") ? para : `/${para}`}`;
     if (window.location.hash === alvo) {
-      setRota(analisarHash(alvo))
-      window.scrollTo({ top: 0 })
+      setRota(analisarHash(alvo));
+      window.scrollTo({ top: 0 });
     } else {
-      window.location.hash = alvo
+      window.location.hash = alvo;
     }
-  }, [])
+  }, []);
 
-  return { rota, navegar }
+  return { rota, navegar };
 }
