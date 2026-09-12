@@ -1,14 +1,14 @@
 // Paleta de cores e ícones das disciplinas, derivada do tema institucional.
 export interface CorDisciplina {
-  chave: string
-  nome: string
-  chip: string
-  chipContorno: string
-  ponto: string
-  texto: string
-  borda: string
-  fundoSuave: string
-  barra: string
+  chave: string;
+  nome: string;
+  chip: string;
+  chipContorno: string;
+  ponto: string;
+  texto: string;
+  borda: string;
+  fundoSuave: string;
+  barra: string;
 }
 
 export const CORES: CorDisciplina[] = [
@@ -128,11 +128,11 @@ export const CORES: CorDisciplina[] = [
     fundoSuave: "bg-stone-100 dark:bg-stone-800/40",
     barra: "bg-stone-500",
   },
-]
+];
 
 // A primeira cor é o padrão para chaves desconhecidas ou vazias.
 export function corDisciplina(chave: string | undefined | null): CorDisciplina {
-  return CORES.find((c) => c.chave === chave) ?? CORES[0]
+  return CORES.find((c) => c.chave === chave) ?? CORES[0];
 }
 
 export const ICONES_DISCIPLINA = [
@@ -152,12 +152,12 @@ export const ICONES_DISCIPLINA = [
   "Laptop",
   "Scale",
   "Map",
-] as const
+] as const;
 
 export function nomeIconeValido(nome: string | undefined): string {
   return (ICONES_DISCIPLINA as readonly string[]).includes(nome ?? "")
     ? (nome as string)
-    : "BookOpen"
+    : "BookOpen";
 }
 
 import {
@@ -177,8 +177,8 @@ import {
   Laptop,
   Scale,
   Map as MapIcon,
-} from "lucide-react"
-import type { ComponentType } from "react"
+} from "lucide-react";
+import type { ComponentType } from "react";
 export const MAPA_ICONES: Record<string, ComponentType<{ className?: string }>> = {
   BookOpen,
   FlaskConical,
@@ -196,10 +196,10 @@ export const MAPA_ICONES: Record<string, ComponentType<{ className?: string }>> 
   Laptop,
   Scale,
   Map: MapIcon,
-}
+};
 export function obterIconeDisciplina(
   nome: string | undefined | null,
 ): ComponentType<{ className?: string }> {
-  const n = nomeIconeValido(nome ?? undefined)
-  return MAPA_ICONES[n] ?? BookOpen
+  const n = nomeIconeValido(nome ?? undefined);
+  return MAPA_ICONES[n] ?? BookOpen;
 }

@@ -1,13 +1,13 @@
 // Imagem Open Graph gerada por requisição para o link público (1200x630).
 
-import { ImageResponse } from "next/og"
-import { buscarDadosOg } from "./dados"
+import { ImageResponse } from "next/og";
+import { buscarDadosOg } from "./dados";
 
-export const alt = "Nota de aula do Caderno Aberto"
-export const size = { width: 1200, height: 630 }
-export const contentType = "image/png"
+export const alt = "Nota de aula do Caderno Aberto";
+export const size = { width: 1200, height: 630 };
+export const contentType = "image/png";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 const HEX_COR: Record<string, string> = {
   verde: "#008241",
@@ -20,7 +20,7 @@ const HEX_COR: Record<string, string> = {
   fucsia: "#D946EF",
   lima: "#84CC16",
   pedra: "#78716C",
-}
+};
 
 const MESES_CAP = [
   "Janeiro",
@@ -35,30 +35,30 @@ const MESES_CAP = [
   "Outubro",
   "Novembro",
   "Dezembro",
-]
+];
 
 function limitar(texto: string, max: number): string {
-  const t = texto.replace(/\s+/g, " ").trim()
-  return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t
+  const t = texto.replace(/\s+/g, " ").trim();
+  return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
 }
 
 export default async function ImagemOg({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params
-  const dados = await buscarDadosOg(token).catch(() => null)
-  const nota = dados?.nota
-  const link = dados?.link
+  const { token } = await params;
+  const dados = await buscarDadosOg(token).catch(() => null);
+  const nota = dados?.nota;
+  const link = dados?.link;
 
   // Cor desconhecida ou link inválido recai no verde da marca.
-  const cor = HEX_COR[nota?.disciplinaCor ?? "verde"] ?? HEX_COR.verde
-  const titulo = limitar(nota?.titulo ?? "Nota de aula", 110)
-  const disciplina = nota?.disciplinaNome ?? "Aula"
+  const cor = HEX_COR[nota?.disciplinaCor ?? "verde"] ?? HEX_COR.verde;
+  const titulo = limitar(nota?.titulo ?? "Nota de aula", 110);
+  const disciplina = nota?.disciplinaNome ?? "Aula";
   const rodape = [
     nota ? `${MESES_CAP[nota.mes - 1] ?? ""}/${nota.anoLetivo}` : "",
     (nota?.turmasNomes ?? []).join(", "),
     link?.professorNome ? `Prof. ${link.professorNome}` : "",
   ]
     .filter(Boolean)
-    .join("  ·  ")
+    .join("  ·  ");
 
   return new ImageResponse(
     <div
@@ -154,5 +154,5 @@ export default async function ImagemOg({ params }: { params: Promise<{ token: st
       </div>
     </div>,
     { ...size },
-  )
+  );
 }

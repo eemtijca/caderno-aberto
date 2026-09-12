@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
 // Vista pública do aluno. /#/l/<token> Sem login: tudo vem de /api/publico/<token>, que devolve link ativo e notas publicadas. Alunos podem alternar o gabarito, imprimir A4 e mudar o tema.
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   BookOpenText,
@@ -15,59 +15,59 @@ import {
   Search,
   Sun,
   Moon,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { useTheme } from "next-themes"
-import { BlocosView } from "@/components/notas/blocos-view"
-import { Skeleton } from "@/components/ui/skeleton"
-import { MESES_CAP, separarHabilidades } from "@/lib/notas/texto"
-import { corDisciplina } from "@/lib/notas/cores"
-import type { AparenciaNota, Bloco } from "@/lib/notas/tipos"
-import { variaveisAparencia } from "@/lib/notas/tipos"
-import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { useTheme } from "next-themes";
+import { BlocosView } from "@/components/notas/blocos-view";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MESES_CAP, separarHabilidades } from "@/lib/notas/texto";
+import { corDisciplina } from "@/lib/notas/cores";
+import type { AparenciaNota, Bloco } from "@/lib/notas/tipos";
+import { variaveisAparencia } from "@/lib/notas/tipos";
+import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo";
 
 interface NotaPublica {
-  id: string
-  titulo: string
-  disciplinaNome: string
-  disciplinaCor: string
-  turmasNomes: string[]
-  anoLetivo: number
-  mes: number
-  sobre: string
-  habilidades: string
-  blocos: Bloco[]
+  id: string;
+  titulo: string;
+  disciplinaNome: string;
+  disciplinaCor: string;
+  turmasNomes: string[];
+  anoLetivo: number;
+  mes: number;
+  sobre: string;
+  habilidades: string;
+  blocos: Bloco[];
   /** Aparência escolhida pelo professor: o aluno vê a mesma. */
-  aparencia: AparenciaNota
-  atualizadoEm: string
+  aparencia: AparenciaNota;
+  atualizadoEm: string;
 }
 
 interface DadosPublicos {
   link: {
-    tipo: "nota" | "turma" | "disciplina"
-    nome: string
-    professorNome: string
-    expiraEm: string | null
-  }
-  notas: NotaPublica[]
+    tipo: "nota" | "turma" | "disciplina";
+    nome: string;
+    professorNome: string;
+    expiraEm: string | null;
+  };
+  notas: NotaPublica[];
 }
 
 export function VistaPublica({
   token,
   navegar,
 }: {
-  token: string
-  navegar?: (para: string) => void
+  token: string;
+  navegar?: (para: string) => void;
 }) {
-  const { setTheme } = useTheme()
-  const [dados, setDados] = useState<DadosPublicos | null>(null)
-  const [erro, setErro] = useState("")
-  const [carregando, setCarregando] = useState(true)
-  const [selecionada, setSelecionada] = useState<string | null>(null)
-  const [mostrarGabarito, setMostrarGabarito] = useState(false)
-  const [busca, setBusca] = useState("")
+  const { setTheme } = useTheme();
+  const [dados, setDados] = useState<DadosPublicos | null>(null);
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(true);
+  const [selecionada, setSelecionada] = useState<string | null>(null);
+  const [mostrarGabarito, setMostrarGabarito] = useState(false);
+  const [busca, setBusca] = useState("");
 
   useEffect(() => {
     // Token de demonstração monta os dados localmente, sem chamar a API.
@@ -95,52 +95,52 @@ export function VistaPublica({
             atualizadoEm: DEMO_NOTA.atualizadoEm,
           },
         ],
-      }
-      setDados(demo)
-      setSelecionada(DEMO_NOTA.id)
-      setCarregando(false)
-      setErro("")
-      return
+      };
+      setDados(demo);
+      setSelecionada(DEMO_NOTA.id);
+      setCarregando(false);
+      setErro("");
+      return;
     }
     // A flag evita atualizar o estado se o token mudar antes da resposta.
-    let vivo = true
-    setCarregando(true)
-    setErro("")
+    let vivo = true;
+    setCarregando(true);
+    setErro("");
     fetch(`/api/publico/${encodeURIComponent(token)}`, { cache: "no-store" })
       .then(async (r) => {
         if (!r.ok) {
-          const c = await r.json().catch(() => ({ erro: "Link indisponível." }))
-          throw new Error(c.erro ?? "Link indisponível.")
+          const c = await r.json().catch(() => ({ erro: "Link indisponível." }));
+          throw new Error(c.erro ?? "Link indisponível.");
         }
-        return r.json() as Promise<DadosPublicos>
+        return r.json() as Promise<DadosPublicos>;
       })
       .then((c) => {
-        if (!vivo) return
-        setDados(c)
-        setSelecionada(c.link.tipo === "nota" ? (c.notas[0]?.id ?? null) : null)
+        if (!vivo) return;
+        setDados(c);
+        setSelecionada(c.link.tipo === "nota" ? (c.notas[0]?.id ?? null) : null);
       })
       .catch((e: Error) => {
-        if (vivo) setErro(e.message)
+        if (vivo) setErro(e.message);
       })
       .finally(() => {
-        if (vivo) setCarregando(false)
-      })
+        if (vivo) setCarregando(false);
+      });
     return () => {
-      vivo = false
-    }
-  }, [token])
+      vivo = false;
+    };
+  }, [token]);
 
-  const varias = Boolean(dados && dados.link.tipo !== "nota" && dados.notas.length > 1)
-  const nota = dados?.notas.find((n) => n.id === selecionada) ?? dados?.notas[0] ?? null
+  const varias = Boolean(dados && dados.link.tipo !== "nota" && dados.notas.length > 1);
+  const nota = dados?.notas.find((n) => n.id === selecionada) ?? dados?.notas[0] ?? null;
 
   const filtradas = useMemo(() => {
-    const base = dados?.notas ?? []
-    if (!varias || !busca.trim()) return base
-    const alvo = busca.trim().toLowerCase()
+    const base = dados?.notas ?? [];
+    if (!varias || !busca.trim()) return base;
+    const alvo = busca.trim().toLowerCase();
     return base.filter(
       (n) => n.titulo.toLowerCase().includes(alvo) || n.disciplinaNome.toLowerCase().includes(alvo),
-    )
-  }, [dados, varias, busca])
+    );
+  }, [dados, varias, busca]);
 
   if (carregando) {
     return (
@@ -154,7 +154,7 @@ export function VistaPublica({
         <Skeleton className="h-24 w-full rounded-2xl" />
         <Skeleton className="h-72 w-full rounded-2xl" />
       </div>
-    )
+    );
   }
 
   if (erro || !dados) {
@@ -168,10 +168,10 @@ export function VistaPublica({
           {erro || "Este link não existe, foi revogado pelo professor ou expirou."}
         </p>
       </div>
-    )
+    );
   }
 
-  const expira = dados.link.expiraEm ? new Date(dados.link.expiraEm) : null
+  const expira = dados.link.expiraEm ? new Date(dados.link.expiraEm) : null;
 
   return (
     <div className="bg-background min-h-screen">
@@ -193,9 +193,9 @@ export function VistaPublica({
               variant="ghost"
               size="icon"
               onClick={() => {
-                if (navegar) navegar("/")
-                else if (window.history.length > 1) window.history.back()
-                else window.location.hash = "#/"
+                if (navegar) navegar("/");
+                else if (window.history.length > 1) window.history.back();
+                else window.location.hash = "#/";
               }}
               aria-label="Voltar"
               className="rounded-lg"
@@ -239,8 +239,8 @@ export function VistaPublica({
             variant="outline"
             size="icon"
             onClick={() => {
-              const escuro = document.documentElement.classList.contains("dark")
-              setTheme(escuro ? "light" : "dark")
+              const escuro = document.documentElement.classList.contains("dark");
+              setTheme(escuro ? "light" : "dark");
             }}
             aria-label="Alternar tema"
             className="hidden rounded-lg sm:inline-flex"
@@ -286,7 +286,7 @@ export function VistaPublica({
 
           <div className="space-y-2.5">
             {filtradas.map((n, i) => {
-              const cor = corDisciplina(n.disciplinaCor)
+              const cor = corDisciplina(n.disciplinaCor);
               return (
                 <button
                   key={n.id}
@@ -321,7 +321,7 @@ export function VistaPublica({
                     {n.disciplinaNome || "Aula"}
                   </Badge>
                 </button>
-              )
+              );
             })}
             {filtradas.length === 0 ? (
               <p className="border-border text-muted-foreground rounded-2xl border border-dashed p-8 text-center text-sm">
@@ -431,5 +431,5 @@ export function VistaPublica({
         </p>
       ) : null}
     </div>
-  )
+  );
 }

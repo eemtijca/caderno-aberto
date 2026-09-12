@@ -1,12 +1,12 @@
 // Utilitários de texto: normalização, slug e extração de conteúdo para busca.
-import { Bloco, BlocoFilho, NotaDados } from "./tipos"
+import { Bloco, BlocoFilho, NotaDados } from "./tipos";
 
 // Remove acentos para que a busca case "fisica" com "física".
 export function normalizar(s: string): string {
   return s
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
+    .toLowerCase();
 }
 
 export function slugificar(titulo: string): string {
@@ -15,7 +15,7 @@ export function slugificar(titulo: string): string {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 80) || "nota"
-  )
+  );
 }
 
 /** Remove marcação e comandos para gerar texto indexável. */
@@ -29,83 +29,83 @@ export function textoPuro(texto: string): string {
     .replace(/\\(?:resultado|dest|textbf|textit)\{([^}]*)\}/g, "$1")
     .replace(/\\[a-zA-Z]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim()
+    .trim();
 }
 
 export function extrairTextoBlocos(blocos: Bloco[]): string {
-  const partes: string[] = []
+  const partes: string[] = [];
   const visita = (lista: Bloco[]): void => {
     for (const b of lista) {
       switch (b.tipo) {
         case "secao":
-          partes.push(b.titulo)
-          break
+          partes.push(b.titulo);
+          break;
         case "paragrafo":
-          if (b.rotulo?.texto) partes.push(b.rotulo.texto)
-          partes.push(textoPuro(b.texto))
-          break
+          if (b.rotulo?.texto) partes.push(b.rotulo.texto);
+          partes.push(textoPuro(b.texto));
+          break;
         case "formula":
-          partes.push(b.latex)
-          break
+          partes.push(b.latex);
+          break;
         case "lista":
-          partes.push(...b.itens.map(textoPuro))
-          break
+          partes.push(...b.itens.map(textoPuro));
+          break;
         case "tabela":
-          for (const linha of b.linhas) partes.push(...linha.map(textoPuro))
-          break
+          for (const linha of b.linhas) partes.push(...linha.map(textoPuro));
+          break;
         case "chamada":
-          partes.push(textoPuro(b.texto))
-          break
+          partes.push(textoPuro(b.texto));
+          break;
         case "figura":
-          partes.push(textoPuro(b.legenda))
-          break
+          partes.push(textoPuro(b.legenda));
+          break;
         case "tikz":
-          partes.push(textoPuro(b.legenda))
-          partes.push(b.codigo)
-          break
+          partes.push(textoPuro(b.legenda));
+          partes.push(b.codigo);
+          break;
         case "copiar":
         case "exemplo":
         case "dica":
-          partes.push(b.rotulo)
-          visitaFilhos(b.filhos)
-          break
+          partes.push(b.rotulo);
+          visitaFilhos(b.filhos);
+          break;
         case "exercicios":
-          partes.push(b.rotulo, b.gabarito)
+          partes.push(b.rotulo, b.gabarito);
           for (const nivel of b.niveis) {
-            partes.push(`Nível ${nivel.numero} ${nivel.titulo}`)
+            partes.push(`Nível ${nivel.numero} ${nivel.titulo}`);
             for (const q of nivel.questoes) {
-              partes.push(textoPuro(q.enunciado))
-              partes.push(...q.alternativas.map(textoPuro))
+              partes.push(textoPuro(q.enunciado));
+              partes.push(...q.alternativas.map(textoPuro));
             }
           }
-          break
+          break;
       }
     }
-  }
+  };
   const visitaFilhos = (filhos: BlocoFilho[]): void => {
     for (const f of filhos) {
       if (f.tipo === "paragrafo") {
-        if (f.rotulo?.texto) partes.push(f.rotulo.texto)
-        partes.push(textoPuro(f.texto))
-      } else if (f.tipo === "formula") partes.push(f.latex)
-      else if (f.tipo === "lista") partes.push(...f.itens.map(textoPuro))
+        if (f.rotulo?.texto) partes.push(f.rotulo.texto);
+        partes.push(textoPuro(f.texto));
+      } else if (f.tipo === "formula") partes.push(f.latex);
+      else if (f.tipo === "lista") partes.push(...f.itens.map(textoPuro));
       else if (f.tipo === "tabela") {
-        for (const linha of f.linhas) partes.push(...linha.map(textoPuro))
-      } else if (f.tipo === "chamada") partes.push(textoPuro(f.texto))
+        for (const linha of f.linhas) partes.push(...linha.map(textoPuro));
+      } else if (f.tipo === "chamada") partes.push(textoPuro(f.texto));
     }
-  }
-  visita(blocos)
+  };
+  visita(blocos);
   // O ponto médio separa campos e evita juntar palavras de blocos distintos.
-  return partes.filter(Boolean).join(" \u00b7 ")
+  return partes.filter(Boolean).join(" \u00b7 ");
 }
 
 export function textoDeBusca(nota: {
-  titulo: string
-  sobre: string
-  habilidades: string
-  blocos: Bloco[]
-  disciplina?: { nome: string } | null
-  turmas?: { nome: string; serie?: string }[]
+  titulo: string;
+  sobre: string;
+  habilidades: string;
+  blocos: Bloco[];
+  disciplina?: { nome: string } | null;
+  turmas?: { nome: string; serie?: string }[];
 }): string {
   const meta = [
     nota.titulo,
@@ -113,22 +113,22 @@ export function textoDeBusca(nota: {
     nota.habilidades,
     nota.disciplina?.nome ?? "",
     ...(nota.turmas ?? []).map((t) => `${t.nome} ${t.serie}`),
-  ]
-  return normalizar([...meta, extrairTextoBlocos(nota.blocos)].join(" \u00b7 "))
+  ];
+  return normalizar([...meta, extrairTextoBlocos(nota.blocos)].join(" \u00b7 "));
 }
 
 export function contarBlocos(blocos: Bloco[]): number {
-  let total = 0
+  let total = 0;
   for (const b of blocos) {
-    total++
+    total++;
     if (b.tipo === "copiar" || b.tipo === "exemplo" || b.tipo === "dica") {
-      total += b.filhos.length
+      total += b.filhos.length;
     }
     if (b.tipo === "exercicios") {
-      total += b.niveis.reduce((s, n) => s + n.questoes.length, 0)
+      total += b.niveis.reduce((s, n) => s + n.questoes.length, 0);
     }
   }
-  return total
+  return total;
 }
 
 export const MESES = [
@@ -144,44 +144,44 @@ export const MESES = [
   "outubro",
   "novembro",
   "dezembro",
-]
+];
 
-export const MESES_CAP = MESES.map((m) => m.charAt(0).toUpperCase() + m.slice(1))
+export const MESES_CAP = MESES.map((m) => m.charAt(0).toUpperCase() + m.slice(1));
 
 export function separarHabilidades(h: string): string[] {
   return h
     .split(/[,;]/)
     .map((s) => s.trim())
-    .filter(Boolean)
+    .filter(Boolean);
 }
 
 /** Deriva as respostas objetivas no formato 1a, 2c; discursivas ficam de fora. */
 export function gabaritoAutomatico(
   niveis: {
-    numero: number
-    titulo: string
-    questoes: { alternativas: string[]; correta: number | null }[]
+    numero: number;
+    titulo: string;
+    questoes: { alternativas: string[]; correta: number | null }[];
   }[],
 ): string[] {
-  const itens: string[] = []
-  let numero = 0
+  const itens: string[] = [];
+  let numero = 0;
   for (const nivel of niveis) {
     for (const q of nivel.questoes) {
-      numero++
+      numero++;
       if (q.alternativas.length > 0 && q.correta !== null) {
-        itens.push(`${numero}${"abcd"[q.correta] ?? ""}`)
+        itens.push(`${numero}${"abcd"[q.correta] ?? ""}`);
       }
     }
   }
-  return itens
+  return itens;
 }
 
 export function contarQuestoes(nota: NotaDados): number {
-  let total = 0
+  let total = 0;
   for (const b of nota.blocos) {
     if (b.tipo === "exercicios") {
-      total += b.niveis.reduce((s, n) => s + n.questoes.length, 0)
+      total += b.niveis.reduce((s, n) => s + n.questoes.length, 0);
     }
   }
-  return total
+  return total;
 }

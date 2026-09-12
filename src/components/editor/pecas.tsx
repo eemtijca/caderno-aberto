@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
 // Peças reutilizáveis do editor: textarea que cresce sozinha e barra de
 // formatação inline que envolve a seleção atual.
 
-import { useEffect, useRef } from "react"
-import { Bold, Italic, Percent, Sigma, Highlighter } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useEffect, useRef } from "react";
+import { Bold, Italic, Percent, Sigma, Highlighter } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function TextareaAuto({
   valor,
@@ -17,24 +17,24 @@ export function TextareaAuto({
   rowsMin = 1,
   ariaLabel,
 }: {
-  valor: string
-  onChange: (v: string) => void
-  placeholder?: string
-  className?: string
-  mono?: boolean
-  onFocus?: () => void
-  rowsMin?: number
-  ariaLabel?: string
+  valor: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  mono?: boolean;
+  onFocus?: () => void;
+  rowsMin?: number;
+  ariaLabel?: string;
 }) {
-  const ref = useRef<HTMLTextAreaElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null);
 
   // Recalcula a altura a cada mudança de valor para acompanhar o conteúdo.
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    el.style.height = "auto"
-    el.style.height = `${el.scrollHeight}px`
-  }, [valor])
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [valor]);
 
   return (
     <textarea
@@ -49,7 +49,7 @@ export function TextareaAuto({
         mono ? "font-mono text-[0.88rem]" : ""
       } ${className ?? ""}`}
     />
-  )
+  );
 }
 
 // Envolve o trecho selecionado (ou um placeholder) com marcadores e devolve o
@@ -60,36 +60,36 @@ export function inserirNoTextarea(
   depois: string = antes,
   placeholder = "",
 ): { valor: string; pos: number } | null {
-  if (!el) return null
-  const inicio = el.selectionStart ?? el.value.length
-  const fim = el.selectionEnd ?? inicio
-  const selecionado = el.value.slice(inicio, fim)
-  const texto = selecionado || placeholder
-  const novo = el.value.slice(0, inicio) + antes + texto + depois + el.value.slice(fim)
-  const pos = inicio + antes.length + texto.length
-  return { valor: novo, pos }
+  if (!el) return null;
+  const inicio = el.selectionStart ?? el.value.length;
+  const fim = el.selectionEnd ?? inicio;
+  const selecionado = el.value.slice(inicio, fim);
+  const texto = selecionado || placeholder;
+  const novo = el.value.slice(0, inicio) + antes + texto + depois + el.value.slice(fim);
+  const pos = inicio + antes.length + texto.length;
+  return { valor: novo, pos };
 }
 
 export function BarraInline({
   alvo,
   onAplicar,
 }: {
-  alvo: React.RefObject<HTMLTextAreaElement | null>
-  onAplicar: (valor: string, pos: number) => void
+  alvo: React.RefObject<HTMLTextAreaElement | null>;
+  onAplicar: (valor: string, pos: number) => void;
 }) {
   const aplicar = (antes: string, depois: string, placeholder: string) => {
-    const el = alvo.current
-    if (!el) return
-    const r = inserirNoTextarea(el, antes, depois, placeholder)
+    const el = alvo.current;
+    if (!el) return;
+    const r = inserirNoTextarea(el, antes, depois, placeholder);
     if (r) {
-      onAplicar(r.valor, r.pos)
+      onAplicar(r.valor, r.pos);
       // Reposiciona o cursor depois que o React aplica o novo valor.
       requestAnimationFrame(() => {
-        el.focus()
-        if (r.pos >= 0) el.setSelectionRange(r.pos, r.pos)
-      })
+        el.focus();
+        if (r.pos >= 0) el.setSelectionRange(r.pos, r.pos);
+      });
     }
-  }
+  };
 
   const itens = [
     { icone: Bold, rotulo: "Negrito", antes: "**", depois: "**", placeholder: "palavra-chave" },
@@ -115,7 +115,7 @@ export function BarraInline({
       depois: "}$",
       placeholder: "H2O",
     },
-  ]
+  ];
 
   return (
     <div className="flex items-center gap-0.5" role="toolbar" aria-label="Formatação inline">
@@ -137,5 +137,5 @@ export function BarraInline({
         </Tooltip>
       ))}
     </div>
-  )
+  );
 }

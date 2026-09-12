@@ -1,63 +1,63 @@
-"use client"
+"use client";
 
 // Renderiza diagramas TikZ via TikZJax: injeta um script text/tikz e observa a
 // inserção do SVG, com limite de tempo e estado de falha.
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react";
 
-const BIBLIOTECAS = "arrows.meta,positioning,calc,decorations.markings"
+const BIBLIOTECAS = "arrows.meta,positioning,calc,decorations.markings";
 
 export function Tikz({ codigo }: { codigo: string }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [carregando, setCarregando] = useState(true)
-  const [falhou, setFalhou] = useState(false)
+  const ref = useRef<HTMLDivElement>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [falhou, setFalhou] = useState(false);
 
   useEffect(() => {
-    if (!ref.current) return
-    const container = ref.current
-    setCarregando(true)
-    setFalhou(false)
-    container.innerHTML = ""
+    if (!ref.current) return;
+    const container = ref.current;
+    setCarregando(true);
+    setFalhou(false);
+    container.innerHTML = "";
 
     // Aceita tanto o ambiente completo quanto apenas o corpo do desenho.
-    const script = document.createElement("script")
-    script.type = "text/tikz"
-    script.setAttribute("data-tikz-libraries", BIBLIOTECAS)
-    const c = codigo.trim()
+    const script = document.createElement("script");
+    script.type = "text/tikz";
+    script.setAttribute("data-tikz-libraries", BIBLIOTECAS);
+    const c = codigo.trim();
     script.textContent =
       c.includes("\\begin{tikzpicture}") || c.includes("\\begin{axis}")
         ? c
-        : `\\begin{tikzpicture}\n${c}\n\\end{tikzpicture}`
+        : `\\begin{tikzpicture}\n${c}\n\\end{tikzpicture}`;
 
     const obs = new MutationObserver(() => {
       if (container.querySelector("svg")) {
-        setCarregando(false)
-        setFalhou(false)
-        obs.disconnect()
+        setCarregando(false);
+        setFalhou(false);
+        obs.disconnect();
       }
-    })
-    obs.observe(container, { childList: true, subtree: true })
+    });
+    obs.observe(container, { childList: true, subtree: true });
 
     const onFinish = () => {
-      setCarregando(false)
-      obs.disconnect()
-    }
-    container.addEventListener("tikzjax-load-finished", onFinish)
-    container.appendChild(script)
+      setCarregando(false);
+      obs.disconnect();
+    };
+    container.addEventListener("tikzjax-load-finished", onFinish);
+    container.appendChild(script);
 
     // Desiste depois de 32s e sinaliza falha se nenhum SVG apareceu.
     const t = setTimeout(() => {
-      if (!container.querySelector("svg")) setFalhou(true)
-      setCarregando(false)
-      obs.disconnect()
-    }, 32000)
+      if (!container.querySelector("svg")) setFalhou(true);
+      setCarregando(false);
+      obs.disconnect();
+    }, 32000);
 
     return () => {
-      clearTimeout(t)
-      obs.disconnect()
-      container.removeEventListener("tikzjax-load-finished", onFinish)
-    }
-  }, [codigo])
+      clearTimeout(t);
+      obs.disconnect();
+      container.removeEventListener("tikzjax-load-finished", onFinish);
+    };
+  }, [codigo]);
 
   if (falhou) {
     return (
@@ -68,7 +68,7 @@ export function Tikz({ codigo }: { codigo: string }) {
         Não foi possível renderizar este diagrama. Verifique o código TikZ — chaves, parênteses e
         comandos precisam estar balanceados.
       </div>
-    )
+    );
   }
 
   return (
@@ -85,5 +85,5 @@ export function Tikz({ codigo }: { codigo: string }) {
         </div>
       ) : null}
     </div>
-  )
+  );
 }

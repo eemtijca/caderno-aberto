@@ -1,15 +1,15 @@
 // Converte linhas do banco no contrato NotaDados exposto pela API.
-import "server-only"
+import "server-only";
 
-import type { Bloco, NotaDados } from "@/lib/notas/tipos"
-import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
-import { slugificar } from "@/lib/notas/texto"
-import { banco } from "@/lib/banco"
-import type { DisciplinaLinha, NotaLinha, TurmaLinha } from "@/lib/banco/tipos"
+import type { Bloco, NotaDados } from "@/lib/notas/tipos";
+import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos";
+import { slugificar } from "@/lib/notas/texto";
+import { banco } from "@/lib/banco";
+import type { DisciplinaLinha, NotaLinha, TurmaLinha } from "@/lib/banco/tipos";
 
 type NotaComDisciplina = NotaLinha & {
-  disciplina?: Pick<DisciplinaLinha, "id" | "nome" | "cor" | "icone" | "ordem"> | null
-}
+  disciplina?: Pick<DisciplinaLinha, "id" | "nome" | "cor" | "icone" | "ordem"> | null;
+};
 
 /** Linha do banco para NotaDados, com fallback denormalizado. */
 export function linhaParaNota(
@@ -33,7 +33,7 @@ export function linhaParaNota(
           icone: "BookOpen",
           ordem: 0,
         }
-      : null
+      : null;
 
   const turmas = linha.turmasIds
     .map((id) => mapaTurmas.get(id))
@@ -43,7 +43,7 @@ export function linhaParaNota(
       nome: t.nome,
       serie: t.serie,
       anoLetivo: t.anoLetivo,
-    }))
+    }));
 
   return {
     id: linha.id,
@@ -62,14 +62,14 @@ export function linhaParaNota(
     criadoEm: linha.criadoEm.toISOString(),
     atualizadoEm: linha.atualizadoEm.toISOString(),
     turmas,
-  }
+  };
 }
 
 /** Turmas do professor indexadas por id. */
 export async function mapaTurmasProfessor(professorId: string): Promise<Map<string, TurmaLinha>> {
-  const db = banco()
-  const turmas = await db.turmas.findMany({ where: { professorId } })
-  return new Map((turmas as unknown as TurmaLinha[]).map((t) => [t.id, t]))
+  const db = banco();
+  const turmas = await db.turmas.findMany({ where: { professorId } });
+  return new Map((turmas as unknown as TurmaLinha[]).map((t) => [t.id, t]));
 }
 
 /** Copia nome e cor para a nota, evitando joins na leitura pública. */
@@ -80,10 +80,10 @@ export function camposDenormalizados(disciplina: DisciplinaLinha | null, turmas:
     disciplinaCor: disciplina?.cor ?? "verde",
     turmasIds: turmas.map((t) => t.id),
     turmasNomes: turmas.map((t) => t.nome),
-  }
+  };
 }
 
 /** Converte blocos/aparência em JSON puro aceito pelo contrato. */
 export function paraJson(valor: unknown): any {
-  return JSON.parse(JSON.stringify(valor ?? null))
+  return JSON.parse(JSON.stringify(valor ?? null));
 }

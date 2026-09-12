@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
 // Diálogo de nova nota. Metadados para organização automática.
-import { useEffect, useMemo, useState } from "react"
-import { Loader2, Plus, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, Plus, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,71 +11,76 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useTurmas, useCriarNota, useDisciplinas, useCriarDisciplina } from "@/lib/notas/api-client"
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  useTurmas,
+  useCriarNota,
+  useDisciplinas,
+  useCriarDisciplina,
+} from "@/lib/notas/api-client";
 import {
   CORES,
   corDisciplina,
   ICONES_DISCIPLINA,
   MAPA_ICONES,
   nomeIconeValido,
-} from "@/lib/notas/cores"
-import { MESES_CAP } from "@/lib/notas/texto"
-import { toast } from "sonner"
+} from "@/lib/notas/cores";
+import { MESES_CAP } from "@/lib/notas/texto";
+import { toast } from "sonner";
 
 interface Props {
-  aberto: boolean
-  aoFechar: () => void
-  aoCriar: (id: string) => void
+  aberto: boolean;
+  aoFechar: () => void;
+  aoCriar: (id: string) => void;
 }
 
 export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
-  const disciplinasQ = useDisciplinas()
-  const turmasQ = useTurmas()
-  const disciplinas = disciplinasQ.data
-  const turmas = turmasQ.data
-  const criar = useCriarNota()
-  const criarDisciplina = useCriarDisciplina()
+  const disciplinasQ = useDisciplinas();
+  const turmasQ = useTurmas();
+  const disciplinas = disciplinasQ.data;
+  const turmas = turmasQ.data;
+  const criar = useCriarNota();
+  const criarDisciplina = useCriarDisciplina();
 
-  const anoAtual = new Date().getFullYear()
-  const mesAtual = new Date().getMonth() + 1
+  const anoAtual = new Date().getFullYear();
+  const mesAtual = new Date().getMonth() + 1;
 
-  const [titulo, setTitulo] = useState("")
-  const [disciplinaId, setDisciplinaId] = useState("")
-  const [anoLetivo, setAnoLetivo] = useState(anoAtual)
-  const [mes, setMes] = useState(mesAtual)
-  const [turmasSel, setTurmasSel] = useState<string[]>([])
-  const [comModelo, setComModelo] = useState(true)
-  const [mostrarNovaDisciplina, setMostrarNovaDisciplina] = useState(false)
-  const [novaDisciplinaNome, setNovaDisciplinaNome] = useState("")
-  const [novaDisciplinaCor, setNovaDisciplinaCor] = useState("verde")
-  const [novaDisciplinaIcone, setNovaDisciplinaIcone] = useState("BookOpen")
+  const [titulo, setTitulo] = useState("");
+  const [disciplinaId, setDisciplinaId] = useState("");
+  const [anoLetivo, setAnoLetivo] = useState(anoAtual);
+  const [mes, setMes] = useState(mesAtual);
+  const [turmasSel, setTurmasSel] = useState<string[]>([]);
+  const [comModelo, setComModelo] = useState(true);
+  const [mostrarNovaDisciplina, setMostrarNovaDisciplina] = useState(false);
+  const [novaDisciplinaNome, setNovaDisciplinaNome] = useState("");
+  const [novaDisciplinaCor, setNovaDisciplinaCor] = useState("verde");
+  const [novaDisciplinaIcone, setNovaDisciplinaIcone] = useState("BookOpen");
   // Só turmas do ano letivo escolhido podem ser vinculadas.
   const turmasDoAno = useMemo(
     () => (turmas ?? []).filter((t) => t.anoLetivo === anoLetivo),
     [turmas, anoLetivo],
-  )
+  );
 
   // Ao trocar o ano, descarta seleções que não pertencem ao ano corrente.
   useEffect(() => {
     setTurmasSel((prev) => {
-      const validos = prev.filter((id) => turmasDoAno.some((t) => t.id === id))
-      return validos.length === prev.length ? prev : validos
-    })
-  }, [turmasDoAno])
+      const validos = prev.filter((id) => turmasDoAno.some((t) => t.id === id));
+      return validos.length === prev.length ? prev : validos;
+    });
+  }, [turmasDoAno]);
 
-  const podeCriar = titulo.trim().length >= 2 && disciplinaId !== ""
+  const podeCriar = titulo.trim().length >= 2 && disciplinaId !== "";
 
   const submeter = async () => {
     try {
@@ -86,16 +91,16 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
         mes,
         turmasIds: turmasSel.filter((id) => turmasDoAno.some((t) => t.id === id)),
         comModelo,
-      })
-      toast.success("Nota criada", { description: `"${r.nota.titulo}" está pronta para editar.` })
-      aoFechar()
-      aoCriar(r.nota.id)
+      });
+      toast.success("Nota criada", { description: `"${r.nota.titulo}" está pronta para editar.` });
+      aoFechar();
+      aoCriar(r.nota.id);
     } catch (e) {
       toast.error("Não foi possível criar", {
         description: e instanceof Error ? e.message : "Erro inesperado.",
-      })
+      });
     }
-  }
+  };
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
@@ -159,19 +164,19 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                     <SelectTrigger className="h-9 rounded-lg">
                       <SelectValue>
                         {(() => {
-                          const Icon = MAPA_ICONES[novaDisciplinaIcone] ?? MAPA_ICONES.BookOpen
+                          const Icon = MAPA_ICONES[novaDisciplinaIcone] ?? MAPA_ICONES.BookOpen;
                           return (
                             <span className="flex items-center gap-2">
                               <Icon className="h-4 w-4" aria-hidden />
                               {novaDisciplinaIcone}
                             </span>
-                          )
+                          );
                         })()}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {ICONES_DISCIPLINA.map((i) => {
-                        const Icon = MAPA_ICONES[i] ?? MAPA_ICONES.BookOpen
+                        const Icon = MAPA_ICONES[i] ?? MAPA_ICONES.BookOpen;
                         return (
                           <SelectItem key={i} value={i}>
                             <span className="flex items-center gap-2">
@@ -179,7 +184,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                               {i}
                             </span>
                           </SelectItem>
-                        )
+                        );
                       })}
                     </SelectContent>
                   </Select>
@@ -193,13 +198,13 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                         nome: novaDisciplinaNome.trim(),
                         cor: novaDisciplinaCor,
                         icone: nomeIconeValido(novaDisciplinaIcone),
-                      })
-                      setDisciplinaId((d as { disciplina: { id: string } }).disciplina.id)
-                      setMostrarNovaDisciplina(false)
-                      setNovaDisciplinaNome("")
-                      toast.success("Disciplina criada")
+                      });
+                      setDisciplinaId((d as { disciplina: { id: string } }).disciplina.id);
+                      setMostrarNovaDisciplina(false);
+                      setNovaDisciplinaNome("");
+                      toast.success("Disciplina criada");
                     } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Falha ao criar disciplina.")
+                      toast.error(e instanceof Error ? e.message : "Falha ao criar disciplina.");
                     }
                   }}
                   className="gap-1"
@@ -288,7 +293,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
             ) : turmasDoAno.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {turmasDoAno.map((t) => {
-                  const sel = turmasSel.includes(t.id)
+                  const sel = turmasSel.includes(t.id);
                   return (
                     <button
                       key={t.id}
@@ -307,7 +312,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                     >
                       {t.nome}
                     </button>
-                  )
+                  );
                 })}
               </div>
             ) : (
@@ -354,5 +359,5 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
         ) : null}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

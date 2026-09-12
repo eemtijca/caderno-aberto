@@ -1,46 +1,46 @@
-"use client"
+"use client";
 
 // Diálogo Compartilhar. Links da nota aberta: cria, copia, pausa, regenera ou exclui sem sair da leitura/edição.
 
-import { useState } from "react"
-import { Check, Copy, Link2, Loader2, Power, RefreshCw, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useState } from "react";
+import { Check, Copy, Link2, Loader2, Power, RefreshCw, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { toast } from "sonner"
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import {
   urlDoLink,
   useCriarLink,
   useEditarLink,
   useExcluirLink,
   useLinks,
-} from "@/lib/notas/api-client"
+} from "@/lib/notas/api-client";
 
 export function DialogoCompartilhar({
   aberto,
   aoFechar,
   notaId,
 }: {
-  aberto: boolean
-  aoFechar: () => void
-  notaId: string
+  aberto: boolean;
+  aoFechar: () => void;
+  notaId: string;
 }) {
-  const { data: links, isLoading } = useLinks()
-  const criar = useCriarLink()
-  const editar = useEditarLink()
-  const excluir = useExcluirLink()
-  const [nome, setNome] = useState("")
-  const [copiado, setCopiado] = useState<string | null>(null)
+  const { data: links, isLoading } = useLinks();
+  const criar = useCriarLink();
+  const editar = useEditarLink();
+  const excluir = useExcluirLink();
+  const [nome, setNome] = useState("");
+  const [copiado, setCopiado] = useState<string | null>(null);
 
   // Mostra apenas os links da nota aberta, não os de turma/disciplina.
-  const meusLinks = (links ?? []).filter((l) => l.tipo === "nota" && l.notaId === notaId)
+  const meusLinks = (links ?? []).filter((l) => l.tipo === "nota" && l.notaId === notaId);
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
@@ -69,19 +69,19 @@ export function DialogoCompartilhar({
               disabled={criar.isPending}
               onClick={async () => {
                 try {
-                  const r = await criar.mutateAsync({ tipo: "nota", notaId, nome: nome.trim() })
-                  setNome("")
+                  const r = await criar.mutateAsync({ tipo: "nota", notaId, nome: nome.trim() });
+                  setNome("");
                   toast.success("Link criado", {
                     description: "O endereço já foi copiado. Envie para os alunos.",
-                  })
+                  });
                   // Cópia automática é melhor esforço: pode falhar sem quebrar o fluxo.
                   void navigator.clipboard
                     ?.writeText(urlDoLink(r.link.token))
-                    .catch(() => undefined)
+                    .catch(() => undefined);
                 } catch (e) {
                   toast.error("Não foi possível criar o link.", {
                     description: e instanceof Error ? e.message : undefined,
-                  })
+                  });
                 }
               }}
             >
@@ -105,7 +105,7 @@ export function DialogoCompartilhar({
         ) : (
           <ul className="space-y-2">
             {meusLinks.map((l) => {
-              const url = urlDoLink(l.token)
+              const url = urlDoLink(l.token);
               return (
                 <li key={l.id} className="border-border rounded-xl border p-3">
                   <div className="flex items-center gap-2">
@@ -132,13 +132,13 @@ export function DialogoCompartilhar({
                       className="h-7 gap-1.5 rounded-md text-[0.72rem]"
                       onClick={async () => {
                         try {
-                          await navigator.clipboard.writeText(url)
-                          setCopiado(l.id)
-                          setTimeout(() => setCopiado(null), 2000)
+                          await navigator.clipboard.writeText(url);
+                          setCopiado(l.id);
+                          setTimeout(() => setCopiado(null), 2000);
                         } catch {
                           toast.error(
                             "Não foi possível copiar. Selecione o endereço e copie manualmente.",
-                          )
+                          );
                         }
                       }}
                     >
@@ -156,12 +156,12 @@ export function DialogoCompartilhar({
                       disabled={editar.isPending}
                       onClick={async () => {
                         try {
-                          await editar.mutateAsync({ id: l.id, dados: { ativo: !l.ativo } })
-                          toast.success(l.ativo ? "Link pausado" : "Link reativado")
+                          await editar.mutateAsync({ id: l.id, dados: { ativo: !l.ativo } });
+                          toast.success(l.ativo ? "Link pausado" : "Link reativado");
                         } catch (e) {
                           toast.error("Não foi possível atualizar o link.", {
                             description: e instanceof Error ? e.message : undefined,
-                          })
+                          });
                         }
                       }}
                     >
@@ -175,12 +175,12 @@ export function DialogoCompartilhar({
                       disabled={editar.isPending}
                       onClick={async () => {
                         try {
-                          await editar.mutateAsync({ id: l.id, dados: { regenerar: true } })
-                          toast.success("Novo link gerado")
+                          await editar.mutateAsync({ id: l.id, dados: { regenerar: true } });
+                          toast.success("Novo link gerado");
                         } catch (e) {
                           toast.error("Não foi possível gerar novo endereço.", {
                             description: e instanceof Error ? e.message : undefined,
-                          })
+                          });
                         }
                       }}
                     >
@@ -193,12 +193,12 @@ export function DialogoCompartilhar({
                       disabled={excluir.isPending}
                       onClick={async () => {
                         try {
-                          await excluir.mutateAsync(l.id)
-                          toast.success("Link excluído")
+                          await excluir.mutateAsync(l.id);
+                          toast.success("Link excluído");
                         } catch (e) {
                           toast.error("Não foi possível excluir o link.", {
                             description: e instanceof Error ? e.message : undefined,
-                          })
+                          });
                         }
                       }}
                     >
@@ -209,7 +209,7 @@ export function DialogoCompartilhar({
                     </span>
                   </div>
                 </li>
-              )
+              );
             })}
           </ul>
         )}
@@ -219,5 +219,5 @@ export function DialogoCompartilhar({
         </p>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -1,62 +1,62 @@
-"use client"
+"use client";
 
 // Vista Notas. Lista completa com filtros rápidos.
 
-import { useMemo, useState } from "react"
-import { FilterX, Plus, Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client"
-import { CartaoNota } from "@/components/notas/cartao-nota"
-import { MESES_CAP } from "@/lib/notas/texto"
-import { corDisciplina } from "@/lib/notas/cores"
+import { useMemo, useState } from "react";
+import { FilterX, Plus, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client";
+import { CartaoNota } from "@/components/notas/cartao-nota";
+import { MESES_CAP } from "@/lib/notas/texto";
+import { corDisciplina } from "@/lib/notas/cores";
 
 export function VistaNotas({
   navegar,
   onNovaNota,
 }: {
-  navegar: (para: string) => void
-  onNovaNota: () => void
+  navegar: (para: string) => void;
+  onNovaNota: () => void;
 }) {
-  const [busca, setBusca] = useState("")
-  const [disciplina, setDisciplina] = useState<string>("")
-  const [ano, setAno] = useState<number | undefined>(undefined)
-  const [mes, setMes] = useState<number | undefined>(undefined)
-  const [turma, setTurma] = useState<string>("")
+  const [busca, setBusca] = useState("");
+  const [disciplina, setDisciplina] = useState<string>("");
+  const [ano, setAno] = useState<number | undefined>(undefined);
+  const [mes, setMes] = useState<number | undefined>(undefined);
+  const [turma, setTurma] = useState<string>("");
 
-  const notasQ = useNotas()
-  const disciplinasQ = useDisciplinas()
-  const turmasQ = useTurmas()
-  const { data: notas, isLoading: carregandoNotas } = notasQ
-  const { data: disciplinas, isLoading: carregandoDisciplinas } = disciplinasQ
-  const { data: turmas } = turmasQ
+  const notasQ = useNotas();
+  const disciplinasQ = useDisciplinas();
+  const turmasQ = useTurmas();
+  const { data: notas, isLoading: carregandoNotas } = notasQ;
+  const { data: disciplinas, isLoading: carregandoDisciplinas } = disciplinasQ;
+  const { data: turmas } = turmasQ;
 
   const anos = useMemo(
     () => [...new Set((notas ?? []).map((n) => n.anoLetivo))].sort((a, b) => b - a),
     [notas],
-  )
+  );
 
   // Busca local por título, resumo e habilidades, somada aos filtros de chips.
   const filtradas = useMemo(() => {
-    let lista = notas ?? []
+    let lista = notas ?? [];
     if (busca.trim()) {
-      const alvo = busca.trim().toLowerCase()
+      const alvo = busca.trim().toLowerCase();
       lista = lista.filter(
         (n) =>
           n.titulo.toLowerCase().includes(alvo) ||
           n.sobre.toLowerCase().includes(alvo) ||
           n.habilidades.toLowerCase().includes(alvo),
-      )
+      );
     }
-    if (disciplina) lista = lista.filter((n) => n.disciplinaId === disciplina)
-    if (ano) lista = lista.filter((n) => n.anoLetivo === ano)
-    if (mes) lista = lista.filter((n) => n.mes === mes)
-    if (turma) lista = lista.filter((n) => n.turmas.some((t) => t.id === turma))
-    return lista
-  }, [notas, busca, disciplina, ano, mes, turma])
+    if (disciplina) lista = lista.filter((n) => n.disciplinaId === disciplina);
+    if (ano) lista = lista.filter((n) => n.anoLetivo === ano);
+    if (mes) lista = lista.filter((n) => n.mes === mes);
+    if (turma) lista = lista.filter((n) => n.turmas.some((t) => t.id === turma));
+    return lista;
+  }, [notas, busca, disciplina, ano, mes, turma]);
 
-  const temFiltro = disciplina || ano || mes || turma
+  const temFiltro = disciplina || ano || mes || turma;
 
   return (
     <div className="space-y-5">
@@ -173,11 +173,11 @@ export function VistaNotas({
             size="sm"
             className="text-muted-foreground gap-1.5"
             onClick={() => {
-              setDisciplina("")
-              setAno(undefined)
-              setMes(undefined)
-              setTurma("")
-              setBusca("")
+              setDisciplina("");
+              setAno(undefined);
+              setMes(undefined);
+              setTurma("");
+              setBusca("");
             }}
           >
             <FilterX className="h-4 w-4" aria-hidden /> Limpar filtros
@@ -225,7 +225,7 @@ export function VistaNotas({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function ChipFiltro({
@@ -234,12 +234,12 @@ function ChipFiltro({
   cor,
   onClick,
 }: {
-  ativo: boolean
-  rotulo: string
-  cor?: string
-  onClick: () => void
+  ativo: boolean;
+  rotulo: string;
+  cor?: string;
+  onClick: () => void;
 }) {
-  const classesCor = cor ? corDisciplina(cor) : null
+  const classesCor = cor ? corDisciplina(cor) : null;
   return (
     <button
       type="button"
@@ -259,5 +259,5 @@ function ChipFiltro({
         />
       ) : null}
     </button>
-  )
+  );
 }

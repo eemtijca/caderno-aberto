@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
 // Vista de leitura. Renderização dos blocos (redesenho). Inclui quiz interativo, gabarito ocultável e estilos de impressão A4.
 
-import { useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react";
 import {
   BookMarked,
   CheckCircle2,
@@ -13,12 +13,12 @@ import {
   Ruler,
   Sprout,
   TriangleAlert,
-} from "lucide-react"
-import type { Bloco, BlocoFilho, Questao, Rotulo } from "@/lib/notas/tipos"
-import { textoRotulo } from "@/lib/notas/tipos"
-import { Inline, renderizarInline } from "./inline"
-import { Matematica } from "./matematica"
-import { Tikz } from "./tikz"
+} from "lucide-react";
+import type { Bloco, BlocoFilho, Questao, Rotulo } from "@/lib/notas/tipos";
+import { textoRotulo } from "@/lib/notas/tipos";
+import { Inline, renderizarInline } from "./inline";
+import { Matematica } from "./matematica";
+import { Tikz } from "./tikz";
 
 const CORES_ROTULO: Record<string, string> = {
   definicao: "text-sky-700 dark:text-sky-300",
@@ -27,12 +27,12 @@ const CORES_ROTULO: Record<string, string> = {
   modelo: "text-sky-700 dark:text-sky-300",
   resolucao: "text-sky-700 dark:text-sky-300",
   livre: "text-sky-700 dark:text-sky-300",
-}
+};
 
 function RotuloPrefixo({ rotulo }: { rotulo: Rotulo | null | undefined }) {
-  const texto = textoRotulo(rotulo)
-  if (!texto) return null
-  return <span className={`font-bold ${CORES_ROTULO[rotulo?.tipo ?? "livre"]}`}>{texto} </span>
+  const texto = textoRotulo(rotulo);
+  if (!texto) return null;
+  return <span className={`font-bold ${CORES_ROTULO[rotulo?.tipo ?? "livre"]}`}>{texto} </span>;
 }
 
 const CHAMADAS: Record<
@@ -57,11 +57,11 @@ const CHAMADAS: Record<
     titulo: "Símbolos:",
     tituloClasse: "text-violet-800 dark:text-violet-300",
   },
-}
+};
 
 function ChamadaView({ estilo, texto }: { estilo: string; texto: string }) {
-  const conf = CHAMADAS[estilo] ?? CHAMADAS.atencao
-  const Icone = conf.icone
+  const conf = CHAMADAS[estilo] ?? CHAMADAS.atencao;
+  const Icone = conf.icone;
   return (
     <div
       className={`na-imprime-caixa flex gap-2.5 rounded-xl border px-3.5 py-3 text-[0.95rem] leading-relaxed ${conf.classe}`}
@@ -72,7 +72,7 @@ function ChamadaView({ estilo, texto }: { estilo: string; texto: string }) {
         <Inline texto={texto} />
       </p>
     </div>
-  )
+  );
 }
 
 function FilhoView({ filho }: { filho: BlocoFilho }): ReactNode {
@@ -83,13 +83,13 @@ function FilhoView({ filho }: { filho: BlocoFilho }): ReactNode {
           <RotuloPrefixo rotulo={filho.rotulo} />
           <Inline texto={filho.texto} />
         </p>
-      )
+      );
     case "formula":
       return (
         <div className="na-formula-display my-1 overflow-x-auto py-1 text-center">
           <Matematica latex={filho.latex} bloco />
         </div>
-      )
+      );
     case "lista":
       return (
         <ul className="space-y-1.5">
@@ -105,17 +105,17 @@ function FilhoView({ filho }: { filho: BlocoFilho }): ReactNode {
             </li>
           ))}
         </ul>
-      )
+      );
     case "tabela":
-      return <TabelaView comCabecalho={filho.comCabecalho} linhas={filho.linhas} />
+      return <TabelaView comCabecalho={filho.comCabecalho} linhas={filho.linhas} />;
     case "chamada":
-      return <ChamadaView estilo={filho.estilo} texto={filho.texto} />
+      return <ChamadaView estilo={filho.estilo} texto={filho.texto} />;
   }
 }
 
 function TabelaView({ comCabecalho, linhas }: { comCabecalho: boolean; linhas: string[][] }) {
-  if (linhas.length === 0) return null
-  const nCol = Math.max(...linhas.map((l) => l.length))
+  if (linhas.length === 0) return null;
+  const nCol = Math.max(...linhas.map((l) => l.length));
   return (
     <div className="na-imprime-caixa overflow-x-auto rounded-xl border border-stone-200 dark:border-stone-800">
       <table className="w-full border-collapse text-[0.92rem]">
@@ -146,7 +146,7 @@ function TabelaView({ comCabecalho, linhas }: { comCabecalho: boolean; linhas: s
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 
 function CabecalhoCaixa({
@@ -154,9 +154,9 @@ function CabecalhoCaixa({
   titulo,
   destaque,
 }: {
-  icone: typeof PencilLine
-  titulo: string
-  destaque?: ReactNode
+  icone: typeof PencilLine;
+  titulo: string;
+  destaque?: ReactNode;
 }) {
   return (
     <div className="mb-2.5 flex flex-wrap items-center gap-2">
@@ -166,7 +166,7 @@ function CabecalhoCaixa({
         {titulo}
       </span>
     </div>
-  )
+  );
 }
 
 function CaixaCopiar({ rotulo, filhos }: { rotulo: string; filhos: BlocoFilho[] }) {
@@ -187,7 +187,7 @@ function CaixaCopiar({ rotulo, filhos }: { rotulo: string; filhos: BlocoFilho[] 
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 function CaixaExemplo({ rotulo, filhos }: { rotulo: string; filhos: BlocoFilho[] }) {
@@ -204,7 +204,7 @@ function CaixaExemplo({ rotulo, filhos }: { rotulo: string; filhos: BlocoFilho[]
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 function CaixaDica({ rotulo, filhos }: { rotulo: string; filhos: BlocoFilho[] }) {
@@ -221,13 +221,13 @@ function CaixaDica({ rotulo, filhos }: { rotulo: string; filhos: BlocoFilho[] })
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 // Quiz local: a escolha vive só no componente e a correção aparece no clique.
 function QuestaoView({ questao, numero }: { questao: Questao; numero: number }) {
-  const [escolhida, setEscolhida] = useState<number | null>(null)
-  const temCorreta = questao.correta !== null && questao.correta < questao.alternativas.length
+  const [escolhida, setEscolhida] = useState<number | null>(null);
+  const temCorreta = questao.correta !== null && questao.correta < questao.alternativas.length;
 
   return (
     <li className="space-y-2">
@@ -239,18 +239,18 @@ function QuestaoView({ questao, numero }: { questao: Questao; numero: number }) 
         <>
           <div className="space-y-1.5 pl-5 print:hidden">
             {questao.alternativas.map((alt, i) => {
-              const letra = "abcd"[i] ?? "?"
-              const selecionada = escolhida === i
+              const letra = "abcd"[i] ?? "?";
+              const selecionada = escolhida === i;
               let classe =
-                "border-stone-200 bg-white hover:border-stone-400 dark:border-stone-700 dark:bg-stone-900 dark:hover:border-stone-500"
+                "border-stone-200 bg-white hover:border-stone-400 dark:border-stone-700 dark:bg-stone-900 dark:hover:border-stone-500";
               if (escolhida !== null && temCorreta) {
                 if (i === questao.correta)
                   classe =
-                    "border-emerald-500 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-950/40"
+                    "border-emerald-500 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-950/40";
                 else if (selecionada)
-                  classe = "border-rose-400 bg-rose-50 dark:border-rose-600 dark:bg-rose-950/40"
+                  classe = "border-rose-400 bg-rose-50 dark:border-rose-600 dark:bg-rose-950/40";
               } else if (selecionada) {
-                classe = "border-stone-900 bg-stone-100 dark:border-stone-300 dark:bg-stone-800"
+                classe = "border-stone-900 bg-stone-100 dark:border-stone-300 dark:bg-stone-800";
               }
               return (
                 <button
@@ -275,7 +275,7 @@ function QuestaoView({ questao, numero }: { questao: Questao; numero: number }) 
                     <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" aria-hidden />
                   ) : null}
                 </button>
-              )
+              );
             })}
           </div>
           {/* no papel as alternativas viram texto corrido, sem botões */}
@@ -285,35 +285,35 @@ function QuestaoView({ questao, numero }: { questao: Questao; numero: number }) 
         </>
       ) : null}
     </li>
-  )
+  );
 }
 
 const CORES_NIVEL: Record<number, string> = {
   1: "border-sky-500/30 bg-sky-50 text-sky-800 dark:border-sky-500/30 dark:bg-sky-950/40 dark:text-sky-300",
   2: "border-amber-500/30 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-300",
   3: "border-rose-500/30 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-950/40 dark:text-rose-300",
-}
+};
 
 function ExerciciosView({
   bloco,
   mostrarGabarito,
 }: {
-  bloco: Extract<Bloco, { tipo: "exercicios" }>
-  mostrarGabarito: boolean
+  bloco: Extract<Bloco, { tipo: "exercicios" }>;
+  mostrarGabarito: boolean;
 }) {
   // Gabarito automático: percorre as questões numeradas e coleta as alternativas marcadas.
-  const gabAuto: string[] = []
-  let nGab = 0
+  const gabAuto: string[] = [];
+  let nGab = 0;
   for (const nivel of bloco.niveis) {
     for (const q of nivel.questoes) {
-      nGab++
+      nGab++;
       if (q.alternativas.length > 0 && q.correta !== null) {
-        gabAuto.push(`${nGab}${"abcd"[q.correta] ?? ""}`)
+        gabAuto.push(`${nGab}${"abcd"[q.correta] ?? ""}`);
       }
     }
   }
-  const gabarito = [gabAuto.join(" · "), bloco.gabarito.trim()].filter(Boolean).join(" · ")
-  let numero = 0
+  const gabarito = [gabAuto.join(" · "), bloco.gabarito.trim()].filter(Boolean).join(" · ");
+  let numero = 0;
 
   return (
     <section className="na-imprime-caixa rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-4 sm:px-5 dark:border-stone-800 dark:bg-stone-900/50">
@@ -329,8 +329,8 @@ function ExerciciosView({
               </p>
               <ol className="space-y-3">
                 {nivel.questoes.map((q) => {
-                  numero++
-                  return <QuestaoView key={q.id} questao={q} numero={numero} />
+                  numero++;
+                  return <QuestaoView key={q.id} questao={q} numero={numero} />;
                 })}
               </ol>
             </div>
@@ -353,7 +353,7 @@ function ExerciciosView({
         ) : null}
       </div>
     </section>
-  )
+  );
 }
 
 export function BlocoView({
@@ -361,9 +361,9 @@ export function BlocoView({
   numeroSecao,
   mostrarGabarito,
 }: {
-  bloco: Bloco
-  numeroSecao: number
-  mostrarGabarito: boolean
+  bloco: Bloco;
+  numeroSecao: number;
+  mostrarGabarito: boolean;
 }) {
   switch (bloco.tipo) {
     case "secao":
@@ -374,15 +374,15 @@ export function BlocoView({
           </span>
           <Inline texto={bloco.titulo} />
         </h2>
-      )
+      );
     case "paragrafo":
     case "formula":
     case "lista":
     case "tabela":
     case "chamada":
-      return <FilhoView filho={bloco} />
+      return <FilhoView filho={bloco} />;
     case "figura":
-      if (!bloco.url) return null
+      if (!bloco.url) return null;
       return (
         <figure className="na-imprime-caixa space-y-2">
           <div className="flex justify-center overflow-hidden rounded-xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
@@ -399,9 +399,9 @@ export function BlocoView({
             </figcaption>
           ) : null}
         </figure>
-      )
+      );
     case "tikz":
-      if (!bloco.codigo.trim()) return null
+      if (!bloco.codigo.trim()) return null;
       return (
         <figure className="na-imprime-caixa space-y-2">
           <div className="overflow-hidden rounded-xl border border-stone-200 bg-white p-2 dark:border-stone-800 dark:bg-stone-900">
@@ -413,15 +413,15 @@ export function BlocoView({
             </figcaption>
           ) : null}
         </figure>
-      )
+      );
     case "copiar":
-      return <CaixaCopiar rotulo={bloco.rotulo} filhos={bloco.filhos} />
+      return <CaixaCopiar rotulo={bloco.rotulo} filhos={bloco.filhos} />;
     case "exemplo":
-      return <CaixaExemplo rotulo={bloco.rotulo} filhos={bloco.filhos} />
+      return <CaixaExemplo rotulo={bloco.rotulo} filhos={bloco.filhos} />;
     case "dica":
-      return <CaixaDica rotulo={bloco.rotulo} filhos={bloco.filhos} />
+      return <CaixaDica rotulo={bloco.rotulo} filhos={bloco.filhos} />;
     case "exercicios":
-      return <ExerciciosView bloco={bloco} mostrarGabarito={mostrarGabarito} />
+      return <ExerciciosView bloco={bloco} mostrarGabarito={mostrarGabarito} />;
   }
 }
 
@@ -430,14 +430,14 @@ export function BlocosView({
   blocos,
   mostrarGabarito,
 }: {
-  blocos: Bloco[]
-  mostrarGabarito: boolean
+  blocos: Bloco[];
+  mostrarGabarito: boolean;
 }) {
-  let numeroSecao = 0
+  let numeroSecao = 0;
   return (
     <div className="space-y-5">
       {blocos.map((b) => {
-        if (b.tipo === "secao") numeroSecao++
+        if (b.tipo === "secao") numeroSecao++;
         return (
           <BlocoView
             key={b.id}
@@ -445,8 +445,8 @@ export function BlocosView({
             numeroSecao={numeroSecao}
             mostrarGabarito={mostrarGabarito}
           />
-        )
+        );
       })}
     </div>
-  )
+  );
 }

@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
 // Vista de leitura (professor). A versão web da nota. Toolbar: gabarito ocultável, impressão A4, compartilhar (links), tema e editar.
 
-import { useState } from "react"
-import { ArrowLeft, Eye, EyeOff, Link2, Pencil, Printer, Sun, Moon } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { useTheme } from "next-themes"
-import { useNota } from "@/lib/notas/api-client"
-import { useSessao } from "@/hooks/use-sessao"
-import { corDisciplina } from "@/lib/notas/cores"
-import { MESES_CAP, separarHabilidades } from "@/lib/notas/texto"
-import { variaveisAparencia } from "@/lib/notas/tipos"
-import { BlocosView } from "@/components/notas/blocos-view"
-import { Skeleton } from "@/components/ui/skeleton"
-import { DialogoCompartilhar } from "@/components/dialogo-compartilhar"
+import { useState } from "react";
+import { ArrowLeft, Eye, EyeOff, Link2, Pencil, Printer, Sun, Moon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useTheme } from "next-themes";
+import { useNota } from "@/lib/notas/api-client";
+import { useSessao } from "@/hooks/use-sessao";
+import { corDisciplina } from "@/lib/notas/cores";
+import { MESES_CAP, separarHabilidades } from "@/lib/notas/texto";
+import { variaveisAparencia } from "@/lib/notas/tipos";
+import { BlocosView } from "@/components/notas/blocos-view";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DialogoCompartilhar } from "@/components/dialogo-compartilhar";
 
 export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: string) => void }) {
-  const { data: nota, isLoading, isError } = useNota(id)
-  const { perfil } = useSessao()
-  const { setTheme } = useTheme()
-  const [mostrarGabarito, setMostrarGabarito] = useState(false)
-  const [compartilharAberto, setCompartilharAberto] = useState(false)
+  const { data: nota, isLoading, isError } = useNota(id);
+  const { perfil } = useSessao();
+  const { setTheme } = useTheme();
+  const [mostrarGabarito, setMostrarGabarito] = useState(false);
+  const [compartilharAberto, setCompartilharAberto] = useState(false);
 
   if (isLoading) {
     return (
@@ -36,7 +36,7 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
         <Skeleton className="h-40 w-full rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
-    )
+    );
   }
 
   if (isError || !nota) {
@@ -50,11 +50,11 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
           <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar às notas
         </Button>
       </div>
-    )
+    );
   }
 
-  const cor = corDisciplina(nota.disciplina?.cor)
-  const habilidades = separarHabilidades(nota.habilidades)
+  const cor = corDisciplina(nota.disciplina?.cor);
+  const habilidades = separarHabilidades(nota.habilidades);
 
   return (
     <div className="bg-background min-h-screen">
@@ -110,8 +110,8 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
             variant="outline"
             size="icon"
             onClick={() => {
-              const escuro = document.documentElement.classList.contains("dark")
-              setTheme(escuro ? "light" : "dark")
+              const escuro = document.documentElement.classList.contains("dark");
+              setTheme(escuro ? "light" : "dark");
             }}
             aria-label="Alternar tema"
             className="hidden rounded-lg sm:inline-flex"
@@ -218,5 +218,5 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
         />
       ) : null}
     </div>
-  )
+  );
 }

@@ -1,36 +1,36 @@
 // Entrega os dados de um link público a partir do token, sem exigir login.
 
-import { NextRequest } from "next/server"
-import { json, erroApi } from "@/lib/api/sessao"
-import { registrarAcesso, resolverLinkPublico } from "@/lib/api/publico"
-import type { AparenciaNota, Bloco, BlocoFilho } from "@/lib/notas/tipos"
-import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos"
-import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo"
+import { NextRequest } from "next/server";
+import { json, erroApi } from "@/lib/api/sessao";
+import { registrarAcesso, resolverLinkPublico } from "@/lib/api/publico";
+import type { AparenciaNota, Bloco, BlocoFilho } from "@/lib/notas/tipos";
+import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos";
+import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
-type Ctx = { params: Promise<{ token: string }> }
+type Ctx = { params: Promise<{ token: string }> };
 
 export interface NotaPublica {
-  id: string
-  titulo: string
-  disciplinaNome: string
-  disciplinaCor: string
-  turmasNomes: string[]
-  anoLetivo: number
-  mes: number
-  sobre: string
-  habilidades: string
-  blocos: Bloco[]
-  aparencia: AparenciaNota
-  atualizadoEm: string
+  id: string;
+  titulo: string;
+  disciplinaNome: string;
+  disciplinaCor: string;
+  turmasNomes: string[];
+  anoLetivo: number;
+  mes: number;
+  sobre: string;
+  habilidades: string;
+  blocos: Bloco[];
+  aparencia: AparenciaNota;
+  atualizadoEm: string;
 }
 
 export async function GET(_req: NextRequest, ctx: Ctx) {
-  const { token } = await ctx.params
+  const { token } = await ctx.params;
   // Token de demonstração é servido sem consultar o banco.
   if (token === DEMO_TOKEN) {
-    const nota = DEMO_NOTA
+    const nota = DEMO_NOTA;
     const notas: NotaPublica[] = [
       {
         id: nota.id,
@@ -46,7 +46,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
         aparencia: normalizarAparencia(nota.aparencia),
         atualizadoEm: nota.atualizadoEm,
       },
-    ]
+    ];
     return json({
       link: {
         tipo: "nota" as const,
@@ -55,18 +55,18 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
         expiraEm: null,
       },
       notas,
-    })
+    });
   }
 
-  const resolvido = await resolverLinkPublico(token)
+  const resolvido = await resolverLinkPublico(token);
   // Link inexistente, revogado ou expirado respondem de forma idêntica.
   if (!resolvido || (resolvido.link.tipo === "nota" && resolvido.notas.length === 0)) {
-    return erroApi("Este link não existe, foi revogado ou expirou.", 404)
+    return erroApi("Este link não existe, foi revogado ou expirou.", 404);
   }
-  const { link, notas: linhas } = resolvido
+  const { link, notas: linhas } = resolvido;
 
   // Contador de acessos tolerante a falhas.
-  await registrarAcesso(link.id, link.acessos)
+  await registrarAcesso(link.id, link.acessos);
 
   const notas: NotaPublica[] = linhas.map((linha) => ({
     id: linha.id,
@@ -81,7 +81,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     blocos: reescreverImagens(normalizarBlocos(linha.blocos) as Bloco[], token),
     aparencia: normalizarAparencia(linha.aparencia),
     atualizadoEm: linha.atualizadoEm.toISOString(),
-  }))
+  }));
 
   return json({
     link: {
@@ -91,7 +91,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       expiraEm: link.expiraEm?.toISOString() ?? null,
     },
     notas,
-  })
+  });
 }
 
 function reescreverImagens(blocos: Bloco[], token: string): Bloco[] {
@@ -99,21 +99,21 @@ function reescreverImagens(blocos: Bloco[], token: string): Bloco[] {
   const visita = <T extends Bloco | BlocoFilho>(lista: T[]): T[] =>
     lista.map((b) => {
       if (b.tipo === "figura") {
-        return { ...b, url: urlImagemPublica(b.url, token) } as T
+        return { ...b, url: urlImagemPublica(b.url, token) } as T;
       }
       if (b.tipo === "copiar" || b.tipo === "exemplo" || b.tipo === "dica") {
-        return { ...b, filhos: visita(b.filhos) } as T
+        return { ...b, filhos: visita(b.filhos) } as T;
       }
-      return b
-    })
-  return visita(blocos)
+      return b;
+    });
+  return visita(blocos);
 }
 
 /** Reescreve URL interna de imagem para o caminho público do link. */
 export function urlImagemPublica(url: string, token: string): string {
   if (url.startsWith("/api/imagens?path=")) {
-    const caminho = decodeURIComponent(url.slice("/api/imagens?path=".length))
-    return `/api/publico/${encodeURIComponent(token)}/imagens?caminho=${encodeURIComponent(caminho)}`
+    const caminho = decodeURIComponent(url.slice("/api/imagens?path=".length));
+    return `/api/publico/${encodeURIComponent(token)}/imagens?caminho=${encodeURIComponent(caminho)}`;
   }
-  return url
+  return url;
 }

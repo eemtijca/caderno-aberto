@@ -1,6 +1,6 @@
 // Layout raiz: fontes, metadados, tema claro/escuro, CSP por nonce e carga do TikZJax.
 
-import type { Metadata, Viewport } from "next"
+import type { Metadata, Viewport } from "next";
 import {
   Sora,
   Plus_Jakarta_Sans,
@@ -8,36 +8,36 @@ import {
   Lora,
   Atkinson_Hyperlegible,
   Lexend,
-} from "next/font/google"
-import "katex/dist/katex.min.css"
-import "@rod2ik/tikzjax/dist/fonts.min.css"
-import "./globals.css"
-import Script from "next/script"
-import { headers } from "next/headers"
-import { Toaster as ToasterSonner } from "@/components/ui/sonner"
-import { Provedores } from "@/components/provedores"
-import { ThemeProvider } from "next-themes"
+} from "next/font/google";
+import "katex/dist/katex.min.css";
+import "@rod2ik/tikzjax/dist/fonts.min.css";
+import "./globals.css";
+import Script from "next/script";
+import { headers } from "next/headers";
+import { Toaster as ToasterSonner } from "@/components/ui/sonner";
+import { Provedores } from "@/components/provedores";
+import { ThemeProvider } from "next-themes";
 
 // O nonce do CSP exige renderização por requisição.
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 const sora = Sora({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["400", "600", "700", "800"],
-})
+});
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-corpo",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-})
+});
 
 const mono = JetBrains_Mono({
   variable: "--font-mono-latex",
   subsets: ["latin"],
   weight: ["400", "500"],
-})
+});
 
 // fontes alternativas escolhidas pelo professor em cada nota (aparência)
 const lora = Lora({
@@ -45,19 +45,19 @@ const lora = Lora({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
-})
+});
 
 const atkinson = Atkinson_Hyperlegible({
   variable: "--font-legivel",
   subsets: ["latin"],
   weight: ["400", "700"],
-})
+});
 
 const lexend = Lexend({
   variable: "--font-lexend",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-})
+});
 
 export const metadata: Metadata = {
   title: {
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },
-}
+};
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -79,15 +79,15 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#fafaf8" },
     { media: "(prefers-color-scheme: dark)", color: "#1c1c1a" },
   ],
-}
+};
 
 export default async function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   // O proxy gera o nonce; sem ele os scripts ficariam bloqueados pelo CSP.
-  const nonce = (await headers()).get("x-nonce") ?? ""
+  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
@@ -110,5 +110,5 @@ export default async function RootLayout({
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
