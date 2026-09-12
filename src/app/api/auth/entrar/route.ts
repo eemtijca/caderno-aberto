@@ -1,3 +1,5 @@
+// Autentica o professor e abre a sessão via cookies.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { erroApi, json } from "@/lib/api/sessao"
@@ -15,6 +17,7 @@ const HASH_FALSO =
 // POST /api/auth/entrar. Confere credenciais e abre a sessão (cookies).
 // Respostas genéricas para não revelar contas existentes.
 export async function POST(req: NextRequest) {
+  // Limita tentativas de login por IP.
   const limite = await cabeNoLimite(chavePorIp(req, "entrar"))
   if (!limite.permitido)
     return erroApi("Muitas tentativas. Aguarde um momento e tente novamente.", 429)
@@ -30,11 +33,13 @@ export async function POST(req: NextRequest) {
   if (!usuario || !confere) {
     return erroApi("E-mail ou senha incorretos.", 401)
   }
+  // Conta sem e-mail verificado recebe o mesmo erro genérico.
   if (!usuario.emailVerificadoEm) {
     return erroApi("E-mail ou senha incorretos.", 401)
   }
 
   const perfil = await db.profiles.findFirst({ where: { id: usuario.id } })
+  // Conta em carência de exclusão também é recusada.
   if (perfil?.expiraEm && perfil.expiraEm < new Date()) {
     return erroApi("E-mail ou senha incorretos.", 401)
   }

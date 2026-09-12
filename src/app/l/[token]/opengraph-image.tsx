@@ -1,3 +1,5 @@
+// Imagem Open Graph gerada por requisição para o link público (1200x630).
+
 import { ImageResponse } from "next/og"
 import { buscarDadosOg } from "./dados"
 
@@ -46,6 +48,7 @@ export default async function ImagemOg({ params }: { params: Promise<{ token: st
   const nota = dados?.nota
   const link = dados?.link
 
+  // Cor desconhecida ou link inválido recai no verde da marca.
   const cor = HEX_COR[nota?.disciplinaCor ?? "verde"] ?? HEX_COR.verde
   const titulo = limitar(nota?.titulo ?? "Nota de aula", 110)
   const disciplina = nota?.disciplinaNome ?? "Aula"

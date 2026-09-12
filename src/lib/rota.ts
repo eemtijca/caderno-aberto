@@ -18,6 +18,7 @@ export type Rota =
   | { vista: "redefinir" }
 
 export function analisarHash(hash: string): Rota {
+  // Descarta "#/", a query e segmentos vazios antes de rotear.
   const limpo = hash.replace(/^#\/?/, "").split("?")[0]
   const partes = limpo.split("/").filter(Boolean)
   if (partes.length === 0) return { vista: "inicio" }
@@ -57,6 +58,7 @@ export function useRota(): {
 
   useEffect(() => {
     const aoMudar = () => {
+      // Ao trocar de vista, volta ao topo da página.
       setRota(analisarHash(window.location.hash))
       window.scrollTo({ top: 0 })
     }
@@ -65,6 +67,7 @@ export function useRota(): {
   }, [])
 
   const navegar = useCallback((para: string) => {
+    // Normaliza para "#/..." e força re-render quando o hash não muda.
     const alvo = para.startsWith("#") ? para : `#${para.startsWith("/") ? para : `/${para}`}`
     if (window.location.hash === alvo) {
       setRota(analisarHash(alvo))

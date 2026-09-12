@@ -1,3 +1,5 @@
+// Renova o acesso do professor a partir do token de atualização.
+
 import { NextRequest } from "next/server"
 import { json } from "@/lib/api/sessao"
 import { renovarSessao } from "@/lib/auth/sessao"

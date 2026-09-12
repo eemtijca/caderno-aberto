@@ -22,6 +22,7 @@ export function provedorResend(): ProvedorEmail {
           subject: pedido.assunto,
           html: pedido.html,
           text: pedido.texto,
+          // Etiquetas viram tags no painel do Resend.
           tags: pedido.etiquetas?.map((e) => ({ name: e.nome, value: e.valor })),
         },
         pedido.chaveIdempotencia ? { idempotencyKey: pedido.chaveIdempotencia } : undefined,

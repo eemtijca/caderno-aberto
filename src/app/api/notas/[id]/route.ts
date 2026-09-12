@@ -1,3 +1,5 @@
+// Lê, atualiza e remove uma nota, restrito ao professor dono.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -17,6 +19,7 @@ type Ctx = { params: Promise<{ id: string }> }
 
 async function buscarNota(id: string, professorId: string): Promise<NotaLinha | null> {
   const db = await banco()
+  // O filtro por professor garante o isolamento entre contas.
   const linha = await db.notas.findFirst({ where: { id, professorId } })
   return (linha as unknown as NotaLinha | null) ?? null
 }
@@ -56,6 +59,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   const atual = await buscarNota(id, usuario.id)
   if (!atual) return erroApi("Nota não encontrada.", 404)
 
+  // Monta a atualização apenas com os campos enviados.
   const dados: Record<string, unknown> = {}
 
   if (typeof corpo.titulo === "string" && corpo.titulo.trim()) {
@@ -155,6 +159,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params
 
   const db = await banco()
+  // Exclusão escopada ao professor.
   await db.notas.deleteMany({ where: { id, professorId: usuario.id } })
   return json({ ok: true })
 }

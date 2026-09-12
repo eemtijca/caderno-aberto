@@ -39,6 +39,7 @@ export function DialogoCompartilhar({
   const [nome, setNome] = useState("")
   const [copiado, setCopiado] = useState<string | null>(null)
 
+  // Mostra apenas os links da nota aberta, não os de turma/disciplina.
   const meusLinks = (links ?? []).filter((l) => l.tipo === "nota" && l.notaId === notaId)
 
   return (
@@ -73,6 +74,7 @@ export function DialogoCompartilhar({
                   toast.success("Link criado", {
                     description: "O endereço já foi copiado. Envie para os alunos.",
                   })
+                  // Cópia automática é melhor esforço: pode falhar sem quebrar o fluxo.
                   void navigator.clipboard
                     ?.writeText(urlDoLink(r.link.token))
                     .catch(() => undefined)

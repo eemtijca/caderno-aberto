@@ -1,3 +1,5 @@
+// Edita e remove uma turma, restrito ao professor dono.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -37,6 +39,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
   const db = await banco()
   try {
+    // Só permite editar turma do próprio professor.
     const existe = await db.turmas.findFirst({ where: { id, professorId: usuario.id } })
     if (!existe) return erroApi("Turma não encontrada.", 404)
     const turma = (await db.turmas.update({
@@ -58,6 +61,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params
 
   const db = await banco()
+  // Exclusão escopada ao professor.
   await db.turmas.deleteMany({ where: { id, professorId: usuario.id } })
   return json({ ok: true })
 }

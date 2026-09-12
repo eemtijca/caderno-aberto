@@ -1,3 +1,4 @@
+// Converte linhas do banco no contrato NotaDados exposto pela API.
 import "server-only"
 
 import type { Bloco, NotaDados } from "@/lib/notas/tipos"
@@ -15,6 +16,7 @@ export function linhaParaNota(
   linha: NotaComDisciplina,
   mapaTurmas: Map<string, TurmaLinha>,
 ): NotaDados {
+  // Prefere a relação; cai nos campos denormalizados quando ela falta.
   const disciplina: NotaDados["disciplina"] = linha.disciplina
     ? {
         id: linha.disciplina.id,
@@ -54,6 +56,7 @@ export function linhaParaNota(
     sobre: linha.sobre,
     habilidades: linha.habilidades,
     status: linha.status,
+    // Normaliza o JSON persistido para o formato tipado do app.
     blocos: normalizarBlocos(linha.blocos) as Bloco[],
     aparencia: normalizarAparencia(linha.aparencia),
     criadoEm: linha.criadoEm.toISOString(),
@@ -69,6 +72,7 @@ export async function mapaTurmasProfessor(professorId: string): Promise<Map<stri
   return new Map((turmas as unknown as TurmaLinha[]).map((t) => [t.id, t]))
 }
 
+/** Copia nome e cor para a nota, evitando joins na leitura pública. */
 export function camposDenormalizados(disciplina: DisciplinaLinha | null, turmas: TurmaLinha[]) {
   return {
     disciplinaId: disciplina?.id ?? null,

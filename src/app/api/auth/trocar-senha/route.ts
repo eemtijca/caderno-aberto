@@ -1,3 +1,5 @@
+// Troca a senha do professor autenticado e reemite a sessão.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { erroApi, json, naoAutenticado, sessaoProfessor } from "@/lib/api/sessao"
@@ -25,10 +27,12 @@ export async function POST(req: NextRequest) {
   if (!(await confereSenha(atual, usuario.senhaHash))) {
     return erroApi("Senha atual incorreta.", 403)
   }
+  // Impede reutilizar a senha atual.
   if (await confereSenha(nova, usuario.senhaHash)) {
     return erroApi("A nova senha é igual à atual.")
   }
 
+  // Derruba as sessões antigas e reabre a atual em seguida.
   await db.$transaction(async (tx) => {
     await tx.usuarios.update({
       where: { id: usuario.id },

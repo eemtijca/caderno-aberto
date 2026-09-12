@@ -45,6 +45,7 @@ function opcoesCookie(maxIdade: number) {
 
 /** Emite o JWT de acesso (1h) para o usuário. */
 export async function emitirAcesso(usuarioId: string): Promise<string> {
+  // HS256 com segredo compartilhado; o refresh é opaco e fica no banco.
   return new jose.SignJWT({})
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(usuarioId)

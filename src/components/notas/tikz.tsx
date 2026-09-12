@@ -1,5 +1,8 @@
 "use client"
 
+// Renderiza diagramas TikZ via TikZJax: injeta um script text/tikz e observa a
+// inserção do SVG, com limite de tempo e estado de falha.
+
 import { useEffect, useRef, useState } from "react"
 
 const BIBLIOTECAS = "arrows.meta,positioning,calc,decorations.markings"
@@ -16,6 +19,7 @@ export function Tikz({ codigo }: { codigo: string }) {
     setFalhou(false)
     container.innerHTML = ""
 
+    // Aceita tanto o ambiente completo quanto apenas o corpo do desenho.
     const script = document.createElement("script")
     script.type = "text/tikz"
     script.setAttribute("data-tikz-libraries", BIBLIOTECAS)
@@ -41,6 +45,7 @@ export function Tikz({ codigo }: { codigo: string }) {
     container.addEventListener("tikzjax-load-finished", onFinish)
     container.appendChild(script)
 
+    // Desiste depois de 32s e sinaliza falha se nenhum SVG apareceu.
     const t = setTimeout(() => {
       if (!container.querySelector("svg")) setFalhou(true)
       setCarregando(false)

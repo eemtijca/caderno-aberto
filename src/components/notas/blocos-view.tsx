@@ -224,6 +224,7 @@ function CaixaDica({ rotulo, filhos }: { rotulo: string; filhos: BlocoFilho[] })
   )
 }
 
+// Quiz local: a escolha vive só no componente e a correção aparece no clique.
 function QuestaoView({ questao, numero }: { questao: Questao; numero: number }) {
   const [escolhida, setEscolhida] = useState<number | null>(null)
   const temCorreta = questao.correta !== null && questao.correta < questao.alternativas.length
@@ -277,6 +278,7 @@ function QuestaoView({ questao, numero }: { questao: Questao; numero: number }) 
               )
             })}
           </div>
+          {/* no papel as alternativas viram texto corrido, sem botões */}
           <p className="hidden pl-5 leading-relaxed print:block">
             {questao.alternativas.map((alt, i) => `(${"abcd"[i] ?? "?"}) ${alt}   `).join("")}
           </p>
@@ -299,6 +301,7 @@ function ExerciciosView({
   bloco: Extract<Bloco, { tipo: "exercicios" }>
   mostrarGabarito: boolean
 }) {
+  // Gabarito automático: percorre as questões numeradas e coleta as alternativas marcadas.
   const gabAuto: string[] = []
   let nGab = 0
   for (const nivel of bloco.niveis) {

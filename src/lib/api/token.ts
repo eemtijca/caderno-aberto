@@ -1,3 +1,4 @@
+// Geração de tokens opacos para links públicos de alunos.
 import { randomInt } from "crypto"
 
 // Alfabeto sem caracteres ambíguos para digitação manual.

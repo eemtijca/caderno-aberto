@@ -20,12 +20,14 @@ export function normalizarNome(valor: unknown): string | null {
 /** Origem pública da aplicação para compor links. Usa APP_URL quando definida. */
 export function origemApp(req: Request): string {
   if (APP_URL) return APP_URL.replace(/\/$/, "")
+  // Atrás de proxy, confia nos cabeçalhos encaminhados.
   const host =
     req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ??
     req.headers.get("host") ??
     "127.0.0.1:3000"
   const proto =
     req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ??
+    // Hosts locais usam http; o restante assume https.
     (host.startsWith("localhost") || host.startsWith("127.") || host.startsWith("192.168.")
       ? "http"
       : "https")

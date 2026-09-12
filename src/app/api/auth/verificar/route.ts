@@ -1,3 +1,5 @@
+// Confirma o e-mail do usuário a partir do token e redireciona de volta.
+
 import { NextRequest, NextResponse } from "next/server"
 import { createHash } from "crypto"
 import { banco } from "@/lib/banco"
@@ -12,11 +14,13 @@ export async function GET(req: NextRequest) {
   const destino = (ok: boolean, motivo?: string) =>
     NextResponse.redirect(`${origem}/#/entrar${ok ? "?verificado=1" : `?erro=${motivo ?? "link"}`}`)
 
+  // Token fora do formato esperado volta como erro para o app.
   if (!/^[0-9a-f]{64}$/.test(token)) return destino(false)
 
   const db = await banco()
   const hash = createHash("sha256").update(token).digest("hex")
   const registro = await db.tokensVerificacao.findFirst({ where: { tokenHash: hash } })
+  // Precisa existir, ser do tipo certo, estar no prazo e não ter sido usado.
   if (
     !registro ||
     registro.tipo !== "verificacao" ||

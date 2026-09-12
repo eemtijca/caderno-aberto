@@ -21,6 +21,7 @@ export function CartaoNota({
   indice?: number
 }) {
   const cor = corDisciplina(nota.disciplina?.cor)
+  // Sem questões, o resumo mostra a contagem de blocos.
   const questoes = contarQuestoes(nota)
 
   return (

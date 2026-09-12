@@ -1,3 +1,5 @@
+// Upload, leitura e remoção de imagens do professor autenticado.
+
 import { NextRequest, NextResponse } from "next/server"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
 import { caminhoDoProfessor, obterArmazenamento } from "@/lib/armazenamento"
@@ -26,6 +28,7 @@ export async function POST(req: NextRequest) {
   if (!imagemValida(mime, bytes)) return erroApi("Arquivo inválido para o tipo.")
 
   const ext = mime.split("/")[1].replace("jpeg", "jpg").replace("svg+xml", "svg")
+  // O nome aleatório evita colisões e adivinhação do caminho.
   const caminho = `${usuario.id}/${gerarToken(14)}.${ext}`
 
   try {
@@ -43,6 +46,7 @@ export async function GET(req: NextRequest) {
   const { usuario } = sessao
 
   const caminho = req.nextUrl.searchParams.get("path") ?? ""
+  // Garante que o caminho pertence ao professor antes de servir.
   if (!caminhoDoProfessor(caminho, usuario.id)) {
     return erroApi("Caminho inválido.", 400)
   }
@@ -52,6 +56,7 @@ export async function GET(req: NextRequest) {
 
   const ext = caminho.split(".").pop()?.toLowerCase() ?? "png"
 
+  // Converte WebP e SVG para PNG quando pedido, útil para exportação.
   const converterPng =
     req.nextUrl.searchParams.get("png") === "1" && (ext === "webp" || ext === "svg")
   if (converterPng) {
@@ -85,6 +90,7 @@ export async function DELETE(req: NextRequest) {
   const { usuario } = sessao
 
   const caminho = req.nextUrl.searchParams.get("path") ?? ""
+  // Só remove imagens do próprio professor.
   if (!caminhoDoProfessor(caminho, usuario.id)) {
     return erroApi("Caminho inválido.", 400)
   }

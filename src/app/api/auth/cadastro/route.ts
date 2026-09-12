@@ -1,3 +1,5 @@
+// Cadastra um professor e envia o e-mail de verificação.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { erroApi, json } from "@/lib/api/sessao"
@@ -12,6 +14,7 @@ export const dynamic = "force-dynamic"
 
 // POST /api/auth/cadastro. Cria usuário e perfil; responde sempre "confirmar".
 export async function POST(req: NextRequest) {
+  // Limita tentativas de cadastro por IP.
   const limite = await cabeNoLimite(chavePorIp(req, "cadastro"))
   if (!limite.permitido)
     return erroApi("Muitas tentativas. Aguarde um momento e tente novamente.", 429)
@@ -50,6 +53,7 @@ export async function POST(req: NextRequest) {
   })
 
   const url = `${origemApp(req)}/api/auth/verificar?token=${token}`
+  // Falha no envio não impede a criação da conta.
   try {
     const modelo = emailVerificacao(nome, url)
     await enviarEmail({

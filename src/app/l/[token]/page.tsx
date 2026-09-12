@@ -1,3 +1,6 @@
+// Página do link público (/l/<token>). Gera metadados/OG e delega a nota à vista
+// hash do app por meio de um redirecionamento client-side.
+
 import type { Metadata } from "next"
 import { NotebookPen } from "lucide-react"
 import { buscarDadosOg } from "./dados"
@@ -29,6 +32,7 @@ function resumir(texto: string, max = 150): string {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params
+  // Link inválido cai em metadados genéricos sem indexação.
   const dados = await buscarDadosOg(token).catch(() => null)
 
   if (!dados || !dados.nota) {
@@ -89,6 +93,7 @@ export default async function PaginaLink({ params }: Props) {
         <h1 className="fonte-display text-lg font-bold">{titulo}</h1>
         <p className="text-muted-foreground text-sm">Abrindo a nota de aula…</p>
       </div>
+      {/* sem JavaScript, o redirecionamento client-side não roda: link direto na hash */}
       <noscript>
         <a
           href={`/#/l/${encodeURIComponent(token)}`}

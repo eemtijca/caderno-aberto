@@ -1,5 +1,7 @@
+// Utilitários de texto: normalização, slug e extração de conteúdo para busca.
 import { Bloco, BlocoFilho, NotaDados } from "./tipos"
 
+// Remove acentos para que a busca case "fisica" com "física".
 export function normalizar(s: string): string {
   return s
     .normalize("NFD")
@@ -16,6 +18,7 @@ export function slugificar(titulo: string): string {
   )
 }
 
+/** Remove marcação e comandos para gerar texto indexável. */
 export function textoPuro(texto: string): string {
   return texto
     .replace(/\$\$([^$]+)\$\$/g, " $1 ")
@@ -92,6 +95,7 @@ export function extrairTextoBlocos(blocos: Bloco[]): string {
     }
   }
   visita(blocos)
+  // O ponto médio separa campos e evita juntar palavras de blocos distintos.
   return partes.filter(Boolean).join(" \u00b7 ")
 }
 
@@ -151,6 +155,7 @@ export function separarHabilidades(h: string): string[] {
     .filter(Boolean)
 }
 
+/** Deriva as respostas objetivas no formato 1a, 2c; discursivas ficam de fora. */
 export function gabaritoAutomatico(
   niveis: {
     numero: number

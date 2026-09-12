@@ -194,6 +194,7 @@ export function EditorLista({ bloco, onPatch }: { bloco: BlocoLista; onPatch: Pa
 }
 
 export function EditorTabela({ bloco, onPatch }: { bloco: BlocoTabela; onPatch: Patch }) {
+  // Normaliza as linhas para a maior largura, preenchendo células faltantes.
   const nCol = Math.max(1, ...bloco.linhas.map((l) => l.length), 1)
   const linhas = bloco.linhas.map((l) => {
     const c = [...l]
@@ -712,6 +713,7 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                             type="button"
                             onClick={() => {
                               const alternativas = q.alternativas.filter((_, x) => x !== k)
+                              // Reajusta o índice do gabarito após a remoção da alternativa.
                               const correta =
                                 q.correta === null
                                   ? null

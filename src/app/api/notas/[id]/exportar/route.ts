@@ -1,3 +1,5 @@
+// Exporta uma nota do professor em JSON, Markdown ou LaTeX.
+
 import { NextRequest, NextResponse } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -15,9 +17,11 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   if (!sessao) return naoAutenticado()
   const { usuario, perfil } = sessao
   const { id } = await ctx.params
+  // JSON é o formato padrão quando nenhum é informado.
   const formato = (req.nextUrl.searchParams.get("formato") ?? "json").toLowerCase()
 
   const db = await banco()
+  // Exporta apenas a nota do professor autenticado.
   const linha = (await db.notas.findFirst({
     where: {
       id,

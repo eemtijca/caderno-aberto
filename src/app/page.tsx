@@ -1,5 +1,8 @@
 "use client"
 
+// Ponto de entrada do app do professor. Escolhe a vista a partir da rota hash e
+// protege o acesso quando não há sessão ou quando a conta está em recuperação.
+
 import { useEffect, useState } from "react"
 import { AppShell } from "@/components/app-shell"
 import { DialogoNovaNota } from "@/components/dialogo-nova-nota"
@@ -54,6 +57,7 @@ export default function Home() {
   const rotaDeAuth =
     rota.vista === "entrar" || rota.vista === "cadastro" || rota.vista === "redefinir"
   if (rotaDeAuth) return <Redirecionar ao={"/"} navegar={navegar} />
+  // Campos de carência de exclusão não fazem parte do tipo público do perfil.
   const exclusaoPendente = Boolean(
     (perfil as unknown as { exclusaoSolicitadaEm?: string })?.exclusaoSolicitadaEm,
   )
@@ -74,6 +78,7 @@ export default function Home() {
       <VistaEditor id={rota.id} navegar={navegar} />
     ) : null
 
+  // A chave inclui o id no editor para forçar a remontagem ao trocar de nota.
   const chaveVista = rota.vista === "editor" ? `${rota.vista}:${rota.id}` : rota.vista
 
   return (

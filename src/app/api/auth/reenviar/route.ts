@@ -1,3 +1,5 @@
+// Reenvia o e-mail de verificação sem revelar a existência da conta.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { erroApi, json } from "@/lib/api/sessao"
@@ -11,6 +13,7 @@ export const dynamic = "force-dynamic"
 
 // POST /api/auth/reenviar {email}. Responde sempre 200, sem distinguir contas existentes.
 export async function POST(req: NextRequest) {
+  // Limite próprio para envio de e-mails.
   const limite = await cabeNoLimite(chavePorIp(req, "reenviar"), LIMITE_EMAIL)
   if (!limite.permitido)
     return erroApi("Muitos e-mails enviados em pouco tempo. Tente de novo em alguns minutos.", 429)
@@ -21,6 +24,7 @@ export async function POST(req: NextRequest) {
 
   const db = await banco()
   const usuario = await db.usuarios.findFirst({ where: { email } })
+  // Só reenvia para contas existentes e ainda não verificadas.
   if (!usuario || usuario.emailVerificadoEm) return json({ ok: true })
 
   const perfil = await db.profiles.findFirst({ where: { id: usuario.id } })

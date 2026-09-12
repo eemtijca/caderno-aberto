@@ -1,3 +1,5 @@
+// Duplica uma nota do professor como novo rascunho.
+
 import { NextRequest } from "next/server"
 import { banco } from "@/lib/banco"
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao"
@@ -15,6 +17,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params
 
   const db = await banco()
+  // Busca a original escopada ao professor dono.
   const original = (await db.notas.findFirst({
     where: {
       id,
@@ -31,6 +34,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       })) as unknown as DisciplinaLinha | null)
     : null
 
+  // A cópia nasce como rascunho e pertence ao mesmo professor.
   const linha = (await db.notas.create({
     data: {
       professorId: original.professorId,

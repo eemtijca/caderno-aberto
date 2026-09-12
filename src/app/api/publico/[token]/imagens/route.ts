@@ -1,3 +1,5 @@
+// Serve as imagens de um link público, sem exigir login.
+
 import { NextRequest, NextResponse } from "next/server"
 import { resolverLinkPublico } from "@/lib/api/publico"
 import { caminhoDoProfessor, obterArmazenamento } from "@/lib/armazenamento"
@@ -41,10 +43,12 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   if (!resolvido) return erroApi("Link indisponível.", 404)
   const { link, notas } = resolvido
 
+  // O caminho precisa pertencer ao professor dono do link.
   if (!caminhoDoProfessor(caminho, link.professorId)) {
     return erroApi("Link indisponível.", 404)
   }
 
+  // Só serve imagens efetivamente citadas nos blocos do link.
   const referenciado = caminhosReferenciados(notas).has(caminho)
   if (!referenciado) return erroApi("Link indisponível.", 404)
 

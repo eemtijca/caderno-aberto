@@ -1,3 +1,5 @@
+// Layout raiz: fontes, metadados, tema claro/escuro, CSP por nonce e carga do TikZJax.
+
 import type { Metadata, Viewport } from "next"
 import {
   Sora,
@@ -16,6 +18,7 @@ import { Toaster as ToasterSonner } from "@/components/ui/sonner"
 import { Provedores } from "@/components/provedores"
 import { ThemeProvider } from "next-themes"
 
+// O nonce do CSP exige renderização por requisição.
 export const dynamic = "force-dynamic"
 
 const sora = Sora({
@@ -83,6 +86,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // O proxy gera o nonce; sem ele os scripts ficariam bloqueados pelo CSP.
   const nonce = (await headers()).get("x-nonce") ?? ""
   return (
     <html lang="pt-BR" suppressHydrationWarning>
