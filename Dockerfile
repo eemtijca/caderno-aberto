@@ -3,7 +3,7 @@
 
 # 1. Dependências (scripts/ junto: o postinstall copia o TikZJax;
 # prisma/ junto: o postinstall gera o cliente Prisma)
-FROM node:24-bookworm-slim AS dependencias
+FROM node:26-bookworm-slim AS dependencias
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY scripts ./scripts
@@ -12,7 +12,7 @@ COPY prisma.config.ts ./
 RUN npm ci
 
 # 2. Compilação
-FROM node:24-bookworm-slim AS compilacao
+FROM node:26-bookworm-slim AS compilacao
 WORKDIR /app
 COPY --from=dependencias /app/node_modules ./node_modules
 COPY --from=dependencias /app/generated ./generated
@@ -21,7 +21,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # 3. Execução (somente o necessário)
-FROM node:24-bookworm-slim AS execucao
+FROM node:26-bookworm-slim AS execucao
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
