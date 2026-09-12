@@ -18,15 +18,19 @@ datasource db {
 }
 
 model Usuarios {
-  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email             String
-  senhaHash         String              @default("") @map("senha_hash")
-  emailVerificadoEm DateTime?           @map("email_verificado_em") @db.Timestamptz
-  criadoEm          DateTime            @default(now()) @map("criado_em") @db.Timestamptz
-  atualizadoEm      DateTime            @default(now()) @map("atualizado_em") @db.Timestamptz
-  perfil            Profiles?
-  sessoes           Sessoes[]
-  tokens            TokensVerificacao[]
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email               String
+  senhaHash           String               @default("") @map("senha_hash")
+  papel               String               @default("professor")
+  ativadoEm           DateTime?            @map("ativado_em") @db.Timestamptz
+  criadoEm            DateTime             @default(now()) @map("criado_em") @db.Timestamptz
+  atualizadoEm        DateTime             @default(now()) @map("atualizado_em") @db.Timestamptz
+  perfil              Profiles?
+  sessoes             Sessoes[]
+  codigos             CodigosAcesso[]      @relation("CodigoUsuario")
+  codigosCriados      CodigosAcesso[]      @relation("CodigoCriador")
+  solicitacoesAtendeu SolicitacoesAcesso[] @relation("SolicitacaoAtendida")
+  eventos             EventosSeguranca[]
 
   @@map("usuarios")
 }
@@ -162,20 +166,55 @@ model Sessoes {
   @@map("sessoes")
 }
 
-model TokensVerificacao {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  usuarioId String    @map("usuario_id") @db.Uuid
-  tipo      String
-  tokenHash String    @unique(map: "tokens_verificacao_token_hash_key") @map("token_hash")
-  novoEmail String?   @map("novo_email")
-  expiraEm  DateTime  @map("expira_em") @db.Timestamptz
-  usadoEm   DateTime? @map("usado_em") @db.Timestamptz
-  criadoEm  DateTime  @default(now()) @map("criado_em") @db.Timestamptz
-  usuario   Usuarios  @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model CodigosAcesso {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId  String    @map("usuario_id") @db.Uuid
+  email      String
+  tipo       String
+  codigoHash String    @map("codigo_hash")
+  criadoPor  String?   @map("criado_por") @db.Uuid
+  expiraEm   DateTime  @map("expira_em") @db.Timestamptz
+  usadoEm    DateTime? @map("usado_em") @db.Timestamptz
+  criadoEm   DateTime  @default(now()) @map("criado_em") @db.Timestamptz
+  usuario    Usuarios  @relation("CodigoUsuario", fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  criador    Usuarios? @relation("CodigoCriador", fields: [criadoPor], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
-  @@index([usuarioId], map: "tokens_usuario_idx")
-  @@index([expiraEm], map: "tokens_expira_idx")
-  @@map("tokens_verificacao")
+  @@index([email], map: "codigos_acesso_email_idx")
+  @@index([expiraEm], map: "codigos_acesso_expira_idx")
+  @@map("codigos_acesso")
+}
+
+// Fila de pedidos de acesso feitos na tela de login.
+model SolicitacoesAcesso {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome       String    @default("")
+  email      String
+  tipo       String
+  status     String    @default("pendente")
+  atendidaPor String?  @map("atendida_por") @db.Uuid
+  atendidaEm DateTime? @map("atendida_em") @db.Timestamptz
+  criadoEm   DateTime  @default(now()) @map("criado_em") @db.Timestamptz
+  atendente  Usuarios? @relation("SolicitacaoAtendida", fields: [atendidaPor], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([status, criadoEm(sort: Desc)], map: "solicitacoes_acesso_status_idx")
+  @@map("solicitacoes_acesso")
+}
+
+// Trilha de auditoria dos eventos sensiveis.
+model EventosSeguranca {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  atorId   String?  @map("ator_id") @db.Uuid
+  acao     String
+  email    String   @default("")
+  ip       String   @default("")
+  agente   String   @default("")
+  detalhe  Json     @default("{}") @db.JsonB
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz
+  ator     Usuarios? @relation(fields: [atorId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([criadoEm(sort: Desc)], map: "eventos_seguranca_criado_idx")
+  @@index([email], map: "eventos_seguranca_email_idx")
+  @@map("eventos_seguranca")
 }
 
 // Janela do limite de tentativas por (chave, feita_em); a chave une rota e IP.
