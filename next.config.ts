@@ -1,3 +1,5 @@
+// Configuração do Next.js. Fora da Vercel a saída é standalone
+// (imagem Docker); na Vercel o empacotamento é o padrão.
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {

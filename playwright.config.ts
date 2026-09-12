@@ -1,3 +1,4 @@
+// Configuração do Playwright: 3 navegadores, execução serial e servidor local.
 import { defineConfig, devices } from "@playwright/test"
 
 /**

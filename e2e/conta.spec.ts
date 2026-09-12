@@ -1,3 +1,4 @@
+// Fluxos de conta: perfil, troca de senha, backup, exclusão e restauração.
 import { expect, test, type Page } from "@playwright/test"
 import { confirmarEEntrar } from "./helpers/auth"
 

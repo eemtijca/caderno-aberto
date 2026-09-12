@@ -1,3 +1,4 @@
+// Telas de links: mensagem de rascunho e exigência de nota publicada.
 import { expect, test, type Page } from "@playwright/test"
 import { confirmarEEntrar } from "./helpers/auth"
 

@@ -9,6 +9,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Testes de API tocam banco e rede; teto alto evita falso negativo.
     testTimeout: 120_000,
     hookTimeout: 60_000,
   },

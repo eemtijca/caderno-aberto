@@ -1,3 +1,4 @@
+# Aplica as migrações Prisma em produção, apenas em push na main.
 name: Migrações do Banco
 
 # Aplica as migrações Prisma no Supabase de produção. Roda só no push
