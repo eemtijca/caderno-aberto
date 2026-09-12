@@ -1,90 +1,65 @@
-// Fluxos de autenticação: cadastro, confirmação por e-mail, login e redefinição.
-import { test, expect } from "@playwright/test"
-import { buscarEmail, corrigirRedirect } from "./helpers/outbox"
-import { entrarSeNecessario, confirmarEEntrar } from "./helpers/auth"
+// Fluxos de autenticação: login como porta de entrada, código e solicitações.
+import { test, expect } from "@playwright/test";
+import { criarContaEentrar, criarProfessorUnico } from "./helpers/auth";
+import { criarUsuarioInativo, emitirCodigo, removerUsuarios } from "./helpers/db";
 
 test.describe("Autenticação", () => {
-  test("cadastro exige confirmação e bloqueia login até confirmar", async ({ page, baseURL }) => {
-    const email = `auth_${Date.now()}@exemplo.br`
-    const senha = "senha123"
-    await page.goto("/#/cadastro")
-    await page.getByLabel("Seu nome").fill("Prof Teste")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill(senha)
-    await page.getByLabel("Confirmar senha").fill(senha)
-    await page.getByRole("button", { name: "Criar conta" }).click()
-    await expect(page.getByText("Conta criada. Confirme o e-mail")).toBeVisible({ timeout: 10000 })
-    await expect(page.getByRole("button", { name: "Reenviar e-mail de confirmação" })).toBeVisible()
-    await page.goto("/#/entrar")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill(senha)
-    await page.getByRole("button", { name: "Entrar" }).click()
-    await expect(page.getByText(/E-mail ou senha incorretos/i)).toBeVisible({ timeout: 10000 })
-    const mail = await buscarEmail(email, "Confirme", 20000)
-    expect(mail.href).toContain("/api/auth/verificar?token=")
-    const link = corrigirRedirect(mail.href, baseURL!)
-    await page.goto(link)
-    await page.waitForTimeout(2000)
-    await entrarSeNecessario(page, email, senha)
-    await expect(page.getByText("Caderno Aberto").first()).toBeVisible()
-  })
+  test("a raiz anônima é a tela de login, sem landing", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Entrar" })).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/abertas para os alunos/i)).toHaveCount(0);
+  });
 
-  test("reenviar e-mail funciona", async ({ page }) => {
-    const email = `reenvio_${Date.now()}@exemplo.br`
-    await page.goto("/#/cadastro")
-    await page.getByLabel("Seu nome").fill("Prof Reenvio")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill("senha123")
-    await page.getByLabel("Confirmar senha").fill("senha123")
-    await page.getByRole("button", { name: "Criar conta" }).click()
-    await expect(page.getByText("Conta criada.")).toBeVisible()
-    await page.getByRole("button", { name: "Reenviar e-mail de confirmação" }).click()
-    await expect(page.getByText("E-mail de confirmação reenviado")).toBeVisible({ timeout: 10000 })
-  })
+  test("login válido entra no app", async ({ page }) => {
+    const { email, nome } = criarProfessorUnico();
+    await criarContaEentrar(page, { nome, email, senha: "senha123" });
+    await expect(page.getByText("Caderno Aberto").first()).toBeVisible();
+  });
 
-  test("validações de cadastro", async ({ page }) => {
-    await page.goto("/#/cadastro")
-    await page.getByLabel("Seu nome").fill("Prof")
-    await page.getByLabel("E-mail").fill("invalido")
-    await page.getByLabel("Senha", { exact: true }).fill("123")
-    await page.getByLabel("Confirmar senha").fill("321")
-    await page.getByRole("button", { name: "Criar conta" }).click()
-    await expect(page.getByText(/8 caracteres|não conferem/i)).toBeVisible({ timeout: 5000 })
-  })
+  test("login inválido mostra erro genérico", async ({ page }) => {
+    await page.goto("/#/entrar");
+    await page.getByLabel("E-mail").fill("ninguem@exemplo.br");
+    await page.getByLabel("Senha", { exact: true }).fill("senhaErrada123");
+    await page.getByRole("button", { name: "Entrar" }).click();
+    await expect(page.getByText(/E-mail ou senha incorretos/i)).toBeVisible({ timeout: 8000 });
+  });
 
-  test("login pós cadastro vai para início não conta", async ({ page, baseURL }) => {
-    const email = `inicio_${Date.now()}@exemplo.br`
-    await page.goto("/#/cadastro")
-    await page.getByLabel("Seu nome").fill("Prof Inicio")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill("senha123")
-    await page.getByLabel("Confirmar senha").fill("senha123")
-    await page.getByRole("button", { name: "Criar conta" }).click()
-    await expect(page.getByText("Conta criada.")).toBeVisible()
-    await confirmarEEntrar(page, baseURL, email, "senha123")
-    expect(page.url()).not.toContain("#/conta")
-    await expect(page.getByRole("heading", { name: /Turmas|Notas|Inicio/i }).first()).toBeVisible({
-      timeout: 5000,
-    })
-  })
+  test("solicitar acesso confirma o pedido", async ({ page }) => {
+    await page.goto("/#/solicitar");
+    await page.getByLabel("Seu nome").fill("Prof Solicitante");
+    await page.getByLabel("E-mail").fill(`solic_${Date.now()}@exemplo.br`);
+    await page.getByRole("button", { name: "Enviar solicitação" }).click();
+    await expect(page.getByText(/Solicitação enviada/i)).toBeVisible({ timeout: 8000 });
+  });
 
-  test("redefinição de senha envia link", async ({ page }) => {
-    await page.goto("/#/redefinir")
-    await page.getByLabel("E-mail").fill("naoexiste_12345@exemplo.br")
-    await page.getByRole("button", { name: "Enviar link de redefini" }).click()
-    await expect(page.getByText(/Se existir conta/i)).toBeVisible({ timeout: 5000 })
-  })
+  test("esqueci a senha responde de forma genérica", async ({ page }) => {
+    await page.goto("/#/solicitar?recuperacao=1");
+    await page.getByLabel("E-mail").fill("naoexiste_12345@exemplo.br");
+    await page.getByRole("button", { name: "Enviar solicitação" }).click();
+    await expect(page.getByText(/administração será avisada|Se existir conta/i)).toBeVisible({
+      timeout: 8000,
+    });
+  });
 
-  test("autenticado não vê telas de auth e redireciona para início", async ({ page, baseURL }) => {
-    const email = `redir_${Date.now()}@exemplo.br`
-    await page.goto("/#/cadastro")
-    await page.getByLabel("Seu nome").fill("Prof Redir")
-    await page.getByLabel("E-mail").fill(email)
-    await page.getByLabel("Senha", { exact: true }).fill("senha123")
-    await page.getByLabel("Confirmar senha").fill("senha123")
-    await page.getByRole("button", { name: "Criar conta" }).click()
-    await confirmarEEntrar(page, baseURL, email, "senha123")
-    await page.goto("/#/cadastro")
-    await expect(page).toHaveURL(/#\//, { timeout: 5000 })
-  })
-})
+  test("tenho um código ativa a conta e entra", async ({ page }) => {
+    const email = `codigo_e2e_${Date.now()}@exemplo.br`;
+    await criarUsuarioInativo(email, "Prof Código");
+    await emitirCodigo(email, "ABCD2345", "primeiro_acesso");
+
+    await page.goto("/#/codigo");
+    await page.getByLabel("E-mail").fill(email);
+    await page.locator('input[autocomplete="one-time-code"]').fill("ABCD2345");
+    await page.getByLabel("Nova senha").fill("senha123");
+    await page.getByLabel("Confirmar senha").fill("senha123");
+    await page.getByRole("button", { name: "Definir senha" }).click();
+    await expect(page.getByText("Caderno Aberto").first()).toBeVisible({ timeout: 15000 });
+    await removerUsuarios([email]);
+  });
+
+  test("autenticado não vê telas de auth", async ({ page }) => {
+    const { email, nome } = criarProfessorUnico();
+    await criarContaEentrar(page, { nome, email, senha: "senha123" });
+    await page.goto("/#/entrar");
+    await expect(page).not.toHaveURL(/#\/entrar/, { timeout: 8000 });
+  });
+});
