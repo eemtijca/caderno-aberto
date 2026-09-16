@@ -57,14 +57,8 @@ import {
   useTurmas,
 } from "@/lib/notas/api-client";
 import { useSessao } from "@/hooks/use-sessao";
-import {
-  CORES,
-  corDisciplina,
-  ICONES_DISCIPLINA,
-  MAPA_ICONES,
-  nomeIconeValido,
-  obterIconeDisciplina,
-} from "@/lib/notas/cores";
+import { SeletorIcone } from "@/components/seletor-icone";
+import { CORES, corDisciplina, nomeIconeValido } from "@/lib/notas/cores";
 
 const SERIES = ["1º ano", "2º ano", "3º ano", "Outro"];
 
@@ -410,70 +404,50 @@ function SecaoDisciplinas() {
         )}
       </div>
 
-      <div className="border-border mt-4 grid gap-2.5 rounded-xl border border-dashed p-3.5 sm:grid-cols-[1fr_auto_auto_auto]">
-        <Input
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          placeholder="Nova disciplina (ex.: Química)"
-          className="h-9 rounded-lg"
-          aria-label="Nome da nova disciplina"
-        />
-        <Select value={cor} onValueChange={setCor}>
-          <SelectTrigger size="sm" className="h-9 w-36 rounded-lg">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CORES.map((cc) => (
-              <SelectItem key={cc.chave} value={cc.chave}>
-                <span className="flex items-center gap-2">
-                  <span className={`h-2.5 w-2.5 rounded-full ${cc.ponto}`} aria-hidden />
-                  {cc.nome}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={icone} onValueChange={setIcone}>
-          <SelectTrigger size="sm" className="h-9 w-40 rounded-lg">
-            <SelectValue>
-              {(() => {
-                const Icon = MAPA_ICONES[icone] ?? MAPA_ICONES.BookOpen;
-                return (
+      <div className="border-border mt-4 grid gap-3 rounded-xl border border-dashed p-3.5">
+        <div className="grid gap-2.5 sm:grid-cols-[1fr_auto_auto]">
+          <Input
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Nova disciplina (ex.: Química)"
+            className="h-9 rounded-lg"
+            aria-label="Nome da nova disciplina"
+          />
+          <Select value={cor} onValueChange={setCor}>
+            <SelectTrigger size="sm" className="h-9 w-36 rounded-lg">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CORES.map((cc) => (
+                <SelectItem key={cc.chave} value={cc.chave}>
                   <span className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" aria-hidden /> {icone}
-                  </span>
-                );
-              })()}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {ICONES_DISCIPLINA.map((i) => {
-              const Icon = MAPA_ICONES[i] ?? MAPA_ICONES.BookOpen;
-              return (
-                <SelectItem key={i} value={i}>
-                  <span className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" aria-hidden /> {i}
+                    <span className={`h-2.5 w-2.5 rounded-full ${cc.ponto}`} aria-hidden />
+                    {cc.nome}
                   </span>
                 </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-        <Button
-          className="h-9 gap-1.5 rounded-lg"
-          disabled={!nome.trim() || criar.isPending}
-          onClick={async () => {
-            try {
-              await criar.mutateAsync({ nome: nome.trim(), cor, icone: nomeIconeValido(icone) });
-              setNome("");
-              toast.success("Disciplina criada");
-            } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Erro ao criar.");
-            }
-          }}
-        >
-          <Plus className="h-4 w-4" aria-hidden /> Criar
-        </Button>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            className="h-9 gap-1.5 rounded-lg"
+            disabled={!nome.trim() || criar.isPending}
+            onClick={async () => {
+              try {
+                await criar.mutateAsync({ nome: nome.trim(), cor, icone: nomeIconeValido(icone) });
+                setNome("");
+                toast.success("Disciplina criada");
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Erro ao criar.");
+              }
+            }}
+          >
+            <Plus className="h-4 w-4" aria-hidden /> Criar
+          </Button>
+        </div>
+        <div className="grid gap-1.5">
+          <span className="text-muted-foreground text-xs font-medium">Ícone</span>
+          <SeletorIcone valor={icone} onChange={setIcone} />
+        </div>
       </div>
     </section>
   );

@@ -29,13 +29,8 @@ import {
   useDisciplinas,
   useCriarDisciplina,
 } from "@/lib/notas/api-client";
-import {
-  CORES,
-  corDisciplina,
-  ICONES_DISCIPLINA,
-  MAPA_ICONES,
-  nomeIconeValido,
-} from "@/lib/notas/cores";
+import { SeletorIcone } from "@/components/seletor-icone";
+import { CORES, corDisciplina, nomeIconeValido } from "@/lib/notas/cores";
 import { MESES_CAP } from "@/lib/notas/texto";
 import { toast } from "sonner";
 
@@ -144,7 +139,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                   placeholder="Nome da disciplina"
                   className="h-9 rounded-lg"
                 />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid gap-2">
                   <Select value={novaDisciplinaCor} onValueChange={setNovaDisciplinaCor}>
                     <SelectTrigger className="h-9 rounded-lg">
                       <SelectValue />
@@ -160,34 +155,10 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select value={novaDisciplinaIcone} onValueChange={setNovaDisciplinaIcone}>
-                    <SelectTrigger className="h-9 rounded-lg">
-                      <SelectValue>
-                        {(() => {
-                          const Icon = MAPA_ICONES[novaDisciplinaIcone] ?? MAPA_ICONES.BookOpen;
-                          return (
-                            <span className="flex items-center gap-2">
-                              <Icon className="h-4 w-4" aria-hidden />
-                              {novaDisciplinaIcone}
-                            </span>
-                          );
-                        })()}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ICONES_DISCIPLINA.map((i) => {
-                        const Icon = MAPA_ICONES[i] ?? MAPA_ICONES.BookOpen;
-                        return (
-                          <SelectItem key={i} value={i}>
-                            <span className="flex items-center gap-2">
-                              <Icon className="h-4 w-4" aria-hidden />
-                              {i}
-                            </span>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid gap-1.5">
+                    <span className="text-muted-foreground text-xs font-medium">Ícone</span>
+                    <SeletorIcone valor={novaDisciplinaIcone} onChange={setNovaDisciplinaIcone} />
+                  </div>
                 </div>
                 <Button
                   size="sm"
