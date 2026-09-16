@@ -21,6 +21,8 @@ O `@theme inline` mapeia os tokens semânticos para utilitários do Tailwind. A 
 
 Cada disciplina recebe uma das 10 cores de `src/lib/notas/cores.ts` (verde, teal, violeta, rosa, âmbar, laranja, ciano, fúcsia, lima e pedra), com classes para chip, borda, ponto, texto e tons suaves, em modo claro e escuro.
 
+Cada disciplina também escolhe um ícone entre 16 opções (`ICONES_DISCIPLINA`). A escolha usa `SeletorIcone` (`src/components/seletor-icone.tsx`), uma grade sem rótulos visíveis em que o nome do ícone existe apenas como `aria-label` e `title`.
+
 ## Tipografia
 
 | Fonte                 | Variável            | Papel                               |
@@ -42,7 +44,14 @@ As fontes são carregadas com `next/font/google`. Os títulos usam `--font-displ
 
 ## Temas
 
-Claro, escuro e sistema, com `next-themes` (`attribute="class"`, padrão sistema). O HTML usa `suppressHydrationWarning`. O alternador exibe o ícone do tema oposto ao atual. A cor da barra do navegador acompanha o tema.
+Claro, escuro e sistema, com `next-themes` (`attribute="class"`, padrão sistema). O HTML usa `suppressHydrationWarning`. A cor da barra do navegador acompanha o tema.
+
+Há dois controles de tema:
+
+- `SeletorTema` (`src/components/seletor-tema.tsx`): menu com as três opções (Sistema, Claro e Escuro), indicador na opção ativa e ícone do tema corrente no botão. Usado na tela de login e na interface autenticada (sidebar e topbar).
+- Alternador binário da página pública: revela o ícone do tema oposto ao atual.
+
+Os elementos clicáveis usam `cursor: pointer` por uma regra global em `globals.css`; os primitivos de menu e seleção não fixam mais `cursor-default`.
 
 ## Navegação
 
