@@ -8,23 +8,24 @@ async function loginNovo(page: Page) {
 }
 
 test.describe("Disciplina e ícones", () => {
-  test("seletor de ícone exibe ícone gráfico não só texto", async ({ page }) => {
+  test("seletor de ícone em grade, sem rótulos visíveis", async ({ page }) => {
     await loginNovo(page);
     await page.goto("/#/conta");
     await expect(page.getByText("Disciplinas").first()).toBeVisible();
-    const trigger = page.locator("button").filter({ hasText: "BookOpen" }).first();
-    await expect(trigger).toBeVisible({ timeout: 5000 });
-    await trigger.click();
-    const opcao = page.getByRole("option").filter({ hasText: "FlaskConical" }).first();
-    await expect(opcao).toBeVisible({ timeout: 5000 });
-    const svgInOption = opcao.locator("svg");
-    await expect(svgInOption).toBeVisible();
+    const grade = page.getByRole("radiogroup", { name: "Ícone da disciplina" }).first();
+    await expect(grade).toBeVisible({ timeout: 5000 });
+    await expect(grade.getByRole("radio")).toHaveCount(16);
+    const quimica = grade.getByRole("radio", { name: "Química" });
+    await expect(quimica.locator("svg")).toBeVisible();
+    await quimica.click();
+    await expect(quimica).toHaveAttribute("aria-checked", "true");
   });
 
   test("criacao de disciplina com icone e cor", async ({ page }) => {
     await loginNovo(page);
     await page.goto("/#/conta");
     await page.getByPlaceholder("Nova disciplina (ex.: Química)").fill("História");
+    await page.getByRole("radio", { name: "História" }).first().click();
     await page.getByRole("button", { name: "Criar" }).first().click();
     await expect(page.getByText("Disciplina criada")).toBeVisible({ timeout: 5000 });
     await expect(page.getByText("História").first()).toBeVisible();
