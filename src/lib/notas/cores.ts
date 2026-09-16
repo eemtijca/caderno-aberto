@@ -154,6 +154,26 @@ export const ICONES_DISCIPLINA = [
   "Map",
 ] as const;
 
+// Nome acessível de cada ícone; a grade não exibe rótulos visíveis.
+export const ROTULOS_ICONES: Record<string, string> = {
+  BookOpen: "Livro",
+  FlaskConical: "Química",
+  Atom: "Física",
+  Calculator: "Matemática",
+  Pi: "Cálculo",
+  Dna: "Biologia",
+  Globe2: "Geografia",
+  Landmark: "História",
+  Languages: "Idiomas",
+  PenLine: "Redação",
+  Palette: "Artes",
+  Music: "Música",
+  Dumbbell: "Educação física",
+  Laptop: "Tecnologia",
+  Scale: "Direito",
+  Map: "Cartografia",
+};
+
 export function nomeIconeValido(nome: string | undefined): string {
   return (ICONES_DISCIPLINA as readonly string[]).includes(nome ?? "")
     ? (nome as string)

@@ -4,7 +4,6 @@
 // (mobile), além da busca global com atalho de teclado.
 
 import { useEffect, useRef, useState } from "react";
-import { useTheme } from "next-themes";
 import { VERSAO_CURTA } from "@/lib/versao";
 import {
   BookOpenText,
@@ -14,13 +13,11 @@ import {
   Loader2,
   LogOut,
   Menu,
-  Moon,
   NotebookPen,
   Plus,
   Search,
   Settings,
   ShieldCheck,
-  Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +37,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { SeletorTema } from "@/components/seletor-tema";
 import { useBusca } from "@/lib/notas/api-client";
 import { useSessao } from "@/hooks/use-sessao";
 import { corDisciplina } from "@/lib/notas/cores";
@@ -69,7 +67,6 @@ interface PropsShell {
 }
 
 export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
-  const { setTheme } = useTheme();
   const { perfil, usuario, sair, ehAdmin } = useSessao();
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [saindo, setSaindo] = useState(false);
@@ -194,7 +191,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
             </Button>
           </div>
           <div className="mt-3 flex items-center justify-between">
-            <BotaoTema setTheme={setTheme} />
+            <SeletorTema className="rounded-lg" />
             <span className="text-muted-foreground text-[0.7rem]">{VERSAO_CURTA}</span>
           </div>
         </div>
@@ -231,7 +228,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
           >
             <LogOut className="h-5 w-5" aria-hidden />
           </Button>
-          <BotaoTema setTheme={setTheme} />
+          <SeletorTema variant="ghost" />
           <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Mais opções">
@@ -325,24 +322,6 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
         <BuscaGlobal aberta aoFechar={() => setBuscaAberta(false)} navegar={navegar} />
       ) : null}
     </div>
-  );
-}
-
-function BotaoTema({ setTheme }: { setTheme: (t: string) => void }) {
-  return (
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={() => {
-        const escuro = document.documentElement.classList.contains("dark");
-        setTheme(escuro ? "light" : "dark");
-      }}
-      aria-label="Alternar tema claro/escuro"
-      className="rounded-lg"
-    >
-      <Sun className="hidden h-[1.1rem] w-[1.1rem] dark:block" aria-hidden />
-      <Moon className="h-[1.1rem] w-[1.1rem] dark:hidden" aria-hidden />
-    </Button>
   );
 }
 

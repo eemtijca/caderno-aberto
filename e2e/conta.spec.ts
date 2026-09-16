@@ -17,11 +17,10 @@ test.describe("Conta", () => {
     await inputProf.fill("Prof Atualizado");
     await page.getByRole("button", { name: "Salvar perfil" }).click();
     await expect(page.getByText("Perfil salvo")).toBeVisible({ timeout: 5000 });
-    const selectIcone = page.getByText("BookOpen").first();
-    await expect(selectIcone).toBeVisible({ timeout: 5000 });
+    const gradeIcone = page.getByRole("radiogroup", { name: "Ícone da disciplina" }).first();
+    await expect(gradeIcone).toBeVisible({ timeout: 5000 });
     // O ícone renderiza SVG.
-    const svg = page.locator("svg").first();
-    await expect(svg).toBeVisible();
+    await expect(gradeIcone.locator("svg").first()).toBeVisible();
   });
 
   test("trocar senha exige atual e mínimo 8", async ({ page }) => {
