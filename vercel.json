@@ -5,12 +5,6 @@
   "installCommand": "npm ci",
   "outputDirectory": ".next",
   "cleanUrls": true,
-  "git": {
-    "deploymentEnabled": {
-      "main": true,
-      "**": false
-    }
-  },
   "crons": [
     {
       "path": "/api/conta/restaurar",
