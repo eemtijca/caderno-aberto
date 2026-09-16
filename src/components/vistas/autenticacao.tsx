@@ -8,21 +8,32 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  FileText,
   KeyRound,
+  Link2,
   Loader2,
   Lock,
   NotebookPen,
+  PenLine,
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
+import { SeletorTema } from "@/components/seletor-tema";
 import { useSessao } from "@/hooks/use-sessao";
 import type { Rota } from "@/lib/rota";
 
 type Modo = "entrar" | "codigo" | "solicitar";
 type TipoSolicitacao = "primeiro_acesso" | "recuperacao";
+
+// Destaques do painel de marca no desktop.
+const DESTAQUES = [
+  { Icone: PenLine, texto: "Editor de blocos com LaTeX e imagens" },
+  { Icone: FileText, texto: "PDF A4 pronto para imprimir" },
+  { Icone: Link2, texto: "Links gerenciáveis para turmas e disciplinas" },
+];
 
 export function VistaAutenticação({
   rota,
@@ -134,236 +145,282 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
     (modo === "solicitar" && tipo === "recuperacao" && !email.trim());
 
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="na-entra w-full max-w-sm">
-        <button
-          type="button"
-          onClick={() => navegar("/")}
-          className="mx-auto flex items-center gap-2.5"
-          aria-label="Página inicial"
-        >
-          <span className="bg-primary text-primary-foreground flex h-10 w-10 items-center justify-center rounded-xl">
-            <NotebookPen className="h-5 w-5" aria-hidden />
-          </span>
-          <span className="fonte-display text-lg font-bold">Caderno Aberto</span>
-        </button>
+    <div className="bg-background relative flex min-h-[100svh] flex-col overflow-x-hidden lg:grid lg:grid-cols-[1.05fr_1fr]">
+      <SeletorTema className="absolute top-4 right-4 z-20 rounded-xl" />
 
-        <div className="border-border bg-card mt-6 rounded-2xl border p-6 shadow-sm">
-          <h1 className="fonte-display text-xl font-bold">{titulo}</h1>
-          <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">{descricao}</p>
+      <aside className="from-brand-800 via-brand-700 to-brand-900 relative hidden overflow-hidden bg-gradient-to-br p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(38rem 38rem at 84% 6%, rgba(255,255,255,0.16), transparent 62%), radial-gradient(30rem 30rem at 6% 94%, rgba(255,255,255,0.1), transparent 60%)",
+          }}
+        />
+        <div className="relative">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
+              <NotebookPen className="h-5 w-5" aria-hidden />
+            </span>
+            <span className="fonte-display text-lg font-bold">Caderno Aberto</span>
+          </div>
 
-          {modo === "solicitar" ? (
-            <div className="bg-muted mt-4 grid grid-cols-2 gap-1 rounded-xl p-1" role="tablist">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tipo === "primeiro_acesso"}
-                onClick={() => {
-                  setTipo("primeiro_acesso");
-                  setSucesso("");
-                  setErro("");
-                }}
-                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                  tipo === "primeiro_acesso"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground"
-                }`}
-              >
-                Primeiro acesso
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tipo === "recuperacao"}
-                onClick={() => {
-                  setTipo("recuperacao");
-                  setSucesso("");
-                  setErro("");
-                }}
-                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                  tipo === "recuperacao"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground"
-                }`}
-              >
-                Recuperar senha
-              </button>
-            </div>
-          ) : null}
+          <h2 className="fonte-display mt-14 max-w-md text-3xl leading-tight font-extrabold xl:text-4xl">
+            Notas de aula que chegam aos alunos.
+          </h2>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-white/80">
+            Escreva uma vez e publique na web, no PDF de impressão e nos links de compartilhamento.
+          </p>
 
-          <form onSubmit={submeter} className="mt-5 space-y-3.5">
-            {modo === "solicitar" && tipo === "primeiro_acesso" ? (
-              <Campo
-                id="nome"
-                rotulo="Seu nome"
-                tipo="text"
-                valor={nome}
-                onChange={setNome}
-                placeholder="Prof. Maria da Silva"
-                autoFocus
-              />
+          <ul className="mt-10 space-y-4">
+            {DESTAQUES.map(({ Icone, texto }) => (
+              <li key={texto} className="flex items-center gap-3 text-sm text-white/90">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15">
+                  <Icone className="h-4 w-4" aria-hidden />
+                </span>
+                {texto}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p className="relative flex items-center gap-2 text-xs text-white/70">
+          <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+          Acesso restrito à comunidade da escola
+        </p>
+      </aside>
+
+      <main className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 lg:py-10">
+        <div className="na-entra w-full max-w-sm">
+          <button
+            type="button"
+            onClick={() => navegar("/")}
+            className="mx-auto mb-6 flex items-center gap-2.5 lg:hidden"
+            aria-label="Página inicial"
+          >
+            <span className="bg-primary text-primary-foreground flex h-10 w-10 items-center justify-center rounded-xl">
+              <NotebookPen className="h-5 w-5" aria-hidden />
+            </span>
+            <span className="fonte-display text-lg font-bold">Caderno Aberto</span>
+          </button>
+
+          <div className="border-border bg-card max-h-[calc(100svh-12rem)] overflow-y-auto overscroll-contain rounded-2xl border p-6 shadow-sm lg:max-h-[calc(100svh-5rem)]">
+            <h1 className="fonte-display text-xl font-bold">{titulo}</h1>
+            <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">{descricao}</p>
+
+            {modo === "solicitar" ? (
+              <div className="bg-muted mt-4 grid grid-cols-2 gap-1 rounded-xl p-1" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tipo === "primeiro_acesso"}
+                  onClick={() => {
+                    setTipo("primeiro_acesso");
+                    setSucesso("");
+                    setErro("");
+                  }}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                    tipo === "primeiro_acesso"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Primeiro acesso
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tipo === "recuperacao"}
+                  onClick={() => {
+                    setTipo("recuperacao");
+                    setSucesso("");
+                    setErro("");
+                  }}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                    tipo === "recuperacao"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Recuperar senha
+                </button>
+              </div>
             ) : null}
 
-            {!sucesso ? (
-              <Campo
-                id="email"
-                rotulo="E-mail"
-                tipo="email"
-                valor={email}
-                onChange={setEmail}
-                placeholder="nome@escola.br"
-                autoFocus={modo !== "solicitar" || tipo === "recuperacao"}
-              />
-            ) : null}
+            <form onSubmit={submeter} className="mt-5 space-y-3.5">
+              {modo === "solicitar" && tipo === "primeiro_acesso" ? (
+                <Campo
+                  id="nome"
+                  rotulo="Seu nome"
+                  tipo="text"
+                  valor={nome}
+                  onChange={setNome}
+                  placeholder="Prof. Maria da Silva"
+                  autoFocus
+                />
+              ) : null}
 
-            {modo === "entrar" ? (
-              <Campo
-                id="senha"
-                rotulo="Senha"
-                tipo="password"
-                valor={senha}
-                onChange={setSenha}
-                placeholder="••••••••"
-                olho
-                autoComplete="current-password"
-              />
-            ) : null}
+              {!sucesso ? (
+                <Campo
+                  id="email"
+                  rotulo="E-mail"
+                  tipo="email"
+                  valor={email}
+                  onChange={setEmail}
+                  placeholder="nome@escola.br"
+                  autoFocus={modo !== "solicitar" || tipo === "recuperacao"}
+                />
+              ) : null}
 
-            {modo === "codigo" ? (
-              <>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="codigo">Código de acesso</Label>
-                  <InputOTP
-                    id="codigo"
-                    maxLength={8}
-                    value={codigo}
-                    onChange={(v) => setCodigo(v.toUpperCase())}
-                    autoFocus
-                    inputMode="text"
-                    autoComplete="one-time-code"
-                    containerClassName="justify-between"
-                    aria-label="Código de acesso de 8 caracteres"
-                  >
-                    <InputOTPGroup className="w-full justify-between">
-                      {Array.from({ length: 8 }).map((_, i) => (
-                        <InputOTPSlot key={i} index={i} className="h-10 w-8 rounded-md text-sm" />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
-                  <p className="text-muted-foreground text-[0.72rem]">
-                    O código tem 8 caracteres e expira em 60 minutos.
-                  </p>
-                </div>
+              {modo === "entrar" ? (
                 <Campo
                   id="senha"
-                  rotulo="Nova senha"
+                  rotulo="Senha"
                   tipo="password"
                   valor={senha}
                   onChange={setSenha}
                   placeholder="••••••••"
                   olho
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                 />
-                <Campo
-                  id="senha2"
-                  rotulo="Confirmar senha"
-                  tipo="password"
-                  valor={senha2}
-                  onChange={setSenha2}
-                  placeholder="••••••••"
-                  olho
-                  autoComplete="new-password"
-                />
-                {senha ? (
-                  <div className="space-y-1.5" aria-live="polite">
-                    <div className="flex items-center justify-between text-[0.72rem]">
-                      <span className="text-muted-foreground">Força da senha</span>
-                      <span className="font-semibold">{forcaSenha(senha).rotulo}</span>
-                    </div>
-                    <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
-                      <div
-                        className={`h-full rounded-full transition-all ${forcaSenha(senha).cor}`}
-                        style={{ width: `${(forcaSenha(senha).nivel / 3) * 100}%` }}
-                      />
-                    </div>
-                    {senha2 && senha !== senha2 ? (
-                      <p className="text-destructive text-[0.72rem]">As senhas não conferem.</p>
-                    ) : null}
+              ) : null}
+
+              {modo === "codigo" ? (
+                <>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="codigo">Código de acesso</Label>
+                    <InputOTP
+                      id="codigo"
+                      maxLength={8}
+                      value={codigo}
+                      onChange={(v) => setCodigo(v.toUpperCase())}
+                      autoFocus
+                      inputMode="text"
+                      autoComplete="one-time-code"
+                      containerClassName="justify-between"
+                      aria-label="Código de acesso de 8 caracteres"
+                    >
+                      <InputOTPGroup className="w-full justify-between">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                          <InputOTPSlot key={i} index={i} className="h-10 w-8 rounded-md text-sm" />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                    <p className="text-muted-foreground text-[0.72rem]">
+                      O código tem 8 caracteres e expira em 60 minutos.
+                    </p>
                   </div>
-                ) : null}
-              </>
-            ) : null}
+                  <Campo
+                    id="senha"
+                    rotulo="Nova senha"
+                    tipo="password"
+                    valor={senha}
+                    onChange={setSenha}
+                    placeholder="••••••••"
+                    olho
+                    autoComplete="new-password"
+                  />
+                  <Campo
+                    id="senha2"
+                    rotulo="Confirmar senha"
+                    tipo="password"
+                    valor={senha2}
+                    onChange={setSenha2}
+                    placeholder="••••••••"
+                    olho
+                    autoComplete="new-password"
+                  />
+                  {senha ? (
+                    <div className="space-y-1.5" aria-live="polite">
+                      <div className="flex items-center justify-between text-[0.72rem]">
+                        <span className="text-muted-foreground">Força da senha</span>
+                        <span className="font-semibold">{forcaSenha(senha).rotulo}</span>
+                      </div>
+                      <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                        <div
+                          className={`h-full rounded-full transition-all ${forcaSenha(senha).cor}`}
+                          style={{ width: `${(forcaSenha(senha).nivel / 3) * 100}%` }}
+                        />
+                      </div>
+                      {senha2 && senha !== senha2 ? (
+                        <p className="text-destructive text-[0.72rem]">As senhas não conferem.</p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
 
-            {erro ? (
-              <p role="alert" className="text-destructive text-sm font-medium">
-                {erro}
-              </p>
-            ) : null}
-            {sucesso ? (
-              <p className="text-brand-700 dark:text-brand-300 flex items-start gap-1.5 text-sm font-medium">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                {sucesso}
-              </p>
-            ) : null}
-
-            {!sucesso ? (
-              <Button type="submit" className="w-full gap-2 rounded-xl" disabled={desabilitado}>
-                {enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-                {botao}
-              </Button>
-            ) : null}
-          </form>
-
-          <div className="border-border mt-5 space-y-1.5 border-t pt-4 text-center text-sm">
-            {modo === "entrar" ? (
-              <>
-                <p>
-                  <button
-                    type="button"
-                    onClick={() => navegar("/codigo")}
-                    className="text-primary inline-flex items-center gap-1 font-semibold hover:underline"
-                  >
-                    <KeyRound className="h-3 w-3" aria-hidden /> Tenho um código
-                  </button>
+              {erro ? (
+                <p role="alert" className="text-destructive text-sm font-medium">
+                  {erro}
                 </p>
+              ) : null}
+              {sucesso ? (
+                <p className="text-brand-700 dark:text-brand-300 flex items-start gap-1.5 text-sm font-medium">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  {sucesso}
+                </p>
+              ) : null}
+
+              {!sucesso ? (
+                <Button type="submit" className="w-full gap-2 rounded-xl" disabled={desabilitado}>
+                  {enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+                  {botao}
+                </Button>
+              ) : null}
+            </form>
+
+            <div className="border-border mt-5 space-y-1.5 border-t pt-4 text-center text-sm">
+              {modo === "entrar" ? (
+                <>
+                  <p>
+                    <button
+                      type="button"
+                      onClick={() => navegar("/codigo")}
+                      className="text-primary inline-flex items-center gap-1 font-semibold hover:underline"
+                    >
+                      <KeyRound className="h-3 w-3" aria-hidden /> Tenho um código
+                    </button>
+                  </p>
+                  <p>
+                    <button
+                      type="button"
+                      onClick={() => navegar("/solicitar?recuperacao=1")}
+                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 hover:underline"
+                    >
+                      <Lock className="h-3 w-3" aria-hidden /> Esqueci minha senha
+                    </button>
+                  </p>
+                  <p>
+                    <button
+                      type="button"
+                      onClick={() => navegar("/solicitar")}
+                      className="text-muted-foreground hover:text-foreground hover:underline"
+                    >
+                      Solicitar acesso
+                    </button>
+                  </p>
+                </>
+              ) : (
                 <p>
                   <button
                     type="button"
-                    onClick={() => navegar("/solicitar?recuperacao=1")}
+                    onClick={() => navegar("/")}
                     className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 hover:underline"
                   >
-                    <Lock className="h-3 w-3" aria-hidden /> Esqueci minha senha
+                    <ArrowLeft className="h-3 w-3" aria-hidden /> Voltar ao login
                   </button>
                 </p>
-                <p>
-                  <button
-                    type="button"
-                    onClick={() => navegar("/solicitar")}
-                    className="text-muted-foreground hover:text-foreground hover:underline"
-                  >
-                    Solicitar acesso
-                  </button>
-                </p>
-              </>
-            ) : (
-              <p>
-                <button
-                  type="button"
-                  onClick={() => navegar("/")}
-                  className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 hover:underline"
-                >
-                  <ArrowLeft className="h-3 w-3" aria-hidden /> Voltar ao login
-                </button>
-              </p>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
-        <p className="text-muted-foreground mt-4 flex items-center justify-center gap-1.5 text-center text-[0.72rem]">
-          <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-          <span>Acesso restrito à comunidade da escola</span>
-        </p>
-      </div>
+          <p className="text-muted-foreground mt-4 flex items-center justify-center gap-1.5 text-center text-[0.72rem] lg:hidden">
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+            <span>Acesso restrito à comunidade da escola</span>
+          </p>
+        </div>
+      </main>
     </div>
   );
 }
