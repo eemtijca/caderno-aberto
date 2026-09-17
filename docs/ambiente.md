@@ -4,27 +4,26 @@ Todas as variáveis passam por `src/lib/ambiente.ts`, validado com zod na partid
 
 ## Referência
 
-| Variável                  | Obrigatória                | Padrão                                                | Descrição                                                                                   |
-| ------------------------- | -------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`            | Sim                        | `postgresql://caderno:caderno@localhost:5432/caderno` | Conexão de runtime com o PostgreSQL.                                                        |
-| `DIRECT_URL`              | Onde o runtime usa `:6543` | `DATABASE_URL`                                        | Conexão do CLI Prisma para migrações.                                                       |
-| `AUTH_SECRET`             | Sim                        | Nenhum                                                | Segredo do JWT de sessão, com no mínimo 32 caracteres. Gere com `openssl rand -base64 32`.  |
-| `CRON_SECRET`             | Sim em produção            | Vazio                                                 | Segredo da purga. A Vercel envia automaticamente como `Authorization` no Cron.              |
-| `APP_URL`                 | Sim em produção            | Host do pedido                                        | Origem canônica dos links e comparação de host no CSRF. Precisa ser uma URL válida.         |
-| `ADMIN_EMAIL`             | No bootstrap               | Vazio                                                 | E-mail do administrador inicial, usado pelo script `criar-admin` e na partida do container. |
-| `ADMIN_SENHA`             | No bootstrap               | Vazio                                                 | Senha do administrador inicial (8 a 256 caracteres). Nunca versionar.                       |
-| `ADMIN_NOME`              | Não                        | Parte local do e-mail                                 | Nome exibido do administrador inicial.                                                      |
-| `STORAGE_DRIVER`          | Não                        | `disk`                                                | Armazenamento de imagens: `disk` ou `s3`.                                                   |
-| `UPLOAD_DIR`              | Com `STORAGE_DRIVER=disk`  | `/data/imagens`                                       | Diretório local das imagens.                                                                |
-| `STORAGE_S3_ENDPOINT`     | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Endpoint compatível com S3.                                                                 |
-| `STORAGE_S3_REGION`       | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Região do bucket.                                                                           |
-| `STORAGE_S3_BUCKET`       | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Nome do bucket (precisa existir).                                                           |
-| `STORAGE_S3_ACCESS_KEY`   | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Chave de acesso.                                                                            |
-| `STORAGE_S3_SECRET_KEY`   | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Chave secreta.                                                                              |
-| `AUTH_LIMITE_TENTATIVAS`  | Não                        | `30`                                                  | Tentativas por IP a cada 5 minutos nas rotas de autenticação.                               |
-| `AUTH_LIMITE_CODIGO`      | Não                        | `5`                                                   | Tentativas de verificação de código por e-mail a cada 5 minutos.                            |
-| `CODIGO_EXPIRA_MINUTOS`   | Não                        | `60`                                                  | Validade do código de acesso, em minutos.                                                   |
-| `NEXT_PUBLIC_APP_VERSION` | Não                        | Versão do `package.json`                              | Carimbo de versão exibido na interface.                                                     |
+| Variável                 | Obrigatória                | Padrão                                                | Descrição                                                                                   |
+| ------------------------ | -------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | Sim                        | `postgresql://caderno:caderno@localhost:5432/caderno` | Conexão de runtime com o PostgreSQL.                                                        |
+| `DIRECT_URL`             | Onde o runtime usa `:6543` | `DATABASE_URL`                                        | Conexão do CLI Prisma para migrações.                                                       |
+| `AUTH_SECRET`            | Sim                        | Nenhum                                                | Segredo do JWT de sessão, com no mínimo 32 caracteres. Gere com `openssl rand -base64 32`.  |
+| `CRON_SECRET`            | Sim em produção            | Vazio                                                 | Segredo da purga. A Vercel envia automaticamente como `Authorization` no Cron.              |
+| `APP_URL`                | Sim em produção            | Host do pedido                                        | Origem canônica dos links e comparação de host no CSRF. Precisa ser uma URL válida.         |
+| `ADMIN_EMAIL`            | No bootstrap               | Vazio                                                 | E-mail do administrador inicial, usado pelo script `criar-admin` e na partida do container. |
+| `ADMIN_SENHA`            | No bootstrap               | Vazio                                                 | Senha do administrador inicial (8 a 256 caracteres). Nunca versionar.                       |
+| `ADMIN_NOME`             | Não                        | Parte local do e-mail                                 | Nome exibido do administrador inicial.                                                      |
+| `STORAGE_DRIVER`         | Não                        | `disk`                                                | Armazenamento de imagens: `disk` ou `s3`.                                                   |
+| `UPLOAD_DIR`             | Com `STORAGE_DRIVER=disk`  | `/data/imagens`                                       | Diretório local das imagens.                                                                |
+| `STORAGE_S3_ENDPOINT`    | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Endpoint compatível com S3.                                                                 |
+| `STORAGE_S3_REGION`      | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Região do bucket.                                                                           |
+| `STORAGE_S3_BUCKET`      | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Nome do bucket (precisa existir).                                                           |
+| `STORAGE_S3_ACCESS_KEY`  | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Chave de acesso.                                                                            |
+| `STORAGE_S3_SECRET_KEY`  | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Chave secreta.                                                                              |
+| `AUTH_LIMITE_TENTATIVAS` | Não                        | `30`                                                  | Tentativas por IP a cada 5 minutos nas rotas de autenticação.                               |
+| `AUTH_LIMITE_CODIGO`     | Não                        | `5`                                                   | Tentativas de verificação de código por e-mail a cada 5 minutos.                            |
+| `CODIGO_EXPIRA_MINUTOS`  | Não                        | `60`                                                  | Validade do código de acesso, em minutos.                                                   |
 
 ## Conexão com o banco
 

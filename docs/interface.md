@@ -58,11 +58,12 @@ Os elementos clicáveis usam `cursor: pointer` por uma regra global em `globals.
 - Rotas hash: `#/`, `#/notas`, `#/organizacao`, `#/links`, `#/conta`, `#/admin`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/codigo` e `#/solicitar`. Rota desconhecida volta ao início. A raiz anônima é a tela de login.
 - Rotas reais: `/` (shell), `/l/[token]` (página pública com metadados e OpenGraph) e `/api/**`.
 - Busca global com `Ctrl` ou `Cmd` mais `K`, com debounce, mínimo de 2 caracteres e tolerância a acentos.
+- No mobile, a barra superior concentra a busca, o seletor de tema e o menu de perfil (Conta e Sair). A barra inferior mantém cinco itens; o botão Mais abre um painel inferior (`Drawer`) com as opções que não cabem, como Turmas e Administração para contas admin.
 
 ## Responsividade
 
 - Desktop (a partir de 1024px): barra lateral fixa de 256px com navegação completa e botão Nova nota.
-- Mobile (abaixo de 1024px): barra superior e navegação inferior com cinco itens, incluindo o botão flutuante central de Nova nota. O conteúdo reserva espaço para a barra inferior.
+- Mobile (abaixo de 1024px): barra superior com logo, busca, seletor de tema e menu de perfil, e navegação inferior com cinco itens, incluindo o botão flutuante central de Nova nota. O perfil reúne Conta e Sair; o botão Mais abre um painel inferior com as opções restantes (Turmas e Administração, quando aplicável). O conteúdo reserva espaço para a barra inferior.
 - As grades usam `sm:grid-cols-2`, `sm:grid-cols-3` e `sm:grid-cols-4` conforme a vista. O editor alterna entre abas no mobile e duas colunas no desktop.
 
 ## Notificações

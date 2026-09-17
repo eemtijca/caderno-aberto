@@ -84,7 +84,8 @@ Disciplina, ano letivo, mês, turmas, resumo `Sobre`, habilidades BNCC/ENEM, sta
 
 - Reordenação por arrastar e soltar, com suporte a mouse e teclado.
 - Botões por bloco: arrastar, inserir abaixo, duplicar, mover para cima, mover para baixo e excluir.
-- Paleta de inserção contextual e botão de adicionar bloco ao final.
+- Paleta de inserção com busca e categorias (Estrutura, Texto, Conteúdo, Caixas e Prática): bottom sheet no mobile e diálogo no desktop. Abre pelo botão de inserir de cada bloco ou pelo botão de adicionar bloco ao final.
+- Ao inserir um bloco, a tela rola suavemente até ele.
 - `Ctrl` ou `Cmd` mais `K` abre a busca global.
 - Salvamento automático com atraso de 900 ms e indicador de estado (`salvando`, `salvo` ou erro). Não há botão manual de salvar.
 - Ações da nota: ler, exportar, compartilhar, duplicar (a cópia abre como rascunho) e alternar entre rascunho e publicada.

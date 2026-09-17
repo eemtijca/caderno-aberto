@@ -40,7 +40,6 @@ import {
   Plus,
   Printer,
   Trash2,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +84,7 @@ import {
   useTurmas,
 } from "@/lib/notas/api-client";
 import { useSessao } from "@/hooks/use-sessao";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { DialogoCompartilhar } from "@/components/dialogo-compartilhar";
 import { MESES_CAP } from "@/lib/notas/texto";
 import type { AparenciaNota, Bloco, NotaDados } from "@/lib/notas/tipos";
@@ -122,25 +122,7 @@ import {
   EditorTikz,
   novoFilho,
 } from "./editores-bloco";
-
-const PALETA: { tipo: Bloco["tipo"]; rotulo: string; descricao: string }[] = [
-  { tipo: "secao", rotulo: "Seção", descricao: "Título numerado de tópico" },
-  { tipo: "paragrafo", rotulo: "Parágrafo", descricao: "Texto corrido com rótulo opcional" },
-  { tipo: "formula", rotulo: "Fórmula", descricao: "Equação em destaque" },
-  { tipo: "lista", rotulo: "Lista", descricao: "Itens com marcadores" },
-  { tipo: "tabela", rotulo: "Tabela", descricao: "Linhas e colunas" },
-  { tipo: "chamada", rotulo: "Atenção / Símbolos", descricao: "Alerta, dia a dia ou símbolos" },
-  { tipo: "figura", rotulo: "Figura", descricao: "Imagem com legenda" },
-  {
-    tipo: "tikz",
-    rotulo: "Diagrama",
-    descricao: "Ilustração geométrica — criada com TikZ por baixo dos panos",
-  },
-  { tipo: "copiar", rotulo: "COPIAR", descricao: "O que o aluno leva para o caderno" },
-  { tipo: "exemplo", rotulo: "Exemplo", descricao: "Exemplo resolvido passo a passo" },
-  { tipo: "dica", rotulo: "Dica", descricao: "Dica / erro comum" },
-  { tipo: "exercicios", rotulo: "Exercícios", descricao: "Lista com níveis e gabarito" },
-];
+import { PALETA, PaletaBlocos } from "./paleta-blocos";
 
 export function novoBloco(tipo: Bloco["tipo"]): Bloco {
   const id = idBloco();
@@ -252,6 +234,8 @@ function FormularioNota({
   const [sujo, setSujo] = useState(false);
   const [estadoSalvamento, setEstadoSalvamento] = useState<"salvo" | "salvando" | "erro">("salvo");
   const [paletaEm, setPaletaEm] = useState<number | null>(null);
+  const [blocoParaRolar, setBlocoParaRolar] = useState<string | null>(null);
+  const ehMobile = useIsMobile();
   const timerAutoSave = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Autosave: espera 900ms do último campo alterado antes de persistir.
@@ -328,6 +312,31 @@ function FormularioNota({
       if (de !== -1 && para !== -1) mudarBlocos(() => reordenar(blocos, de, para));
     }
   };
+
+  // Tipo do bloco acima da posição de inserção, usado no subtítulo da paleta.
+  const rotuloAnterior =
+    paletaEm !== null && paletaEm > 0
+      ? PALETA.find((p) => p.tipo === blocos[paletaEm - 1]?.tipo)?.rotulo
+      : undefined;
+
+  const inserirNaPaleta = (tipo: Bloco["tipo"]) => {
+    const indice = paletaEm ?? blocos.length;
+    const bloco = novoBloco(tipo);
+    mudarBlocos((bs) => inserirBloco(bs, indice, bloco));
+    setBlocoParaRolar(bloco.id);
+    setPaletaEm(null);
+  };
+
+  // Rola até o bloco recém-inserido, escolhendo a lista visível (mobile ou desktop).
+  useEffect(() => {
+    if (!blocoParaRolar) return;
+    const alvo = Array.from(
+      document.querySelectorAll<HTMLElement>(`[data-bloco-id="${blocoParaRolar}"]`),
+    ).find((el) => el.offsetParent !== null);
+    const reduzirMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    alvo?.scrollIntoView({ behavior: reduzirMovimento ? "auto" : "smooth", block: "center" });
+    setBlocoParaRolar(null);
+  }, [blocoParaRolar]);
 
   const linkLeitura = `#/nota/${notaInicial.id}`;
 
@@ -719,8 +728,7 @@ function FormularioNota({
             <ListaBlocos
               blocos={blocos}
               mudarBlocos={mudarBlocos}
-              paletaEm={paletaEm}
-              setPaletaEm={setPaletaEm}
+              onInserirEm={setPaletaEm}
               sensores={sensores}
               aoArrastarFim={aoArrastarFim}
             />
@@ -736,8 +744,7 @@ function FormularioNota({
           <ListaBlocos
             blocos={blocos}
             mudarBlocos={mudarBlocos}
-            paletaEm={paletaEm}
-            setPaletaEm={setPaletaEm}
+            onInserirEm={setPaletaEm}
             sensores={sensores}
             aoArrastarFim={aoArrastarFim}
           />
@@ -750,6 +757,16 @@ function FormularioNota({
         </div>
       </div>
 
+      <PaletaBlocos
+        aberta={paletaEm !== null}
+        posicao={paletaEm ?? blocos.length}
+        total={blocos.length}
+        rotuloAnterior={rotuloAnterior}
+        ehMobile={ehMobile}
+        onEscolher={inserirNaPaleta}
+        onFechar={() => setPaletaEm(null)}
+      />
+
       {compartilharAberto ? (
         <DialogoCompartilhar aberto aoFechar={() => setCompartilharAberto(false)} notaId={id} />
       ) : null}
@@ -760,15 +777,13 @@ function FormularioNota({
 function ListaBlocos({
   blocos,
   mudarBlocos,
-  paletaEm,
-  setPaletaEm,
+  onInserirEm,
   sensores,
   aoArrastarFim,
 }: {
   blocos: Bloco[];
   mudarBlocos: (fn: (b: Bloco[]) => Bloco[]) => void;
-  paletaEm: number | null;
-  setPaletaEm: (i: number | null) => void;
+  onInserirEm: (i: number) => void;
   sensores: ReturnType<typeof useSensors>;
   aoArrastarFim: (e: DragEndEvent) => void;
 }) {
@@ -789,17 +804,8 @@ function ListaBlocos({
                   numeroSecao={numeroSecao}
                   total={blocos.length}
                   mudarBlocos={mudarBlocos}
-                  onInserirAqui={() => setPaletaEm(i + 1)}
+                  onInserirAqui={() => onInserirEm(i + 1)}
                 />
-                {paletaEm === i + 1 ? (
-                  <PaletaInsercao
-                    onEscolher={(tipo) => {
-                      mudarBlocos((bs) => inserirBloco(bs, i + 1, novoBloco(tipo)));
-                      setPaletaEm(null);
-                    }}
-                    onFechar={() => setPaletaEm(null)}
-                  />
-                ) : null}
               </div>
             );
           })}
@@ -807,24 +813,14 @@ function ListaBlocos({
       </SortableContext>
 
       <div className="mt-3">
-        {paletaEm === blocos.length || blocos.length === 0 ? (
-          <PaletaInsercao
-            onEscolher={(tipo) => {
-              mudarBlocos((bs) => inserirBloco(bs, bs.length, novoBloco(tipo)));
-              setPaletaEm(null);
-            }}
-            onFechar={() => setPaletaEm(null)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setPaletaEm(blocos.length)}
-            className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed py-3.5 text-sm font-semibold transition-colors hover:border-solid"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            {blocos.length === 0 ? "Adicionar o primeiro bloco" : "Adicionar bloco ao final"}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => onInserirEm(blocos.length)}
+          className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed py-3.5 text-sm font-semibold transition-colors hover:border-solid"
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          {blocos.length === 0 ? "Adicionar o primeiro bloco" : "Adicionar bloco ao final"}
+        </button>
       </div>
     </DndContext>
   );
@@ -850,7 +846,7 @@ function CartaoBloco({
   });
 
   const estilo: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
     opacity: isDragging ? 0.6 : 1,
   };
@@ -874,11 +870,12 @@ function CartaoBloco({
   return (
     <article
       ref={setNodeRef}
+      data-bloco-id={bloco.id}
       style={estilo}
       className={`group bg-card relative rounded-2xl border px-3 py-3 transition-shadow hover:shadow-sm sm:px-4 ${classesCaixa}`}
     >
       {/* controles laterais (desktop) */}
-      <div className="absolute top-2 -left-11 hidden flex-col items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
+      <div className="absolute top-2 -left-11 z-10 hidden flex-col items-center gap-0.5 opacity-0 transition-opacity group-hover:z-20 group-hover:opacity-100 has-[:focus-visible]:z-20 has-[:focus-visible]:opacity-100 sm:flex">
         <button
           type="button"
           {...attributes}
@@ -1035,47 +1032,6 @@ function CartaoBloco({
         />
       )}
     </article>
-  );
-}
-
-function PaletaInsercao({
-  onEscolher,
-  onFechar,
-}: {
-  onEscolher: (tipo: Bloco["tipo"]) => void;
-  onFechar: () => void;
-}) {
-  return (
-    <div className="border-border bg-popover mt-2 rounded-2xl border p-3 shadow-lg">
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-muted-foreground px-1 text-[0.7rem] font-bold tracking-wider uppercase">
-          Inserir bloco
-        </p>
-        <button
-          type="button"
-          onClick={onFechar}
-          className="text-muted-foreground hover:bg-accent rounded-md p-1"
-          aria-label="Fechar paleta"
-        >
-          <X className="h-3.5 w-3.5" aria-hidden />
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-        {PALETA.map((item) => (
-          <button
-            key={item.tipo}
-            type="button"
-            onClick={() => onEscolher(item.tipo)}
-            className="border-border bg-card hover:border-foreground/30 hover:bg-accent rounded-xl border px-3 py-2.5 text-left transition-colors"
-          >
-            <span className="block text-[0.82rem] font-bold">{item.rotulo}</span>
-            <span className="text-muted-foreground block text-[0.68rem] leading-snug">
-              {item.descricao}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }
 
