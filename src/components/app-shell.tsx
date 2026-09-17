@@ -3,7 +3,7 @@
 // Moldura do app autenticado: navegação lateral (desktop), topbar e barra inferior
 // (mobile), além da busca global com atalho de teclado.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { VERSAO_CURTA } from "@/lib/versao";
 import {
   BookOpenText,
@@ -12,7 +12,7 @@ import {
   Link2,
   Loader2,
   LogOut,
-  Menu,
+  MoreHorizontal,
   NotebookPen,
   Plus,
   Search,
@@ -29,13 +29,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { SeletorTema } from "@/components/seletor-tema";
 import { useBusca } from "@/lib/notas/api-client";
@@ -44,7 +52,9 @@ import { corDisciplina } from "@/lib/notas/cores";
 import { MESES_CAP } from "@/lib/notas/texto";
 import type { Rota } from "@/lib/rota";
 
-const ITENS_NAV: { rotulo: string; icone: typeof Home; hash: string; vistas: Rota["vista"][] }[] = [
+type ItemNav = { rotulo: string; icone: typeof Home; hash: string; vistas: Rota["vista"][] };
+
+const ITENS_NAV: ItemNav[] = [
   { rotulo: "Início", icone: Home, hash: "/", vistas: ["inicio"] },
   { rotulo: "Notas", icone: BookOpenText, hash: "/notas", vistas: ["notas", "editor", "leitura"] },
   { rotulo: "Turmas", icone: CalendarRange, hash: "/organizacao", vistas: ["organizacao"] },
@@ -52,12 +62,17 @@ const ITENS_NAV: { rotulo: string; icone: typeof Home; hash: string; vistas: Rot
   { rotulo: "Conta", icone: Settings, hash: "/conta", vistas: ["conta"] },
 ];
 
-const ITEM_ADMIN: (typeof ITENS_NAV)[number] = {
+const ITEM_ADMIN: ItemNav = {
   rotulo: "Administração",
   icone: ShieldCheck,
   hash: "/admin",
   vistas: ["admin"],
 };
+
+// Opções que não cabem na barra inferior (a Conta fica no menu de perfil).
+const ITENS_MAIS: ItemNav[] = [
+  { rotulo: "Turmas", icone: CalendarRange, hash: "/organizacao", vistas: ["organizacao"] },
+];
 
 interface PropsShell {
   rota: Rota;
@@ -70,9 +85,10 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
   const { perfil, usuario, sair, ehAdmin } = useSessao();
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [saindo, setSaindo] = useState(false);
-  const [menuAberto, setMenuAberto] = useState(false);
+  const [maisAberto, setMaisAberto] = useState(false);
 
   const itensNav = ehAdmin ? [...ITENS_NAV, ITEM_ADMIN] : ITENS_NAV;
+  const itensMais = ehAdmin ? [...ITENS_MAIS, ITEM_ADMIN] : ITENS_MAIS;
 
   // Atalho global Ctrl/Cmd+K abre a busca.
   useEffect(() => {
@@ -219,53 +235,52 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
           >
             <Search className="h-5 w-5" aria-hidden />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={sairDaConta}
-            aria-label="Sair da conta"
-            disabled={saindo}
-          >
-            <LogOut className="h-5 w-5" aria-hidden />
-          </Button>
           <SeletorTema variant="ghost" />
-          <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Mais opções">
-                <Menu className="h-5 w-5" aria-hidden />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                aria-label={`Perfil de ${perfil?.nome || usuario?.email || "professor(a)"}`}
+                aria-haspopup="menu"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                    {iniciais || "?"}
+                  </AvatarFallback>
+                </Avatar>
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <SheetHeader>
-                <SheetTitle className="fonte-display">Menu</SheetTitle>
-                <SheetDescription className="sr-only">Navegação da aplicação</SheetDescription>
-              </SheetHeader>
-              <nav className="mt-4 space-y-1 px-4" aria-label="Menu da aplicação">
-                {itensNav.map((item) => {
-                  const ativo = item.vistas.includes(vistaAtual);
-                  return (
-                    <button
-                      key={item.hash}
-                      type="button"
-                      onClick={() => {
-                        setMenuAberto(false);
-                        navegar(item.hash);
-                      }}
-                      aria-current={ativo ? "page" : undefined}
-                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[0.95rem] font-medium transition-colors ${
-                        ativo
-                          ? "bg-primary text-primary-foreground"
-                          : "text-foreground/80 hover:bg-accent hover:text-accent-foreground"
-                      }`}
-                    >
-                      <item.icone className="h-[1.1rem] w-[1.1rem]" aria-hidden />
-                      {item.rotulo}
-                    </button>
-                  );
-                })}
-              </nav>
-            </SheetContent>
-          </Sheet>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuLabel className="flex flex-col gap-0.5">
+                <span className="truncate text-sm font-semibold">
+                  {perfil?.nome || "Professor(a)"}
+                </span>
+                <span className="text-muted-foreground truncate text-xs font-normal">
+                  {usuario?.email}
+                </span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="gap-2" onClick={() => navegar("/conta")}>
+                <Settings className="h-4 w-4" aria-hidden />
+                Conta
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive gap-2"
+                disabled={saindo}
+                onClick={sairDaConta}
+              >
+                {saindo ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <LogOut className="h-4 w-4" aria-hidden />
+                )}
+                Sair da conta
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -311,12 +326,50 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
           onClick={() => navegar("/links")}
         />
         <ItemNavBaixo
-          icone={Settings}
-          rotulo="Conta"
-          ativo={vistaAtual === "conta"}
-          onClick={() => navegar("/conta")}
+          icone={MoreHorizontal}
+          rotulo="Mais"
+          ativo={itensMais.some((item) => item.vistas.includes(vistaAtual))}
+          onClick={() => setMaisAberto(true)}
+          aria-haspopup="dialog"
+          aria-expanded={maisAberto}
         />
       </nav>
+
+      {/* ---------------- Mais opções (mobile) ---------------- */}
+      <Drawer open={maisAberto} onOpenChange={setMaisAberto}>
+        <DrawerContent className="pb-[env(safe-area-inset-bottom)]">
+          <DrawerHeader className="group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+            <DrawerTitle className="fonte-display">Mais opções</DrawerTitle>
+            <DrawerDescription className="sr-only">
+              Opções de navegação que não cabem na barra inferior.
+            </DrawerDescription>
+          </DrawerHeader>
+          <nav className="space-y-1 px-4 pb-4" aria-label="Mais opções">
+            {itensMais.map((item) => {
+              const ativo = item.vistas.includes(vistaAtual);
+              return (
+                <button
+                  key={item.hash}
+                  type="button"
+                  onClick={() => {
+                    setMaisAberto(false);
+                    navegar(item.hash);
+                  }}
+                  aria-current={ativo ? "page" : undefined}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[0.95rem] font-medium transition-colors ${
+                    ativo
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <item.icone className="h-[1.1rem] w-[1.1rem]" aria-hidden />
+                  {item.rotulo}
+                </button>
+              );
+            })}
+          </nav>
+        </DrawerContent>
+      </Drawer>
 
       {buscaAberta ? (
         <BuscaGlobal aberta aoFechar={() => setBuscaAberta(false)} navegar={navegar} />
@@ -330,12 +383,13 @@ function ItemNavBaixo({
   rotulo,
   ativo,
   onClick,
+  ...props
 }: {
   icone: typeof Home;
   rotulo: string;
   ativo: boolean;
   onClick: () => void;
-}) {
+} & ComponentProps<"button">) {
   return (
     <button
       type="button"
@@ -344,6 +398,7 @@ function ItemNavBaixo({
       className={`flex min-h-[3.25rem] flex-col items-center justify-center gap-0.5 py-1 text-[0.68rem] font-medium transition-colors ${
         ativo ? "text-foreground" : "text-muted-foreground"
       }`}
+      {...props}
     >
       <Icone className={`h-5 w-5 ${ativo ? "" : "opacity-70"}`} aria-hidden />
       {rotulo}

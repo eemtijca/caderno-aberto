@@ -43,4 +43,22 @@ test.describe("Navegação e roteamento", () => {
       await page.waitForTimeout(800);
     }
   });
+
+  test("menu de perfil e botão Mais no mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await criarEConfirmar(page);
+    await page.goto("/#/");
+
+    // O perfil no topo reúne Conta e Sair.
+    await page.getByRole("button", { name: /Perfil de/i }).click();
+    await expect(page.getByRole("menuitem", { name: "Conta", exact: true })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Sair da conta" })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // O botão Mais abre o painel inferior com as opções restantes.
+    await page.getByRole("button", { name: "Mais" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByRole("button", { name: "Turmas" }).click();
+    await expect(page).toHaveURL(/#\/organizacao/);
+  });
 });
