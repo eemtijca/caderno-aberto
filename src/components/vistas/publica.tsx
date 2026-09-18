@@ -22,11 +22,13 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
 import { BlocosView } from "@/components/notas/blocos-view";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TelaEstado } from "@/components/tela-estado";
 import { MESES_CAP, separarHabilidades } from "@/lib/notas/texto";
 import { corDisciplina } from "@/lib/notas/cores";
 import type { AparenciaNota, Bloco } from "@/lib/notas/tipos";
 import { variaveisAparencia } from "@/lib/notas/tipos";
 import { DEMO_NOTA, DEMO_TOKEN } from "@/lib/notas/demo";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 
 interface NotaPublica {
   id: string;
@@ -68,6 +70,12 @@ export function VistaPublica({
   const [selecionada, setSelecionada] = useState<string | null>(null);
   const [mostrarGabarito, setMostrarGabarito] = useState(false);
   const [busca, setBusca] = useState("");
+
+  const tituloAba =
+    dados?.link.tipo === "nota"
+      ? (dados.notas[0]?.titulo ?? "Nota de aula")
+      : (dados?.link.nome ?? null);
+  useTituloAba(tituloAba);
 
   useEffect(() => {
     // Token de demonstração monta os dados localmente, sem chamar a API.
@@ -159,15 +167,21 @@ export function VistaPublica({
 
   if (erro || !dados) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-20 text-center">
-        <span className="bg-destructive/10 text-destructive mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
-          <Hourglass className="h-6 w-6" aria-hidden />
-        </span>
-        <h1 className="fonte-display mt-4 text-xl font-bold">Link indisponível</h1>
-        <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-          {erro || "Este link não existe, foi revogado pelo professor ou expirou."}
-        </p>
-      </div>
+      <TelaEstado
+        variante="link_invalido"
+        descricao={erro || "Este link não existe, foi revogado pelo professor ou expirou."}
+        acao={
+          navegar
+            ? { rotulo: "Ir para o início", onClick: () => navegar("/") }
+            : {
+                rotulo: "Voltar",
+                onClick: () => {
+                  if (window.history.length > 1) window.history.back();
+                  else window.location.hash = "#/";
+                },
+              }
+        }
+      />
     );
   }
 
@@ -215,14 +229,17 @@ export function VistaPublica({
             size="sm"
             onClick={() => setMostrarGabarito(!mostrarGabarito)}
             className="gap-1.5 rounded-lg text-xs"
+            aria-label={mostrarGabarito ? "Ocultar gabarito" : "Mostrar gabarito"}
           >
             {mostrarGabarito ? (
               <>
-                <EyeOff className="h-3.5 w-3.5" aria-hidden /> Ocultar gabarito
+                <EyeOff className="h-3.5 w-3.5" aria-hidden />
+                <span className="hidden sm:inline">Ocultar gabarito</span>
               </>
             ) : (
               <>
-                <Eye className="h-3.5 w-3.5" aria-hidden /> Gabarito
+                <Eye className="h-3.5 w-3.5" aria-hidden />
+                <span className="hidden sm:inline">Gabarito</span>
               </>
             )}
           </Button>
@@ -243,7 +260,7 @@ export function VistaPublica({
               setTheme(escuro ? "light" : "dark");
             }}
             aria-label="Alternar tema"
-            className="hidden rounded-lg sm:inline-flex"
+            className="rounded-lg"
           >
             <Sun className="hidden h-4 w-4 dark:block" aria-hidden />
             <Moon className="h-4 w-4 dark:hidden" aria-hidden />
@@ -279,7 +296,7 @@ export function VistaPublica({
             <Input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar aula por título…"
+              placeholder="Buscar aula por título..."
               className="rounded-xl pl-9"
             />
           </div>
@@ -309,7 +326,7 @@ export function VistaPublica({
                       {n.sobre ? (
                         <span className="hidden sm:inline">
                           · {n.sobre.slice(0, 60)}
-                          {n.sobre.length > 60 ? "…" : ""}
+                          {n.sobre.length > 60 ? "..." : ""}
                         </span>
                       ) : null}
                     </span>
@@ -325,7 +342,7 @@ export function VistaPublica({
             })}
             {filtradas.length === 0 ? (
               <p className="border-border text-muted-foreground rounded-2xl border border-dashed p-8 text-center text-sm">
-                Nenhuma aula encontrada para &ldquo;{busca}&rdquo;.
+                Nenhuma aula encontrada para "{busca}".
               </p>
             ) : null}
           </div>
@@ -406,7 +423,7 @@ export function VistaPublica({
 
           <footer className="na-imprime-esconder border-border text-muted-foreground mt-10 border-t pt-5 pb-6 text-center text-[0.75rem]">
             {dados.link.professorNome ? `${dados.link.professorNome} · ` : ""}
-            gerado com Caderno Aberto
+            Gerado por Caderno Aberto.
           </footer>
         </div>
       ) : !varias ? (
@@ -427,7 +444,7 @@ export function VistaPublica({
       {expira && expira.getTime() - Date.now() < 3 * 24 * 3600 * 1000 ? (
         <p className="na-imprime-esconder fixed inset-x-0 bottom-0 z-30 mx-auto mb-0 flex w-fit items-center gap-1.5 rounded-t-xl border border-b-0 border-amber-300 bg-amber-50 px-3.5 py-1.5 text-[0.72rem] font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
           <Hourglass className="h-3 w-3" aria-hidden />
-          Este link expira em {expira.toLocaleDateString("pt-BR")}
+          Este link expira em {expira.toLocaleDateString("pt-BR")}.
         </p>
       ) : null}
     </div>

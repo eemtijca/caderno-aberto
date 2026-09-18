@@ -2,8 +2,24 @@
 
 // Cartão de nota. Usado na lista, no painel e nas visões.
 
-import { BookOpenText, Eye, FileText, ListChecks, Pencil } from "lucide-react";
+import {
+  BookOpenText,
+  ChevronDown,
+  Download,
+  Eye,
+  FileCode,
+  FileJson,
+  FileText,
+  ListChecks,
+  Pencil,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { NotaDados } from "@/lib/notas/tipos";
 import { corDisciplina } from "@/lib/notas/cores";
 import { contarQuestoes, MESES_CAP } from "@/lib/notas/texto";
@@ -44,7 +60,7 @@ export function CartaoNota({
             {nota.sobre ? (
               <span className="hidden break-words sm:inline">
                 · {nota.sobre.slice(0, 60)}
-                {nota.sobre.length > 60 ? "…" : ""}
+                {nota.sobre.length > 60 ? "..." : ""}
               </span>
             ) : null}
           </p>
@@ -81,7 +97,7 @@ export function CartaoNota({
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={onAbrir}
@@ -98,6 +114,38 @@ export function CartaoNota({
             <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar
           </button>
         ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-[0.82rem] font-semibold transition-colors"
+              aria-label={`Exportar a nota ${nota.titulo}`}
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden /> Exportar
+              <ChevronDown className="h-3 w-3" aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={() => window.open(`/api/notas/${nota.id}/exportar?formato=tex`, "_blank")}
+            >
+              <FileCode className="h-3.5 w-3.5" aria-hidden /> LaTeX (.tex)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={() => window.open(`/api/notas/${nota.id}/exportar?formato=md`, "_blank")}
+            >
+              <FileText className="h-3.5 w-3.5" aria-hidden /> Markdown (.md)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={() => window.open(`/api/notas/${nota.id}/exportar?formato=json`, "_blank")}
+            >
+              <FileJson className="h-3.5 w-3.5" aria-hidden /> Backup (.json)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </article>
   );

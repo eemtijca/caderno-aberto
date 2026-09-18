@@ -2,15 +2,16 @@
 
 // Vista Notas. Lista completa com filtros rápidos.
 
-import { useMemo, useState } from "react";
-import { FilterX, Plus, Search } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { FilterX, Plus, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client";
+import { importarNotaArquivo, useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client";
 import { CartaoNota } from "@/components/notas/cartao-nota";
 import { MESES_CAP } from "@/lib/notas/texto";
 import { corDisciplina } from "@/lib/notas/cores";
+import { toast } from "sonner";
 
 export function VistaNotas({
   navegar,
@@ -24,6 +25,8 @@ export function VistaNotas({
   const [ano, setAno] = useState<number | undefined>(undefined);
   const [mes, setMes] = useState<number | undefined>(undefined);
   const [turma, setTurma] = useState<string>("");
+  const inputArquivo = useRef<HTMLInputElement>(null);
+  const [importando, setImportando] = useState(false);
 
   const notasQ = useNotas();
   const disciplinasQ = useDisciplinas();
@@ -58,6 +61,24 @@ export function VistaNotas({
 
   const temFiltro = disciplina || ano || mes || turma;
 
+  const importarNota = async (arquivo: File) => {
+    setImportando(true);
+    try {
+      const conteudo = await arquivo.text();
+      const formato = arquivo.name.endsWith(".json") ? "json" : "md";
+      const nota = await importarNotaArquivo(conteudo, formato);
+      toast.success("Nota importada", { description: nota.titulo });
+      navegar(`/editor/${nota.id}`);
+    } catch (e) {
+      toast.error("Falha na importação", {
+        description: e instanceof Error ? e.message : "Verifique o formato do arquivo.",
+      });
+    } finally {
+      setImportando(false);
+      if (inputArquivo.current) inputArquivo.current.value = "";
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -67,9 +88,29 @@ export function VistaNotas({
             {filtradas.length} de {notas?.length ?? 0} notas
           </p>
         </div>
-        <Button onClick={onNovaNota} className="gap-2 rounded-xl">
-          <Plus className="h-4 w-4" aria-hidden /> Nova
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={inputArquivo}
+            type="file"
+            accept=".md,.json,text/markdown,application/json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void importarNota(f);
+            }}
+          />
+          <Button
+            variant="outline"
+            className="gap-2 rounded-xl"
+            disabled={importando}
+            onClick={() => inputArquivo.current?.click()}
+          >
+            <Upload className="h-4 w-4" aria-hidden /> Importar nota
+          </Button>
+          <Button onClick={onNovaNota} className="gap-2 rounded-xl">
+            <Plus className="h-4 w-4" aria-hidden /> Nova nota
+          </Button>
+        </div>
       </div>
 
       {/* busca local + filtros */}
@@ -82,7 +123,7 @@ export function VistaNotas({
           <Input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Filtrar por título, resumo ou habilidade…"
+            placeholder="Filtrar por título, resumo ou habilidade..."
             className="rounded-xl pl-9"
           />
         </div>

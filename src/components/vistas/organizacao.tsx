@@ -30,12 +30,16 @@ export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void 
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="fonte-display text-2xl font-bold">Turmas &amp; calendário</h1>
+          <h1 className="fonte-display text-2xl font-bold">Turmas e calendário</h1>
           <p className="text-muted-foreground text-sm">
             Visões montadas automaticamente a partir dos metadados das notas.
           </p>
         </div>
-        <Button variant="outline" onClick={() => navegar("/conta")} className="gap-2 rounded-xl">
+        <Button
+          variant="outline"
+          onClick={() => navegar("/configuracoes/turmas")}
+          className="gap-2 rounded-xl"
+        >
           <Settings className="h-4 w-4" aria-hidden /> Gerenciar turmas
         </Button>
       </div>
@@ -124,7 +128,7 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
         </div>
       ) : lista.length === 0 ? (
         <p className="border-border text-muted-foreground rounded-xl border border-dashed p-4 text-sm">
-          Nenhuma turma cadastrada em {ano}. Cadastre em Conta → Turmas.
+          Nenhuma turma cadastrada em {ano}. Cadastre em Configurações, na seção Turmas.
         </p>
       ) : (
         <div className="border-border overflow-hidden rounded-2xl border">

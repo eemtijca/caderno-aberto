@@ -13,19 +13,57 @@ import { VistaNotas } from "@/components/vistas/notas";
 import { VistaOrganizacao } from "@/components/vistas/organizacao";
 import { VistaLeitura } from "@/components/vistas/leitura";
 import { VistaLinks } from "@/components/vistas/links";
-import { VistaConta } from "@/components/vistas/conta";
+import { VistaLixeira } from "@/components/vistas/lixeira";
+import { VistaConfiguracoes } from "@/components/vistas/configuracoes";
+import { VistaRecuperacao } from "@/components/vistas/recuperacao";
 import { VistaEditor } from "@/components/editor/editor-nota";
 import { VistaAdmin } from "@/components/vistas/admin/painel";
-import { useRota } from "@/lib/rota";
+import { useRota, ROTULOS_CONFIG, type Rota } from "@/lib/rota";
 import { useSessao } from "@/hooks/use-sessao";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import { TelaEstado } from "@/components/tela-estado";
+
+function tituloDaRota(rota: Rota): string | null {
+  switch (rota.vista) {
+    case "inicio":
+      return "Início";
+    case "notas":
+      return "Notas";
+    case "organizacao":
+      return "Turmas e calendário";
+    case "links":
+      return "Links";
+    case "lixeira":
+      return "Lixeira";
+    case "editor":
+      return "Editor";
+    case "leitura":
+      return "Leitura";
+    case "configuracoes":
+      return rota.secao === "visao" ? "Configurações" : ROTULOS_CONFIG[rota.secao];
+    case "recuperacao":
+      return "Recuperação de conta";
+    case "admin":
+      return "Administração";
+    case "entrar":
+      return "Entrar";
+    case "codigo":
+      return "Código de acesso";
+    case "solicitar":
+      return "Solicitar acesso";
+    // A página pública define o título com os metadados do link.
+    case "publica":
+      return null;
+  }
+}
 
 export default function Home() {
   const { rota, navegar } = useRota();
   const [novaNotaAberta, setNovaNotaAberta] = useState(false);
-  const { usuario, perfil, carregando, ehAdmin, restaurarConta } = useSessao();
-  const [restaurando, setRestaurando] = useState(false);
+  const { usuario, perfil, carregando, ehAdmin } = useSessao();
+
+  useTituloAba(tituloDaRota(rota));
 
   if (rota.vista === "publica") {
     return <VistaPublica token={rota.token} navegar={navegar} />;
@@ -49,18 +87,25 @@ export default function Home() {
   if (!usuario) {
     return <VistaAutenticação rota={rota} navegar={navegar} />;
   }
+  // Carência de exclusão: acesso ao app fica suspenso até restaurar ou sair.
+  if (perfil?.exclusaoSolicitadaEm) {
+    return <VistaRecuperacao navegar={navegar} />;
+  }
+  // Sem carência pendente, a rota de recuperação volta ao início.
+  if (rota.vista === "recuperacao") return <Redirecionar ao={"/"} navegar={navegar} />;
   if (rota.vista === "leitura") {
     return <VistaLeitura id={rota.id} navegar={navegar} />;
   }
   const rotaDeAuth =
     rota.vista === "entrar" || rota.vista === "codigo" || rota.vista === "solicitar";
   if (rotaDeAuth) return <Redirecionar ao={"/"} navegar={navegar} />;
-  if (rota.vista === "admin" && !ehAdmin) return <Redirecionar ao={"/"} navegar={navegar} />;
-  // Campos de carência de exclusão não fazem parte do tipo público do perfil.
-  const exclusaoPendente = Boolean(
-    (perfil as unknown as { exclusaoSolicitadaEm?: string })?.exclusaoSolicitadaEm,
-  );
-  const expiraEm = (perfil as unknown as { expiraEm?: string })?.expiraEm;
+  if (rota.vista === "admin" && !ehAdmin)
+    return (
+      <TelaEstado
+        variante="sem_permissao"
+        acao={{ rotulo: "Ir para o início", onClick: () => navegar("/") }}
+      />
+    );
 
   const conteudo =
     rota.vista === "inicio" ? (
@@ -71,56 +116,27 @@ export default function Home() {
       <VistaOrganizacao navegar={navegar} />
     ) : rota.vista === "links" ? (
       <VistaLinks />
-    ) : rota.vista === "conta" ? (
-      <VistaConta navegar={navegar} />
+    ) : rota.vista === "lixeira" ? (
+      <VistaLixeira />
+    ) : rota.vista === "configuracoes" ? (
+      <VistaConfiguracoes secao={rota.secao} navegar={navegar} />
     ) : rota.vista === "editor" ? (
       <VistaEditor id={rota.id} navegar={navegar} />
     ) : rota.vista === "admin" ? (
       <VistaAdmin />
     ) : null;
 
-  // A chave inclui o id no editor para forçar a remontagem ao trocar de nota.
-  const chaveVista = rota.vista === "editor" ? `${rota.vista}:${rota.id}` : rota.vista;
+  // A chave inclui o id no editor e a seção nas configurações para remontar a vista.
+  const chaveVista =
+    rota.vista === "editor"
+      ? `${rota.vista}:${rota.id}`
+      : rota.vista === "configuracoes"
+        ? `${rota.vista}:${rota.secao}`
+        : rota.vista;
 
   return (
     <AppShell rota={rota} navegar={navegar} onNovaNota={() => setNovaNotaAberta(true)}>
       <div key={chaveVista} className="na-entra">
-        {exclusaoPendente ? (
-          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
-            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              Exclusão solicitada. A conta será removida em{" "}
-              {expiraEm ? new Date(expiraEm).toLocaleString("pt-BR") : "24 horas"}.
-            </p>
-            <p className="text-muted-foreground mt-1 text-sm">
-              É possível restaurar a conta dentro do prazo.
-            </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={async () => {
-                  setRestaurando(true);
-                  try {
-                    await restaurarConta();
-                    toast.success("Conta restaurada. O acesso foi restabelecido.");
-                  } catch (err) {
-                    toast.error(err instanceof Error ? err.message : "Falha ao restaurar.");
-                  } finally {
-                    setRestaurando(false);
-                  }
-                }}
-                disabled={restaurando}
-                className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
-              >
-                {restaurando ? "Restaurando…" : "Restaurar conta"}
-              </button>
-              <button
-                onClick={() => navegar("/conta")}
-                className="border-border rounded-lg border px-4 py-2 text-sm"
-              >
-                Ver detalhes
-              </button>
-            </div>
-          </div>
-        ) : null}
         {conteudo}
       </div>
       {novaNotaAberta ? (

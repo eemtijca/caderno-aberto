@@ -2,7 +2,11 @@
 
 // Hooks React Query que falam com a API de notas, turmas e links.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { mapearErro } from "@/lib/api/erro";
 import type { AparenciaNota, Bloco, DisciplinaInfo, NotaDados, TurmaInfo } from "./tipos";
+
+// Avisa a sessão global quando o acesso expira, para limpar o estado e voltar ao login.
+export const EVENTO_SESSAO_EXPIRADA = "caderno:sessao-expirada";
 
 async function pedir<T>(url: string, init?: RequestInit): Promise<T> {
   // Sem cache para que mutações recém-feitas apareçam de imediato.
@@ -18,8 +22,11 @@ async function pedir<T>(url: string, init?: RequestInit): Promise<T> {
   }
   if (!r.ok) {
     const corpo = await r.json().catch(() => null);
-    // A API devolve a mensagem legível no campo "erro".
-    throw new Error(corpo?.erro ?? `Erro ${r.status}`);
+    const erro = mapearErro(r.status, corpo, `Erro ${r.status}`);
+    if (r.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(EVENTO_SESSAO_EXPIRADA));
+    }
+    throw erro;
   }
   return r.json() as Promise<T>;
 }
@@ -249,6 +256,45 @@ export function useDuplicarNota() {
   });
 }
 
+export interface LixeiraInfo {
+  dias: number;
+  expiraEm: string;
+  notas: { id: string; titulo: string; excluidoEm: string | null }[];
+  links: { id: string; nome: string; tipo: string; excluidoEm: string | null }[];
+}
+
+export function useLixeira() {
+  return useQuery({
+    queryKey: ["lixeira"],
+    queryFn: () => pedir<LixeiraInfo>("/api/lixeira"),
+  });
+}
+
+export function useRestaurarNota() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      pedir<{ ok: true }>(`/api/notas/${id}/restaurar`, { method: "POST" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notas"] });
+      qc.invalidateQueries({ queryKey: ["lixeira"] });
+      qc.invalidateQueries({ queryKey: ["links"] });
+    },
+  });
+}
+
+export function useRestaurarLink() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      pedir<{ ok: true }>(`/api/links/${id}/restaurar`, { method: "POST" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["links"] });
+      qc.invalidateQueries({ queryKey: ["lixeira"] });
+    },
+  });
+}
+
 export interface ResultadoBusca {
   id: string;
   titulo: string;
@@ -384,7 +430,7 @@ export async function comprimirImagem(arquivo: File, maxLado = 1600): Promise<Bl
   });
 }
 
-export async function importarBackup(conteudo: string): Promise<void> {
+export async function importarBackup(conteudo: string): Promise<{ snapshot?: string | null }> {
   const r = await fetch("/api/backup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -392,8 +438,45 @@ export async function importarBackup(conteudo: string): Promise<void> {
   });
   if (!r.ok) {
     const c = await r.json().catch(() => ({ erro: "Falha na importação." }));
-    throw new Error(c.erro ?? "Falha na importação.");
+    throw mapearErro(r.status, c, "Falha na importação.");
   }
+  return (await r.json()) as { snapshot?: string | null };
+}
+
+export interface ResumoBackup {
+  versao: number;
+  exportadoEm: string | null;
+  professorNome: string;
+  contagem: { notas: number; disciplinas: number; turmas: number; links: number };
+  imagens: number;
+}
+
+export interface ContagemDados {
+  notas: number;
+  disciplinas: number;
+  turmas: number;
+  links: number;
+}
+
+/** Dry-run da restauração: resume o arquivo e compara com os dados atuais. */
+export async function validarBackup(
+  conteudo: string,
+): Promise<{ backup: ResumoBackup; atual: ContagemDados }> {
+  const r = await fetch("/api/backup/validar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(JSON.parse(conteudo)),
+  });
+  const c = await r.json().catch(() => ({}));
+  if (!r.ok) throw mapearErro(r.status, c, "Arquivo de backup inválido.");
+  return c as { backup: ResumoBackup; atual: ContagemDados };
+}
+
+export async function listarSnapshots(): Promise<{ caminho: string; criadoEm: string | null }[]> {
+  const r = await fetch("/api/backup/snapshots", { cache: "no-store" });
+  if (!r.ok) return [];
+  const c = (await r.json()) as { snapshots?: { caminho: string; criadoEm: string | null }[] };
+  return c.snapshots ?? [];
 }
 
 export async function importarNotaArquivo(
