@@ -4,7 +4,6 @@ out/
 dist/
 .git/
 .github/
-.agents/
 tests/
 e2e/
 playwright-report/
