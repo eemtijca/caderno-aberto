@@ -34,6 +34,8 @@ Toda a documentação usa português brasileiro com acentuação e cedilha corre
 Restrições de formatação:
 
 - Não use travessão, meia-risca, reticências tipográficas, aspas curvas, setas ou símbolos decorativos. Use dois-pontos, vírgula, parênteses, `...` e aspas retas.
+- Exceção: o ponto médio `·` é o separador aceito entre metadados na interface (por exemplo, `Março/2026 · 3A · Prof. Ana`). O resto do texto segue as regras acima.
+- Evite segunda pessoa explícita (`você`) e pluralização com parênteses (`nota(s)`). O teste `tests/unit/texto-ui.test.ts` barra esses padrões e pode ser rodado com `npm run test:unit`.
 - Siga a sintaxe Markdown do GitHub: um único título de nível 1 por arquivo, hierarquia de títulos sem saltos, listas com `-`, cercas de código com linguagem e texto alternativo em imagens.
 - Use links relativos para arquivos do repositório e mantenha o texto do link em uma única linha.
 - Use alertas (`> [!NOTE]`, `> [!WARNING]`) com parcimônia, no máximo um ou dois por documento.

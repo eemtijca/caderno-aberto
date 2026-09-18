@@ -65,7 +65,7 @@ export function Tikz({ codigo }: { codigo: string }) {
         className="rounded-xl border border-dashed border-rose-200 bg-rose-50/60 px-4 py-3 text-center text-[0.85rem] text-rose-700 dark:border-rose-800 dark:bg-rose-950/20 dark:text-rose-300"
         role="alert"
       >
-        Não foi possível renderizar este diagrama. Verifique o código TikZ — chaves, parênteses e
+        Não foi possível renderizar este diagrama. Verifique o código TikZ: chaves, parênteses e
         comandos precisam estar balanceados.
       </div>
     );
@@ -81,7 +81,7 @@ export function Tikz({ codigo }: { codigo: string }) {
           aria-live="polite"
         >
           <span className="border-muted-foreground h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
-          <span className="text-muted-foreground text-sm">Renderizando diagrama…</span>
+          <span className="text-muted-foreground text-sm">Renderizando diagrama...</span>
         </div>
       ) : null}
     </div>

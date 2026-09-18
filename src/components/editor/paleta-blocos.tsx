@@ -174,7 +174,7 @@ function ConteudoPaleta({ onEscolher }: { onEscolher: (tipo: Bloco["tipo"]) => v
 function subtitulo(posicao: number, total: number, rotuloAnterior?: string): string {
   if (total === 0) return "Escolha o primeiro bloco da nota.";
   if (posicao >= total) return "Inserir no final da nota.";
-  return rotuloAnterior ? `Inserir após «${rotuloAnterior}».` : "Inserir nesta posição.";
+  return rotuloAnterior ? `Inserir após "${rotuloAnterior}".` : "Inserir nesta posição.";
 }
 
 export function PaletaBlocos({

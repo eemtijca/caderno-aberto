@@ -27,7 +27,7 @@ describe("bibliotecas de notas", () => {
     "usa article autocontido",
     texDemo.includes("\\documentclass[10pt,a4paper,twocolumn]{article}"),
   );
-  t("cabeçalho com título", texDemo.includes("\\titulonota{Movimento Uniforme — da régua ao GPS}"));
+  t("cabeçalho com título", texDemo.includes("\\titulonota{Movimento Uniforme: da régua ao GPS}"));
   t("créditos montados", montarCreditos(DEMO_NOTA, "Prof. Maria").includes("Física"));
   t(
     "comandos pt-BR definidos no preâmbulo",

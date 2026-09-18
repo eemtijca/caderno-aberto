@@ -346,8 +346,8 @@ function ExerciciosView({
             </div>
           ) : (
             <p className="flex items-center gap-2 text-[0.82rem] text-stone-400 dark:text-stone-500 print:hidden">
-              <EyeOff className="h-3.5 w-3.5" aria-hidden /> Gabarito oculto. Toque em
-              &ldquo;Mostrar gabarito&rdquo; na barra acima para revelar.
+              <EyeOff className="h-3.5 w-3.5" aria-hidden /> Gabarito oculto. Toque em "Mostrar
+              gabarito" na barra acima para revelar.
             </p>
           )
         ) : null}
