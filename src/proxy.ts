@@ -3,20 +3,50 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import * as jose from "jose";
-import { AUTH_SECRET } from "@/lib/ambiente";
+import { AUTH_SECRET, MANUTENCAO } from "@/lib/ambiente";
 
 const SEGREDO = new TextEncoder().encode(AUTH_SECRET);
 
 // Lê o usuário do cookie de sessão sem consultar o banco.
-async function lerUsuarioId(req: NextRequest): Promise<string | null> {
+async function lerSessao(req: NextRequest): Promise<{ id: string | null; papel: string | null }> {
   const token = req.cookies.get("sessao")?.value;
-  if (!token) return null;
+  if (!token) return { id: null, papel: null };
   try {
     const { payload } = await jose.jwtVerify(token, SEGREDO);
-    return typeof payload.sub === "string" ? payload.sub : null;
+    return {
+      id: typeof payload.sub === "string" ? payload.sub : null,
+      papel: typeof payload.papel === "string" ? payload.papel : null,
+    };
   } catch {
-    return null;
+    return { id: null, papel: null };
   }
+}
+
+function querJson(req: NextRequest): boolean {
+  return (
+    req.nextUrl.pathname.startsWith("/api/") ||
+    (req.headers.get("accept") ?? "").includes("application/json")
+  );
+}
+
+/** Resposta de erro do proxy, em JSON para a API e HTML para navegação. */
+function respostaErro(
+  req: NextRequest,
+  status: number,
+  mensagem: string,
+  codigo: string,
+): NextResponse {
+  if (querJson(req)) {
+    return NextResponse.json(
+      { erro: mensagem, codigo },
+      { status, headers: { "Cache-Control": "private, no-store" } },
+    );
+  }
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${mensagem}</title><style>body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;font-family:system-ui,sans-serif;text-align:center;background:#fafaf8;color:#1c1c1a}h1{font-size:20px;margin:0}p{max-width:420px;color:#6b6b66;font-size:14px;margin:0}a{margin-top:8px;color:#008241;font-weight:600}</style></head><body><h1>${mensagem}</h1><p>Acesso bloqueado pelo servidor.</p><a href="/">Voltar ao início</a></body></html>`;
+  return new NextResponse(html, {
+    status,
+    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+  });
 }
 
 function hostProprio(req: NextRequest): string {
@@ -41,7 +71,25 @@ function negarCsrf(req: NextRequest): boolean {
 
 export async function proxy(request: NextRequest) {
   if (negarCsrf(request)) {
-    return new NextResponse("Origem não confiável.", { status: 403 });
+    return respostaErro(request, 403, "Origem não confiável.", "CSRF");
+  }
+
+  const { id: usuarioId, papel } = await lerSessao(request);
+
+  // Modo manutenção: só administradores e rotas essenciais passam.
+  if (MANUTENCAO) {
+    const caminho = request.nextUrl.pathname;
+    const liberado =
+      caminho.startsWith("/_next") ||
+      caminho.startsWith("/api/auth") ||
+      caminho.startsWith("/api/publico") ||
+      caminho.startsWith("/l/") ||
+      caminho === "/favicon.ico" ||
+      caminho === "/icon.svg" ||
+      caminho === "/robots.txt";
+    if (papel !== "admin" && !liberado) {
+      return respostaErro(request, 503, "Em manutenção", "INDISPONIVEL");
+    }
   }
 
   // Nonce por requisição libera apenas os scripts marcados pelo layout.
@@ -71,7 +119,6 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
 
   // Propaga o usuário do JWT válido; sem acesso ao banco.
-  const usuarioId = await lerUsuarioId(request);
   if (usuarioId) requestHeaders.set("x-usuario-id", usuarioId);
   else requestHeaders.delete("x-usuario-id");
 
