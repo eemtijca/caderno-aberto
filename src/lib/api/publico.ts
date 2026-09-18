@@ -30,12 +30,12 @@ export async function resolverLinkPublico(token: string): Promise<LinkPublico | 
   const db = banco();
   // Busca por token, mas ainda valida ativo, expiração e exclusão do dono.
   const link = (await db.links.findFirst({ where: { token } })) as LinkLinha | null;
-  if (!link || !link.ativo) return null;
+  if (!link || !link.ativo || link.excluidoEm) return null;
   if (link.expiraEm && link.expiraEm < new Date()) return null;
   if (await professorExcluido(link.professorId)) return null;
 
   const todas = (await db.notas.findMany({
-    where: { professorId: link.professorId, status: "publicada" },
+    where: { professorId: link.professorId, status: "publicada", excluidoEm: null },
   })) as unknown as NotaLinha[];
 
   let notas = todas.filter((n) => {

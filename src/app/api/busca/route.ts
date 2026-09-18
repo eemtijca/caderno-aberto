@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const like = alvo.replace(/[%_\\]/g, (c) => `\\${c}`);
   const db = banco();
   const linhas = (await db.notas.findMany({
-    where: { professorId: usuario.id, busca: { contains: like } },
+    where: { professorId: usuario.id, excluidoEm: null, busca: { contains: like } },
     orderBy: { atualizadoEm: "desc" },
     take: 40,
   })) as unknown as NotaLinha[];
@@ -44,9 +44,9 @@ export async function GET(req: NextRequest) {
         if (idx !== -1) {
           const inicio = Math.max(0, idx - 40);
           const trecho =
-            (inicio > 0 ? "…" : "") +
+            (inicio > 0 ? "..." : "") +
             texto.slice(inicio, idx + q.length + 80).trim() +
-            (idx + q.length + 80 < texto.length ? "…" : "");
+            (idx + q.length + 80 < texto.length ? "..." : "");
           return {
             id: linha.id,
             titulo: linha.titulo,

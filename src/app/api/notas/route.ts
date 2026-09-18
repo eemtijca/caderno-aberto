@@ -52,7 +52,9 @@ export async function GET(req: NextRequest) {
 
 async function notasDoProfessor(professorId: string): Promise<NotaLinha[]> {
   const db = await banco();
-  return (await db.notas.findMany({ where: { professorId } })) as unknown as NotaLinha[];
+  return (await db.notas.findMany({
+    where: { professorId, excluidoEm: null },
+  })) as unknown as NotaLinha[];
 }
 
 async function filtrarBusca(professorId: string, q: string): Promise<NotaLinha[]> {
@@ -60,7 +62,7 @@ async function filtrarBusca(professorId: string, q: string): Promise<NotaLinha[]
   // Busca textual já isolada por professor no banco.
   const like = q.replace(/[%_\\]/g, (c) => `\\${c}`);
   const linhas = await db.notas.findMany({
-    where: { professorId, busca: { contains: like } },
+    where: { professorId, excluidoEm: null, busca: { contains: like } },
   });
   return linhas as unknown as NotaLinha[];
 }

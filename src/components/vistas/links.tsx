@@ -60,6 +60,7 @@ import {
   useExcluirLink,
   useLinks,
   useNotas,
+  useRestaurarLink,
   useTurmas,
   type LinkInfo,
   type TipoLink,
@@ -182,7 +183,7 @@ function SecaoNovoLink({
           {opcoes.length > 0 ? (
             <Select value={alvo} onValueChange={setAlvo}>
               <SelectTrigger className="w-full rounded-lg">
-                <SelectValue placeholder="Selecione…" />
+                <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
               <SelectContent>
                 {opcoes.map((o) => (
@@ -247,6 +248,7 @@ function SecaoNovoLink({
 function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
   const editar = useEditarLink();
   const excluir = useExcluirLink();
+  const restaurar = useRestaurarLink();
   const [copiado, setCopiado] = useState(false);
   const [editando, setEditando] = useState(false);
   const [nome, setNome] = useState(link.nome);
@@ -260,7 +262,7 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
   const disponivel = link.ativo && !expirado;
   const aviso =
     link.tipo === "nota" && link.alvoDetalhe === "rascunho"
-      ? "A nota ainda é rascunho. Publique para liberar o acesso"
+      ? "A nota ainda é rascunho. Publique para liberar o acesso."
       : "";
 
   const copiar = async () => {
@@ -488,8 +490,9 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Excluir este link?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Os alunos que ainda tiverem o endereço perderão o acesso imediatamente. As
-                      notas não são afetadas.
+                      Os alunos que ainda tiverem o endereço perderão o acesso imediatamente. O link
+                      vai para a lixeira e pode ser restaurado por 30 dias. As notas não são
+                      afetadas.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -499,7 +502,17 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
                       onClick={async () => {
                         try {
                           await excluir.mutateAsync(link.id);
-                          toast.success("Link excluído");
+                          toast.success("Link movido para a lixeira", {
+                            action: {
+                              label: "Desfazer",
+                              onClick: () => {
+                                void restaurar
+                                  .mutateAsync(link.id)
+                                  .then(() => toast.success("Link restaurado"))
+                                  .catch(() => toast.error("Não foi possível restaurar"));
+                              },
+                            },
+                          });
                         } catch (e) {
                           toast.error("Não foi possível excluir o link", {
                             description: e instanceof Error ? e.message : undefined,

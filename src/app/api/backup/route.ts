@@ -10,6 +10,7 @@ import { camposDenormalizados, paraJson } from "@/lib/api/serializacao";
 import type { DisciplinaLinha, TurmaLinha } from "@/lib/banco/tipos";
 import { normalizarAparencia, normalizarBlocos } from "@/lib/notas/tipos";
 import { normalizar, textoDeBusca } from "@/lib/notas/texto";
+import { salvarSnapshot } from "@/lib/api/backup";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +26,8 @@ export async function GET(req: NextRequest) {
   const db = await banco();
   const disciplinas = await db.disciplinas.findMany({ where: { professorId: usuario.id } });
   const turmas = await db.turmas.findMany({ where: { professorId: usuario.id } });
-  const notas = await db.notas.findMany({ where: { professorId: usuario.id } });
-  const links = await db.links.findMany({ where: { professorId: usuario.id } });
+  const notas = await db.notas.findMany({ where: { professorId: usuario.id, excluidoEm: null } });
+  const links = await db.links.findMany({ where: { professorId: usuario.id, excluidoEm: null } });
 
   // Anexa as imagens do professor em base64 ao arquivo de backup.
   const objetos = await obterArmazenamento().listar(usuario.id);
@@ -113,6 +114,8 @@ export async function POST(req: NextRequest) {
   }
 
   const db = await banco();
+  // Guarda um snapshot do estado atual antes da substituição (rollback).
+  const snapshot = await salvarSnapshot(usuario.id).catch(() => null);
   // A restauração substitui todos os dados atuais do professor.
   await db.links.deleteMany({ where: { professorId: usuario.id } });
   await db.notas.deleteMany({ where: { professorId: usuario.id } });
@@ -315,5 +318,5 @@ export async function POST(req: NextRequest) {
     await db.profiles.update({ where: { id: usuario.id }, data: dadosPerfil });
   }
 
-  return json({ ok: true, notas: notasCriadas.length });
+  return json({ ok: true, notas: notasCriadas.length, snapshot });
 }

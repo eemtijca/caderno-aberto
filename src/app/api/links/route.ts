@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
   const links = (await db.links.findMany({
     where: {
       professorId: usuario.id,
+      excluidoEm: null,
     },
   })) as unknown as LinkLinha[];
   links.sort((a, b) => (a.criadoEm < b.criadoEm ? 1 : -1));

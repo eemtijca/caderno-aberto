@@ -1,7 +1,7 @@
 // Migrador idempotente das migrações Prisma. Aplica cada
 // prisma/migrations/*/migration.sql uma vez, na ordem, e regista
 // em public._prisma_migrations para interoperar com migrate deploy.
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, mkdir, writeFile } from "node:fs/promises";
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +28,29 @@ try {
   process.exit(2);
 }
 
+// Dump lógico de todas as tabelas públicas para rollback antes de migrar.
+async function dumpLogico(pendentes) {
+  try {
+    const dir = process.env.BACKUP_DIR || "/data/backups";
+    await mkdir(dir, { recursive: true });
+    const tabelas = await cliente.query(
+      `select table_name from information_schema.tables
+       where table_schema = 'public' and table_type = 'BASE TABLE'
+       order by table_name`,
+    );
+    const dump = { criadoEm: new Date().toISOString(), migracoesPendentes: pendentes, tabelas: {} };
+    for (const { table_name } of tabelas.rows) {
+      const linhas = await cliente.query(`select * from "${table_name}"`);
+      dump.tabelas[table_name] = linhas.rows;
+    }
+    const arquivo = path.join(dir, `pre-migracao-${Date.now()}.json`);
+    await writeFile(arquivo, JSON.stringify(dump));
+    console.log(`[migrar] Dump salvo em ${arquivo}.`);
+  } catch (erro) {
+    console.error(`[migrar] Aviso: falha ao gerar dump (${erro.message}).`);
+  }
+}
+
 try {
   await cliente.query(`
     create table if not exists public._prisma_migrations (
@@ -50,6 +73,20 @@ try {
     .filter((e) => e.isDirectory())
     .map((e) => e.name)
     .sort();
+
+  // Dump lógico antes de aplicar migrações pendentes (opt-in).
+  if (process.env.BACKUP_BEFORE_MIGRATE === "1") {
+    const pendentes = [];
+    for (const nome of pastas) {
+      const sql = await readFile(path.join(pasta, nome, "migration.sql"), "utf8");
+      const soma = createHash("sha256").update(sql).digest("hex");
+      if (aplicadas.get(nome) !== soma) pendentes.push(nome);
+    }
+    if (pendentes.length > 0) {
+      await dumpLogico(pendentes);
+    }
+  }
+
   for (const nome of pastas) {
     const sql = await readFile(path.join(pasta, nome, "migration.sql"), "utf8");
     const soma = createHash("sha256").update(sql).digest("hex");
