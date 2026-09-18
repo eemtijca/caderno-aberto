@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { NotebookPen } from "lucide-react";
 import { buscarDadosOg } from "./dados";
 import { RedirecionarVista } from "./redirecionar";
+import { separarHabilidades } from "@/lib/notas/texto";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ const MESES_CURTOS = [
 
 function resumir(texto: string, max = 150): string {
   const limpo = texto.replace(/\s+/g, " ").trim();
-  return limpo.length > max ? `${limpo.slice(0, max - 1).trimEnd()}…` : limpo;
+  return limpo.length > max ? `${limpo.slice(0, max - 1).trimEnd()}...` : limpo;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -45,28 +46,48 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const { nota, link } = dados;
-  const subtitulo = [nota.disciplinaNome, `${MESES_CURTOS[nota.mes - 1] ?? ""}/${nota.anoLetivo}`]
+  const periodo = `${MESES_CURTOS[nota.mes - 1] ?? ""}/${nota.anoLetivo}`;
+  const subtitulo = [nota.disciplinaNome, periodo].filter(Boolean).join(" · ");
+  const turmas = nota.turmasNomes.length > 0 ? nota.turmasNomes.join(", ") : "";
+  const professor = link.professorNome ? `Prof. ${link.professorNome}` : "";
+  const habilidades = separarHabilidades(nota.habilidades);
+  // A descrição reúne os metadados da nota e, quando houver, o resumo.
+  const metadados = [nota.disciplinaNome, periodo, turmas, professor].filter(Boolean).join(" · ");
+  const descricao = [metadados, nota.sobre ? resumir(nota.sobre, 140) : ""]
     .filter(Boolean)
-    .join(" · ");
-  const turmas = nota.turmasNomes.length > 0 ? ` · ${nota.turmasNomes.join(", ")}` : "";
-  const professor = link.professorNome ? ` · Prof. ${link.professorNome}` : "";
-  const descricao = nota.sobre
-    ? resumir(nota.sobre)
-    : `Nota de aula de ${nota.disciplinaNome || "ensino médio"}${turmas}${professor}`;
+    .join(" - ");
+
+  const imagem = {
+    url: `/l/${token}/opengraph-image`,
+    width: 1200,
+    height: 630,
+    alt: `${nota.titulo} · ${subtitulo}`,
+  };
 
   return {
     title: nota.titulo,
-    description: `${subtitulo}${turmas}${professor} — ${descricao}`.replace(/\s+/g, " ").trim(),
+    description: descricao,
+    keywords: [nota.disciplinaNome, ...nota.turmasNomes, ...habilidades].filter(Boolean),
+    authors: link.professorNome ? [{ name: link.professorNome }] : undefined,
+    robots: { index: true, follow: true },
     openGraph: {
       title: nota.titulo,
       description: descricao,
       type: "article",
+      locale: "pt_BR",
       siteName: "Caderno Aberto",
+      url: `/l/${token}`,
+      images: [imagem],
+      authors: link.professorNome ? [link.professorNome] : undefined,
+      publishedTime: nota.atualizadoEm,
+      modifiedTime: nota.atualizadoEm,
+      tags: habilidades.length > 0 ? habilidades : undefined,
     },
     twitter: {
       card: "summary_large_image",
       title: nota.titulo,
       description: descricao,
+      images: [imagem],
     },
   };
 }
@@ -91,7 +112,7 @@ export default async function PaginaLink({ params }: Props) {
       </div>
       <div className="space-y-1">
         <h1 className="fonte-display text-lg font-bold">{titulo}</h1>
-        <p className="text-muted-foreground text-sm">Abrindo a nota de aula…</p>
+        <p className="text-muted-foreground text-sm">Abrindo a nota de aula...</p>
       </div>
       {/* sem JavaScript, o redirecionamento client-side não roda: link direto na hash */}
       <noscript>

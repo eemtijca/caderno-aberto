@@ -17,6 +17,7 @@ import { headers } from "next/headers";
 import { Toaster as ToasterSonner } from "@/components/ui/sonner";
 import { Provedores } from "@/components/provedores";
 import { ThemeProvider } from "next-themes";
+import { APP_URL } from "@/lib/ambiente";
 
 // O nonce do CSP exige renderização por requisição.
 export const dynamic = "force-dynamic";
@@ -60,6 +61,7 @@ const lexend = Lexend({
 });
 
 export const metadata: Metadata = {
+  metadataBase: APP_URL ? new URL(APP_URL) : undefined,
   title: {
     default: "Caderno Aberto",
     template: "%s · Caderno Aberto",
