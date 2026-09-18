@@ -31,6 +31,9 @@ export async function GET(req: NextRequest) {
       nome: u.perfil?.nome ?? "",
       papel: u.papel,
       ativado: Boolean(u.ativadoEm),
+      statusConta: u.perfil?.statusConta ?? "ativo",
+      motivo: u.perfil?.motivo ?? "",
+      suspensoEm: u.perfil?.suspensoEm?.toISOString() ?? null,
       criadoEm: u.criadoEm.toISOString(),
     })),
   });

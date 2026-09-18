@@ -19,10 +19,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { SeletorTema } from "@/components/seletor-tema";
+import { TelaEstado } from "@/components/tela-estado";
 import { useSessao } from "@/hooks/use-sessao";
+import { ErroApi } from "@/lib/api/erro";
 import type { Rota } from "@/lib/rota";
 
 type Modo = "entrar" | "codigo" | "solicitar";
@@ -75,9 +78,14 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
   const [nome, setNome] = useState("");
   const [codigo, setCodigo] = useState("");
   const [tipo, setTipo] = useState<TipoSolicitacao>(() => tipoDoHash());
+  const [manterConectado, setManterConectado] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
+  const [estadoConta, setEstadoConta] = useState<{
+    codigo: "CONTA_PENDENTE" | "CONTA_SUSPENSA";
+    motivo?: string;
+  } | null>(null);
 
   useEffect(() => {
     setErro("");
@@ -89,10 +97,12 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
     e.preventDefault();
     setErro("");
     setSucesso("");
+    setEstadoConta(null);
+    sessao.limparAvisoSessao();
     setEnviando(true);
     try {
       if (modo === "entrar") {
-        await sessao.entrar(email.trim(), senha);
+        await sessao.entrar(email.trim(), senha, manterConectado);
         navegar("/");
       } else if (modo === "codigo") {
         if (senha.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.");
@@ -109,7 +119,17 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
         setSucesso("Se existir conta com este e-mail, a administração será avisada.");
       }
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Erro inesperado. Tente novamente.");
+      if (
+        err instanceof ErroApi &&
+        (err.codigo === "CONTA_PENDENTE" || err.codigo === "CONTA_SUSPENSA")
+      ) {
+        setEstadoConta({
+          codigo: err.codigo,
+          motivo: typeof err.detalhe?.motivo === "string" ? err.detalhe.motivo : undefined,
+        });
+      } else {
+        setErro(err instanceof Error ? err.message : "Erro inesperado. Tente novamente.");
+      }
     } finally {
       setEnviando(false);
     }
@@ -143,6 +163,32 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
     (modo === "solicitar" && !!sucesso) ||
     (modo === "solicitar" && tipo === "primeiro_acesso" && (!nome.trim() || !email.trim())) ||
     (modo === "solicitar" && tipo === "recuperacao" && !email.trim());
+
+  // Conta pendente ou suspensa: tela de status dedicada.
+  if (estadoConta) {
+    return (
+      <div className="bg-background relative min-h-[100svh]">
+        <SeletorTema className="absolute top-4 right-4 z-20 rounded-xl" />
+        <TelaEstado
+          variante={estadoConta.codigo === "CONTA_PENDENTE" ? "conta_pendente" : "conta_suspensa"}
+          descricao={
+            estadoConta.motivo
+              ? `Motivo informado: ${estadoConta.motivo}`
+              : estadoConta.codigo === "CONTA_SUSPENSA"
+                ? "A administração desativou esta conta. Procure a administração da escola."
+                : undefined
+          }
+          acao={{
+            rotulo: "Voltar",
+            onClick: () => {
+              setEstadoConta(null);
+              setSenha("");
+            },
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background relative flex min-h-[100svh] flex-col overflow-x-hidden lg:grid lg:grid-cols-[1.05fr_1fr]">
@@ -279,7 +325,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                   tipo="password"
                   valor={senha}
                   onChange={setSenha}
-                  placeholder="••••••••"
+                  placeholder="Digite a senha"
                   olho
                   autoComplete="current-password"
                 />
@@ -316,7 +362,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                     tipo="password"
                     valor={senha}
                     onChange={setSenha}
-                    placeholder="••••••••"
+                    placeholder="Mínimo de 8 caracteres"
                     olho
                     autoComplete="new-password"
                   />
@@ -326,7 +372,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                     tipo="password"
                     valor={senha2}
                     onChange={setSenha2}
-                    placeholder="••••••••"
+                    placeholder="Repita a nova senha"
                     olho
                     autoComplete="new-password"
                   />
@@ -350,6 +396,11 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                 </>
               ) : null}
 
+              {sessao.sessaoExpirada && modo === "entrar" ? (
+                <p className="bg-muted text-muted-foreground rounded-lg px-3 py-2 text-sm">
+                  Sua sessão expirou. Entre novamente para continuar.
+                </p>
+              ) : null}
               {erro ? (
                 <p role="alert" className="text-destructive text-sm font-medium">
                   {erro}
@@ -360,6 +411,19 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                   {sucesso}
                 </p>
+              ) : null}
+
+              {modo === "entrar" ? (
+                <div className="flex items-center gap-2 pt-0.5">
+                  <Checkbox
+                    id="manter-conectado"
+                    checked={manterConectado}
+                    onCheckedChange={(v) => setManterConectado(v === true)}
+                  />
+                  <Label htmlFor="manter-conectado" className="cursor-pointer text-sm font-normal">
+                    Manter conectado neste dispositivo
+                  </Label>
+                </div>
               ) : null}
 
               {!sucesso ? (

@@ -3,7 +3,7 @@
 // Console de administração: solicitações, códigos, usuários e auditoria.
 
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { BadgeCheck, KeyRound, ScrollText, ShieldCheck, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { adminApi, type CodigoEmitido, type Resumo } from "./api";
@@ -11,6 +11,7 @@ import { ModalCodigo } from "./modal-codigo";
 import { SecaoSolicitacoes } from "./solicitacoes";
 import { SecaoCodigos } from "./codigos";
 import { SecaoUsuarios } from "./usuarios";
+import { SecaoAprovacoes } from "./aprovacoes";
 import { SecaoAuditoria } from "./auditoria";
 
 export function VistaAdmin() {
@@ -58,6 +59,9 @@ export function VistaAdmin() {
           <TabsTrigger value="usuarios" className="gap-1.5 rounded-lg">
             <Users className="h-4 w-4" aria-hidden /> Usuários
           </TabsTrigger>
+          <TabsTrigger value="aprovacoes" className="gap-1.5 rounded-lg">
+            <BadgeCheck className="h-4 w-4" aria-hidden /> Aprovações
+          </TabsTrigger>
           <TabsTrigger value="auditoria" className="gap-1.5 rounded-lg">
             <ScrollText className="h-4 w-4" aria-hidden /> Auditoria
           </TabsTrigger>
@@ -70,6 +74,9 @@ export function VistaAdmin() {
         </TabsContent>
         <TabsContent value="usuarios" className="mt-4">
           <SecaoUsuarios aoEmitir={setEmitido} />
+        </TabsContent>
+        <TabsContent value="aprovacoes" className="mt-4">
+          <SecaoAprovacoes />
         </TabsContent>
         <TabsContent value="auditoria" className="mt-4">
           <SecaoAuditoria />

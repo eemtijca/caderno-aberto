@@ -7,7 +7,8 @@ import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const sessao = await sessaoProfessor(req);
+  // A leitura permite conta em carência para alimentar a tela de recuperação.
+  const sessao = await sessaoProfessor(req, { permitirCarencia: true });
   // Sem sessão, devolve nulos em vez de erro para o app decidir a navegação.
   if (!sessao) {
     return json({ usuario: null, perfil: null });

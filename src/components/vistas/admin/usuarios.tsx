@@ -11,22 +11,15 @@ import {
   Pencil,
   RefreshCw,
   Trash2,
+  UserCheck,
   UserPlus,
+  UserX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +65,8 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
   const [salvando, setSalvando] = useState(false);
   const [editando, setEditando] = useState<UsuarioAdmin | null>(null);
   const [excluindo, setExcluindo] = useState<UsuarioAdmin | null>(null);
+  const [suspendendo, setSuspendendo] = useState<UsuarioAdmin | null>(null);
+  const [reativando, setReativando] = useState<UsuarioAdmin | null>(null);
   const [processando, setProcessando] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
@@ -187,6 +182,11 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
                   <Badge variant={u.ativado ? "secondary" : "outline"}>
                     {u.ativado ? "Ativo" : "Pendente"}
                   </Badge>
+                  {u.statusConta === "suspenso" ? (
+                    <Badge variant="destructive">Desativado</Badge>
+                  ) : u.statusConta === "excluindo" ? (
+                    <Badge variant="outline">Em exclusão</Badge>
+                  ) : null}
                 </div>
                 <p className="text-muted-foreground mt-0.5 truncate text-sm">{u.email}</p>
               </div>
@@ -210,6 +210,22 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
                   <DropdownMenuItem className="gap-2" onSelect={() => setEditando(u)}>
                     <Pencil className="h-4 w-4" aria-hidden /> Editar
                   </DropdownMenuItem>
+                  {u.statusConta === "suspenso" ? (
+                    <DropdownMenuItem className="gap-2" onSelect={() => setReativando(u)}>
+                      <UserCheck className="h-4 w-4" aria-hidden /> Reativar
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      className="gap-2"
+                      disabled={u.id === usuario?.id}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setSuspendendo(u);
+                      }}
+                    >
+                      <UserX className="h-4 w-4" aria-hidden /> Desativar
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem className="gap-2" onSelect={() => void reemitir(u)}>
                     <KeyRound className="h-4 w-4" aria-hidden /> Gerar código
                   </DropdownMenuItem>
@@ -309,36 +325,90 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
         }}
       />
 
-      <AlertDialog open={Boolean(excluindo)} onOpenChange={(o) => !o && setExcluindo(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir conta</AlertDialogTitle>
-            <AlertDialogDescription>
-              A conta de {excluindo?.nome || excluindo?.email} e todos os seus dados serão removidos
-              permanentemente. Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90 rounded-xl text-white"
-              onClick={async () => {
-                if (!excluindo) return;
-                try {
-                  await adminApi.excluirUsuario(excluindo.id);
-                  toast.success("Conta excluída");
-                  setExcluindo(null);
-                  await carregar();
-                } catch (erro) {
-                  toast.error(erro instanceof Error ? erro.message : "Falha ao excluir.");
-                }
-              }}
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmacaoDestrutiva
+        aberto={Boolean(excluindo)}
+        onOpenChange={(o) => !o && setExcluindo(null)}
+        titulo="Excluir conta"
+        descricao={
+          <>
+            A conta de <b>{excluindo?.nome || excluindo?.email}</b> e todos os seus dados serão
+            removidos permanentemente. Esta ação não pode ser desfeita.
+          </>
+        }
+        resumo="Serão removidos notas, disciplinas, turmas, links e imagens. Baixe um backup antes."
+        alvo={{
+          rotulo: "Digite o e-mail da conta para confirmar",
+          valor: excluindo?.email ?? "",
+        }}
+        precisaMotivo
+        exigeSenha
+        textoConfirmar="Excluir conta"
+        onConfirmar={async ({ senha, motivo }) => {
+          if (!excluindo) return;
+          const r = await adminApi.excluirUsuario(excluindo.id, { motivo, senha });
+          toast.success(
+            r.pendente ? "Solicitação registrada" : "Conta excluída",
+            r.pendente ? { description: "Outro administrador deve aprovar a ação." } : undefined,
+          );
+          setExcluindo(null);
+          await carregar();
+        }}
+      />
+
+      <ConfirmacaoDestrutiva
+        aberto={Boolean(suspendendo)}
+        onOpenChange={(o) => !o && setSuspendendo(null)}
+        titulo="Desativar conta"
+        descricao={
+          <>
+            A conta de <b>{suspendendo?.nome || suspendendo?.email}</b> perderá o acesso
+            imediatamente. Os dados são preservados e a ação pode ser revertida.
+          </>
+        }
+        alvo={
+          suspendendo
+            ? { rotulo: "Digite o e-mail para confirmar", valor: suspendendo.email }
+            : undefined
+        }
+        precisaMotivo
+        exigeSenha
+        textoConfirmar="Desativar conta"
+        onConfirmar={async ({ senha, motivo }) => {
+          if (!suspendendo) return;
+          const r = await adminApi.editarUsuario(suspendendo.id, {
+            statusConta: "suspenso",
+            motivo,
+            senha,
+          });
+          toast.success(
+            r.pendente ? "Solicitação registrada" : "Conta desativada",
+            r.pendente ? { description: "Outro administrador deve aprovar a ação." } : undefined,
+          );
+          setSuspendendo(null);
+          await carregar();
+        }}
+      />
+
+      <ConfirmacaoDestrutiva
+        aberto={Boolean(reativando)}
+        onOpenChange={(o) => !o && setReativando(null)}
+        titulo="Reativar conta"
+        descricao={
+          <>
+            A conta de <b>{reativando?.nome || reativando?.email}</b> voltará a ter acesso e poderá
+            entrar novamente.
+          </>
+        }
+        exigeSenha
+        textoConfirmar="Reativar conta"
+        onConfirmar={async ({ senha }) => {
+          if (!reativando) return;
+          await adminApi.editarUsuario(reativando.id, { statusConta: "ativo", senha });
+          toast.success("Conta reativada");
+          setReativando(null);
+          await carregar();
+        }}
+      />
     </div>
   );
 }

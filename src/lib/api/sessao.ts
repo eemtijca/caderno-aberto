@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { banco } from "@/lib/banco";
 import { sessaoRequisicao, type SessaoUsuario } from "@/lib/auth/sessao";
 import type { PerfilLinha } from "@/lib/banco/tipos";
+import type { CodigoErro } from "@/lib/api/erro";
 
 export interface SessaoProfessor {
   usuario: SessaoUsuario;
@@ -13,7 +14,10 @@ export interface SessaoProfessor {
 
 // Guarda única de sessão para rotas privadas.
 /** Sessão da requisição com perfil. Null sem sessão válida. */
-export async function sessaoProfessor(req?: NextRequest): Promise<SessaoProfessor | null> {
+export async function sessaoProfessor(
+  req?: NextRequest,
+  opcoes?: { permitirCarencia?: boolean },
+): Promise<SessaoProfessor | null> {
   // Permite chamar sem Request (ex.: Server Components) criando uma vazia.
   const requisicao =
     req ??
@@ -28,6 +32,10 @@ export async function sessaoProfessor(req?: NextRequest): Promise<SessaoProfesso
   if (!usuario.ativadoEm) return null;
   // Contas com carência vencida não autenticam.
   if (perfil?.expiraEm && perfil.expiraEm < new Date()) return null;
+  // Conta suspensa pela administração fica bloqueada.
+  if (perfil?.statusConta === "suspenso") return null;
+  // Conta em carência de exclusão fica bloqueada, exceto nas rotas de recuperação.
+  if (perfil?.exclusaoSolicitadaEm && !opcoes?.permitirCarencia) return null;
 
   return { usuario, perfil };
 }
@@ -39,14 +47,14 @@ export function json(dados: unknown, status = 200): NextResponse {
   });
 }
 
-export function erroApi(mensagem: string, status = 400): NextResponse {
-  return json({ erro: mensagem }, status);
+export function erroApi(mensagem: string, status = 400, codigo?: CodigoErro): NextResponse {
+  return json({ erro: mensagem, ...(codigo ? { codigo } : {}) }, status);
 }
 
 export function naoAutenticado(): NextResponse {
-  return json({ erro: "Faça login para continuar." }, 401);
+  return erroApi("Faça login para continuar.", 401, "NAO_AUTENTICADO");
 }
 
 export function semPermissao(): NextResponse {
-  return json({ erro: "Acesso restrito à administração." }, 403);
+  return erroApi("Acesso restrito à administração.", 403, "SEM_PERMISSAO");
 }
