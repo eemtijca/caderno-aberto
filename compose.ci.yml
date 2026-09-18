@@ -17,3 +17,8 @@ services:
     environment:
       AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
       CRON_SECRET: segredo-cron-dummy-de-32-bytes-para-ci00
+      # O Playwright acessa o app sem proxy, então todos os logins chegam com
+      # o mesmo IP ("desconhecido"). O teto padrão de 30 por 5 minutos não
+      # suporta a suíte de e2e; o teto por e-mail (AUTH_LIMITE_CODIGO) segue
+      # no padrão para os testes de código.
+      AUTH_LIMITE_TENTATIVAS: "1000"

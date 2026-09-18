@@ -3,6 +3,7 @@
 import { NextRequest } from "next/server";
 import { banco } from "@/lib/banco";
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao";
+import { ehUuid } from "@/lib/identificador";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +16,11 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
 
   const db = await banco();
-  const nota = await db.notas.findFirst({
-    where: { id, professorId: usuario.id, excluidoEm: { not: null } },
-  });
+  const nota = ehUuid(id)
+    ? await db.notas.findFirst({
+        where: { id, professorId: usuario.id, excluidoEm: { not: null } },
+      })
+    : null;
   if (!nota) return erroApi("Nota não encontrada na lixeira.", 404, "NAO_ENCONTRADO");
 
   await db.$transaction(async (tx) => {

@@ -5,6 +5,7 @@ import { banco } from "@/lib/banco";
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao";
 import { linhaParaNota, mapaTurmasProfessor, paraJson } from "@/lib/api/serializacao";
 import type { DisciplinaLinha, NotaLinha } from "@/lib/banco/tipos";
+import { ehUuid } from "@/lib/identificador";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +19,15 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
   const db = await banco();
   // Busca a original escopada ao professor dono.
-  const original = (await db.notas.findFirst({
-    where: {
-      id,
-      professorId: usuario.id,
-    },
-  })) as unknown as NotaLinha | null;
-  if (!original) return erroApi("Nota não encontrada.", 404);
+  const original = ehUuid(id)
+    ? ((await db.notas.findFirst({
+        where: {
+          id,
+          professorId: usuario.id,
+        },
+      })) as unknown as NotaLinha | null)
+    : null;
+  if (!original) return erroApi("Nota não encontrada.", 404, "NAO_ENCONTRADO");
 
   const disciplina = original.disciplinaId
     ? ((await db.disciplinas.findFirst({

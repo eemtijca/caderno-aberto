@@ -58,3 +58,12 @@ export function codigoPorStatus(status: number): CodigoErro {
   if (status >= 500) return "ERRO_INTERNO";
   return "VALIDACAO";
 }
+
+/** Código de erro do Prisma, quando houver (ex.: P2025 para registro ausente). */
+export function codigoPrisma(erro: unknown): string | undefined {
+  if (erro && typeof erro === "object" && "code" in erro) {
+    const codigo = (erro as { code?: unknown }).code;
+    if (typeof codigo === "string") return codigo;
+  }
+  return undefined;
+}

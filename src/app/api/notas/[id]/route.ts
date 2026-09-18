@@ -12,12 +12,15 @@ import {
 import type { DisciplinaLinha, NotaLinha, TurmaLinha } from "@/lib/banco/tipos";
 import { normalizarAparencia, normalizarBlocos, type Bloco } from "@/lib/notas/tipos";
 import { normalizar, textoDeBusca } from "@/lib/notas/texto";
+import { ehUuid } from "@/lib/identificador";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 async function buscarNota(id: string, professorId: string): Promise<NotaLinha | null> {
+  // Id fora do formato de UUID nem chega ao banco.
+  if (!ehUuid(id)) return null;
   const db = await banco();
   // O filtro por professor garante o isolamento entre contas.
   const linha = await db.notas.findFirst({ where: { id, professorId, excluidoEm: null } });
@@ -160,9 +163,9 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
 
   const db = await banco();
   // Vai para a lixeira (soft delete) e leva os links da nota junto.
-  const nota = await db.notas.findFirst({
-    where: { id, professorId: usuario.id, excluidoEm: null },
-  });
+  const nota = ehUuid(id)
+    ? await db.notas.findFirst({ where: { id, professorId: usuario.id, excluidoEm: null } })
+    : null;
   if (!nota) return erroApi("Nota não encontrada.", 404, "NAO_ENCONTRADO");
 
   const agora = new Date();

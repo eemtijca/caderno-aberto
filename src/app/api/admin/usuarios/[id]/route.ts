@@ -15,6 +15,8 @@ import {
   suspenderUsuario,
 } from "@/lib/api/admin-usuarios";
 import { normalizarEmail, normalizarNome } from "@/lib/auth/validacao";
+import { codigoPrisma } from "@/lib/api/erro";
+import { ehUuid } from "@/lib/identificador";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +36,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   const { id } = await ctx.params;
   const eu = guarda.sessao.usuario.id;
+  if (!ehUuid(id)) return erroApi("Usuário não encontrado.", 404, "NAO_ENCONTRADO");
   const corpo = await req.json().catch(() => null);
   const db = banco();
   const usuario = await db.usuarios.findFirst({ where: { id } });
@@ -121,15 +124,22 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   // Mudar papel ou desativar derruba as sessões; desativar revoga códigos.
   const derrubaSessoes = "papel" in dados || dados.ativadoEm === null;
-  await db.$transaction(async (tx) => {
-    if (Object.keys(dados).length) await tx.usuarios.update({ where: { id }, data: dados });
-    if (Object.keys(perfilDados).length)
-      await tx.profiles.update({ where: { id }, data: perfilDados });
-    if (derrubaSessoes) await tx.sessoes.deleteMany({ where: { usuarioId: id } });
-    if (dados.ativadoEm === null) {
-      await tx.codigosAcesso.deleteMany({ where: { usuarioId: id, usadoEm: null } });
-    }
-  });
+  try {
+    await db.$transaction(async (tx) => {
+      if (Object.keys(dados).length) await tx.usuarios.update({ where: { id }, data: dados });
+      if (Object.keys(perfilDados).length)
+        await tx.profiles.update({ where: { id }, data: perfilDados });
+      if (derrubaSessoes) await tx.sessoes.deleteMany({ where: { usuarioId: id } });
+      if (dados.ativadoEm === null) {
+        await tx.codigosAcesso.deleteMany({ where: { usuarioId: id, usadoEm: null } });
+      }
+    });
+  } catch (erro) {
+    // Corrida com uma exclusão concorrente: a conta deixou de existir.
+    if (codigoPrisma(erro) === "P2025")
+      return erroApi("Usuário não encontrado.", 404, "NAO_ENCONTRADO");
+    throw erro;
+  }
 
   await registrarEvento({
     atorId: eu,
@@ -149,6 +159,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
   const eu = guarda.sessao.usuario.id;
   if (id === eu) return erroApi("Não é possível excluir a própria conta.");
+  if (!ehUuid(id)) return erroApi("Usuário não encontrado.", 404, "NAO_ENCONTRADO");
 
   const db = banco();
   const usuario = await db.usuarios.findFirst({ where: { id } });

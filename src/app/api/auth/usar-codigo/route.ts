@@ -75,8 +75,9 @@ export async function POST(req: NextRequest) {
   }
 
   const senhaHash = await hashSenha(novaSenha);
-  await db.$transaction(async (tx) => {
-    await tx.usuarios.update({
+  // updateMany evita estourar quando a conta some em uma corrida.
+  const atualizado = await db.$transaction(async (tx) => {
+    const alterado = await tx.usuarios.updateMany({
       where: { id: usuario.id },
       data: {
         senhaHash,
@@ -84,9 +85,12 @@ export async function POST(req: NextRequest) {
         ...(registro.tipo === "primeiro_acesso" ? { ativadoEm: new Date() } : {}),
       },
     });
+    if (alterado.count === 0) return false;
     // Qualquer senha nova derruba as sessões antigas.
     await tx.sessoes.deleteMany({ where: { usuarioId: usuario.id } });
+    return true;
   });
+  if (!atualizado) return erroApi("Código inválido ou expirado.");
 
   await limparTentativas(chave);
   await registrarEvento({
