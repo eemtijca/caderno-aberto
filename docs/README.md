@@ -28,6 +28,8 @@ As decisões estruturais ficam registradas como ADRs (Architecture Decision Reco
 - [ADR-002: provedores agnósticos de e-mail e imagens](adr/002-provedores-agnosticos.md)
 - [ADR-003: isolamento pelo dono com RLS de barreira](adr/003-isolamento.md)
 - [ADR-004: acesso por código gerido pela administração](adr/004-acesso-por-codigo.md)
+- [ADR-005: ciclo de vida da conta do professor](adr/005-ciclo-de-vida-da-conta.md)
+- [ADR-006: salvaguardas contra ações destrutivas](adr/006-salvaguardas-destrutivas.md)
 
 Novas decisões seguem o formato descrito em [../CONTRIBUTING.md](../CONTRIBUTING.md).
 

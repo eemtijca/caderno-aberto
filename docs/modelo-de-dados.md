@@ -40,16 +40,20 @@ Credenciais, papel e ativação da conta.
 
 Perfil do professor. Usa o mesmo `id` de `Usuarios`.
 
-| Campo                      | Tipo        | Observação                                   |
-| -------------------------- | ----------- | -------------------------------------------- |
-| `id`                       | uuid        | Chave primária e estrangeira para `Usuarios` |
-| `nome`                     | text        | Exibido nas notas e na impressão             |
-| `email`                    | text        | Espelho do e-mail                            |
-| `escola`                   | text        | Exibida no perfil                            |
-| `preferencias`             | jsonb       | Preferências de interface                    |
-| `exclusaoSolicitadaEm`     | timestamptz | Início da carência de exclusão               |
-| `expiraEm`                 | timestamptz | Fim da carência, base para a purga           |
-| `criadoEm`, `atualizadoEm` | timestamptz | Auditoria                                    |
+| Campo                      | Tipo        | Observação                                     |
+| -------------------------- | ----------- | ---------------------------------------------- |
+| `id`                       | uuid        | Chave primária e estrangeira para `Usuarios`   |
+| `nome`                     | text        | Exibido nas notas e na impressão               |
+| `email`                    | text        | Espelho do e-mail                              |
+| `escola`                   | text        | Exibida no perfil                              |
+| `preferencias`             | jsonb       | Preferências de interface                      |
+| `statusConta`              | text        | `ativo`, `suspenso` ou `excluindo`             |
+| `motivo`                   | text        | Motivo da suspensão ou exclusão administrativa |
+| `suspensoEm`               | timestamptz | Início da suspensão pela administração         |
+| `exclusaoOrigem`           | text        | `auto` ou `admin`                              |
+| `exclusaoSolicitadaEm`     | timestamptz | Início da carência de exclusão                 |
+| `expiraEm`                 | timestamptz | Fim da carência, base para a purga             |
+| `criadoEm`, `atualizadoEm` | timestamptz | Auditoria                                      |
 
 ### Disciplinas
 
@@ -96,6 +100,7 @@ Nota de aula. Guarda blocos e aparência como JSON e cópias denormalizadas para
 | `blocos`                   | jsonb       | AST de blocos                          |
 | `aparencia`                | jsonb       | Fonte, escala e entrelinha             |
 | `busca`                    | text        | Texto normalizado usado na busca       |
+| `excluidoEm`               | timestamptz | Preenchido quando vai para a lixeira   |
 | `criadoEm`, `atualizadoEm` | timestamptz | Auditoria                              |
 
 ### Links
@@ -115,6 +120,7 @@ Vínculo público de leitura, com token, expiração e contador.
 | `pausadoNaExclusao`                 | boolean     | Marca links pausados pela carência       |
 | `expiraEm`                          | timestamptz | Nulo significa sem expiração             |
 | `acessos`                           | int         | Contador de acessos                      |
+| `excluidoEm`                        | timestamptz | Preenchido quando vai para a lixeira     |
 | `criadoEm`                          | timestamptz | Criação                                  |
 
 ### Sessoes
@@ -183,6 +189,10 @@ Trilha de auditoria das ações sensíveis de acesso.
 
 Contador de limite de tentativas por chave `rota:ip`, com chave primária composta `(chave, feitaEm)`.
 
+### AprovacoesAcao
+
+Solicitações de ação destrutiva aguardando aprovação de um segundo administrador (quatro olhos), ativadas por `APROVACAO_DUPLA=1`. Guarda tipo, alvo, motivo, solicitante, aprovador, status e expiração.
+
 ## Glossário
 
 | Termo                    | Definição                                                                                                             |
@@ -196,8 +206,12 @@ Contador de limite de tentativas por chave `rota:ip`, com chave primária compos
 | Disciplina               | Classificação da nota, com nome, cor e ícone                                                                          |
 | Gabarito                 | Respostas corretas, automáticas para múltipla escolha e livres para questões abertas                                  |
 | Link público             | Endereço `/l/<token>` que dá acesso de leitura a uma nota, turma ou disciplina publicada                              |
+| Lixeira                  | Itens de notas e links com `excluidoEm` preenchido, restauráveis por `LIXEIRA_DIAS` dias                              |
 | Nota                     | Nota de aula, composta de metadados e blocos                                                                          |
-| Purga                    | Remoção definitiva de contas com carência vencida                                                                     |
+| Purga                    | Remoção definitiva de contas com carência vencida e de itens vencidos da lixeira                                      |
+| Quatro olhos             | Aprovação de uma ação destrutiva por um segundo administrador                                                         |
+| Snapshot                 | Cópia JSON do estado antes de uma restauração substitutiva, usada para rollback                                       |
+| Suspensão                | Desativação reversível de uma conta pela administração, com motivo                                                    |
 | Restauração substitutiva | Restauração de backup que apaga os dados atuais do professor antes de recriar os do arquivo                           |
 | Rótulo                   | Marcador de parágrafo (Definição, Fórmulas, Relações, Modelo básico, Resolução ou livre)                              |
 | Round-trip               | Capacidade de exportar uma nota para um formato e importá-la de volta sem perda relevante                             |

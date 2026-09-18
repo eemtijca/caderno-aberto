@@ -48,14 +48,22 @@ O professor cria uma conta, escreve no editor visual de blocos (caixas COPIAR, e
 - Endereço em caminho real (`/l/<token>`): WhatsApp, Telegram e redes sociais exibem prévia com imagem, título e descrição gerados por nota (OpenGraph). Links antigos em `/#/l/<token>` continuam funcionando.
 - Rascunhos nunca ficam visíveis; links pausados, expirados ou revogados exibem a mensagem "Link indisponível".
 
-### Conta
+### Configurações
 
+- Hub com seções em telas próprias: Perfil, Segurança, Disciplinas, Turmas, Dados e Exclusão.
 - Perfil com nome e escola (exibidos nas notas e na impressão) e e-mail.
 - Segurança com troca de senha (mínimo de 8 caracteres, com confirmação e senha atual); o e-mail da conta só é alterado pela administração.
-- Disciplinas com nome, cor e ícone gráfico, contador de notas e renomeação; excluir preserva as notas (apenas desvincula).
+- Disciplinas com nome, cor e ícone gráfico (menu suspenso), contador de notas e renomeação; excluir preserva as notas (apenas desvincula).
 - Turmas com nome, série e ano letivo, agrupadas por ano; excluir preserva as notas.
-- Backup completo em um único arquivo JSON (disciplinas, turmas, notas, links e imagens em base64), com restauração substitutiva e importação de nota única (`.md` ou `.json`).
-- Exclusão de conta em 2 etapas (aceite, palavra EXCLUIR e senha) com carência de 24 horas, banner global de restauração e desativação dos links no período.
+- Dados com backup completo em um único arquivo JSON (disciplinas, turmas, notas, links e imagens em base64) e restauração substitutiva com dry-run, confirmação por digitação e snapshot para rollback. A importação de uma nota única (`.md` ou `.json`) fica na tela Notas.
+- Lixeira com retenção de 30 dias para notas e links, com restauração e desfazer imediato.
+- Exclusão de conta em 2 etapas (aceite, palavra EXCLUIR e senha) com carência de 24 horas; a solicitação encerra a sessão e bloqueia o acesso. Para recuperar, o professor entra de novo e confirma em uma tela de recuperação; a conta de administração não pode ser excluída.
+
+### Administração
+
+- Desativar (reversível, com motivo e senha) e excluir contas, com proteção do último administrador e da conta de bootstrap.
+- Aprovação em duas etapas (quatro olhos) opcional para ações destrutivas.
+- Telas de erro e aviso padronizadas (404, 500, sessão expirada, sem permissão, link indisponível, conta desativada) e aviso de conexão offline.
 
 ### Vista do aluno (sem login)
 
@@ -69,8 +77,8 @@ O professor cria uma conta, escreve no editor visual de blocos (caixas COPIAR, e
 - Página inicial é a tela de login (aplicação de uma escola, sem landing page).
 - Primeiro acesso e recuperação de senha por código de 8 caracteres gerado pela administração; o professor solicita o código, a administração entrega e o professor define a senha.
 - Console de administração com fila de solicitações, emissão e revogação de códigos, gestão de contas e auditoria dos eventos sensíveis.
-- Temas claro, escuro e sistema; aplicativo somente em português; navegação por rotas hash (`#/`, `#/notas`, `#/organizacao`, `#/links`, `#/conta`, `#/admin`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/codigo`, `#/solicitar`) com retorno ao início em rota desconhecida.
-- Layout responsivo com barra lateral no desktop e navegação inferior no celular; notificações toast em todas as ações, com mensagens de erro em português.
+- Temas claro, escuro e sistema; aplicativo somente em português; navegação por rotas hash (`#/`, `#/notas`, `#/organizacao`, `#/links`, `#/lixeira`, `#/configuracoes` com as seções de perfil, segurança, disciplinas, turmas, dados e exclusão, `#/recuperacao`, `#/admin`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/codigo`, `#/solicitar`) com retorno ao início em rota desconhecida.
+- Layout responsivo com barra lateral recolhível no desktop e navegação inferior no celular; notificações toast em todas as ações, com mensagens de erro em português.
 - Estados de carregamento independentes por elemento (esqueletos por cartão, filtro, número e seção) e animações sutis que respeitam `prefers-reduced-motion`.
 
 ## Começando
@@ -130,10 +138,10 @@ Sim, e de código aberto sob licença MIT. Cada professor cria a própria conta 
 Sim. Toda consulta é filtrada pelo professor dono no servidor, com políticas de segunda barreira no banco e suíte de isolamento automatizada.
 
 **Como levo minhas notas para outro lugar?**
-Baixe o backup completo em Conta (JSON com notas, links e imagens) ou exporte cada nota em `.md`, `.json` ou `.tex`. A restauração substitui os dados atuais.
+Baixe o backup completo em Configurações, seção Dados (JSON com notas, links e imagens) ou exporte cada nota em `.md`, `.json` ou `.tex`. A restauração substitui os dados atuais.
 
 **Excluí minha conta. E agora?**
-Dentro de 24 horas, entre e escolha Restaurar conta no aviso exibido. Depois do prazo, a purga remove tudo permanentemente.
+Dentro de 24 horas, entre novamente com suas credenciais e escolha Restaurar conta na tela de recuperação. Se preferir seguir com a exclusão, basta sair. Depois do prazo, a purga remove tudo permanentemente.
 
 **Funciona sem internet ou como aplicativo de celular?**
 Não. O Caderno Aberto é uma aplicação web responsiva, em português, que exige conexão; não há modo offline nem aplicativo nativo.
