@@ -12,6 +12,7 @@ export async function entrar(page: Page, email: string, senha: string) {
 export async function entrarAdmin(page: Page) {
   await entrar(page, ADMIN_PADRAO.email, ADMIN_PADRAO.senha);
   await page.waitForURL((url) => !url.hash.startsWith("#/entrar"), { timeout: 30000 });
+  await expect(page.getByLabel("E-mail")).toHaveCount(0);
 }
 
 export function criarProfessorUnico() {

@@ -25,7 +25,7 @@ test.describe("Edge cases", () => {
   test("exclusão sem EXCLUIR bloqueada", async ({ page }) => {
     const { email, nome } = criarProfessorUnico();
     await criarContaEentrar(page, { nome, email, senha: "senha123" });
-    await page.goto("/#/conta");
+    await page.goto("/#/configuracoes/exclusao");
     await page.getByRole("button", { name: "Excluir minha conta" }).click();
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Continuar" }).click();
@@ -41,10 +41,10 @@ test.describe("Edge cases", () => {
     });
   });
 
-  test("importação de nota inexistente", async ({ page }) => {
+  test("importação de nota na tela Notas", async ({ page }) => {
     const { email, nome } = criarProfessorUnico();
     await criarContaEentrar(page, { nome, email, senha: "senha123" });
-    await page.goto("/#/conta");
-    await expect(page.getByText("Backup e importação")).toBeVisible();
+    await page.goto("/#/notas");
+    await expect(page.getByRole("button", { name: /Importar nota/i })).toBeVisible();
   });
 });

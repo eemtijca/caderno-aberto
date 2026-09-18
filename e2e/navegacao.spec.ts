@@ -17,8 +17,8 @@ test.describe("Navegação e roteamento", () => {
     await expect(page.getByText(/Turmas/i).first()).toBeVisible();
     await page.goto("/#/links");
     await expect(page.getByText(/Links/i).first()).toBeVisible();
-    await page.goto("/#/conta");
-    await expect(page.getByText(/Conta/i).first()).toBeVisible();
+    await page.goto("/#/configuracoes");
+    await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
     await page.goto("/#/editor/semid");
     await expect(page).toHaveURL(/#\/notas|#\/editor/);
     await page.goto("/#/rota-invalida-xyz");
@@ -49,9 +49,9 @@ test.describe("Navegação e roteamento", () => {
     await criarEConfirmar(page);
     await page.goto("/#/");
 
-    // O perfil no topo reúne Conta e Sair.
+    // O perfil no topo reúne Configurações e Sair.
     await page.getByRole("button", { name: /Perfil de/i }).click();
-    await expect(page.getByRole("menuitem", { name: "Conta", exact: true })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Configurações", exact: true })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "Sair da conta" })).toBeVisible();
     await page.keyboard.press("Escape");
 

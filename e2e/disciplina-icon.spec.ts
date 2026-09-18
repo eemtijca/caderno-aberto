@@ -1,4 +1,4 @@
-// Disciplinas e seletor de ícones na página de conta.
+// Disciplinas e seletor de ícones nas configurações.
 import { expect, test, type Page } from "@playwright/test";
 import { criarContaEentrar } from "./helpers/auth";
 
@@ -8,26 +8,43 @@ async function loginNovo(page: Page) {
 }
 
 test.describe("Disciplina e ícones", () => {
-  test("seletor de ícone em grade, sem rótulos visíveis", async ({ page }) => {
+  test("seletor de ícone em menu suspenso", async ({ page }) => {
     await loginNovo(page);
-    await page.goto("/#/conta");
-    await expect(page.getByText("Disciplinas").first()).toBeVisible();
-    const grade = page.getByRole("radiogroup", { name: "Ícone da disciplina" }).first();
-    await expect(grade).toBeVisible({ timeout: 5000 });
-    await expect(grade.getByRole("radio")).toHaveCount(16);
-    const quimica = grade.getByRole("radio", { name: "Química" });
-    await expect(quimica.locator("svg")).toBeVisible();
-    await quimica.click();
-    await expect(quimica).toHaveAttribute("aria-checked", "true");
+    await page.goto("/#/configuracoes/disciplinas");
+    await expect(page.getByRole("heading", { name: "Disciplinas", level: 1 })).toBeVisible();
+    const combo = page.getByRole("combobox", { name: "Ícone da disciplina" }).first();
+    await expect(combo).toBeVisible({ timeout: 5000 });
+    await combo.click();
+    const lista = page.getByRole("listbox");
+    await expect(lista.getByRole("option")).toHaveCount(16);
+    await lista.getByRole("option", { name: "Química" }).click();
+    await expect(combo).toContainText("Química");
   });
 
   test("criacao de disciplina com icone e cor", async ({ page }) => {
     await loginNovo(page);
-    await page.goto("/#/conta");
+    await page.goto("/#/configuracoes/disciplinas");
     await page.getByPlaceholder("Nova disciplina (ex.: Química)").fill("História");
-    await page.getByRole("radio", { name: "História" }).first().click();
+    await page.getByRole("combobox", { name: "Ícone da disciplina" }).first().click();
+    await page.getByRole("option", { name: "História" }).click();
     await page.getByRole("button", { name: "Criar" }).first().click();
     await expect(page.getByText("Disciplina criada")).toBeVisible({ timeout: 5000 });
     await expect(page.getByText("História").first()).toBeVisible();
+  });
+
+  test("edicao permite alterar nome, cor e icone", async ({ page }) => {
+    await loginNovo(page);
+    await page.goto("/#/configuracoes/disciplinas");
+    await page.getByPlaceholder("Nova disciplina (ex.: Química)").fill("Biologia");
+    await page.getByRole("button", { name: "Criar" }).first().click();
+    await expect(page.getByText("Disciplina criada")).toBeVisible({ timeout: 5000 });
+
+    await page.getByRole("button", { name: "Editar Biologia" }).click();
+    await page.getByLabel("Novo nome da disciplina").fill("Ciências");
+    await page.getByRole("combobox", { name: "Ícone da disciplina" }).first().click();
+    await page.getByRole("option", { name: "Física", exact: true }).click();
+    await page.getByRole("button", { name: "Salvar" }).first().click();
+    await expect(page.getByText("Disciplina atualizada")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Ciências").first()).toBeVisible();
   });
 });

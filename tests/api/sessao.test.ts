@@ -1,7 +1,7 @@
 // Ciclo de vida da sessão: rotação, reuso, logout e troca de senha.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Cliente } from "./ajuda/cliente";
-import { criarProfessor, entrarAdmin, removerUsuarios, sufixo } from "./ajuda/apoio";
+import { criarProfessor, entrarAdmin, ipTeste, removerUsuarios, sufixo } from "./ajuda/apoio";
 
 const suf = sufixo();
 let admin: Cliente;
@@ -69,5 +69,33 @@ describe("sessão", () => {
     expect((await replay.post("/api/auth/renovar", {})).status, "refresh antigo inválido").toBe(
       401,
     );
+  });
+
+  it("manter conectado controla a persistência do refresh", async () => {
+    const email = `sess_pers_${suf}@exemplo.br`;
+    criados.push(email);
+    await criarProfessor(admin, { nome: "Persistente", email, senha: "senha123" });
+
+    const persistente = new Cliente();
+    const r1 = await persistente.post(
+      "/api/auth/entrar",
+      { email, senha: "senha123", manterConectado: true },
+      ipTeste(),
+    );
+    expect(r1.status).toBe(200);
+    const c1 = r1.cabecalhos.getSetCookie().find((c) => c.startsWith("sessao_refresh="));
+    expect(c1, "refresh definido").toBeTruthy();
+    expect(c1!.toLowerCase(), "cookie persistente").toContain("max-age");
+
+    const sessao = new Cliente();
+    const r2 = await sessao.post(
+      "/api/auth/entrar",
+      { email, senha: "senha123", manterConectado: false },
+      ipTeste(),
+    );
+    expect(r2.status).toBe(200);
+    const c2 = r2.cabecalhos.getSetCookie().find((c) => c.startsWith("sessao_refresh="));
+    expect(c2, "refresh definido").toBeTruthy();
+    expect(c2!.toLowerCase(), "cookie de sessão").not.toContain("max-age");
   });
 });

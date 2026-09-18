@@ -1,7 +1,12 @@
 // Fluxos de autenticação: login como porta de entrada, código e solicitações.
 import { test, expect } from "@playwright/test";
 import { criarContaEentrar, criarProfessorUnico } from "./helpers/auth";
-import { criarUsuarioInativo, emitirCodigo, removerUsuarios } from "./helpers/db";
+import {
+  criarUsuarioAtivo,
+  criarUsuarioInativo,
+  emitirCodigo,
+  removerUsuarios,
+} from "./helpers/db";
 
 test.describe("Autenticação", () => {
   test("a raiz anônima é a tela de login, sem landing", async ({ page }) => {
@@ -61,5 +66,33 @@ test.describe("Autenticação", () => {
     await criarContaEentrar(page, { nome, email, senha: "senha123" });
     await page.goto("/#/entrar");
     await expect(page).not.toHaveURL(/#\/entrar/, { timeout: 8000 });
+  });
+
+  test("manter conectado controla a persistência do cookie", async ({ page, context }) => {
+    const email = `pers_${Date.now()}@exemplo.br`;
+    await criarUsuarioAtivo(email, "Prof Persistente", "senha123");
+    const caixa = page.getByRole("checkbox", { name: "Manter conectado neste dispositivo" });
+
+    // Desmarcado: cookie de sessão (expires -1).
+    await page.goto("/#/entrar");
+    await page.getByLabel("E-mail").fill(email);
+    await page.getByLabel("Senha", { exact: true }).fill("senha123");
+    await caixa.uncheck();
+    await page.getByRole("button", { name: "Entrar" }).click();
+    await page.waitForURL((url) => !url.hash.startsWith("#/entrar"), { timeout: 15000 });
+    const sessao = (await context.cookies()).find((c) => c.name === "sessao_refresh");
+    expect(sessao?.expires, "cookie de sessão").toBe(-1);
+
+    // Marcado: cookie persistente.
+    await page.getByRole("button", { name: "Sair da conta" }).first().click();
+    await page.getByLabel("E-mail").fill(email);
+    await page.getByLabel("Senha", { exact: true }).fill("senha123");
+    await caixa.check();
+    await page.getByRole("button", { name: "Entrar" }).click();
+    await page.waitForURL((url) => !url.hash.startsWith("#/entrar"), { timeout: 15000 });
+    const persistente = (await context.cookies()).find((c) => c.name === "sessao_refresh");
+    expect(persistente?.expires ?? -1, "cookie persistente").toBeGreaterThan(0);
+
+    await removerUsuarios([email]);
   });
 });
