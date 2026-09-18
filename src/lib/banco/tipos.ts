@@ -20,6 +20,10 @@ export type PerfilLinha = {
   email: string;
   escola: string;
   preferencias: Record<string, unknown>;
+  statusConta?: string;
+  motivo?: string;
+  suspensoEm?: Date | null;
+  exclusaoOrigem?: string | null;
   criadoEm: Date;
   atualizadoEm: Date;
   exclusaoSolicitadaEm?: Date | null;
@@ -65,6 +69,7 @@ export type NotaLinha = {
   /** Aparência da leitura (fonte/escala/entrelinha). Vazio = padrão do app. */
   aparencia: AparenciaNota;
   busca: string;
+  excluidoEm?: Date | null;
   criadoEm: Date;
   atualizadoEm: Date;
 };
@@ -83,6 +88,7 @@ export type LinkLinha = {
   pausadoNaExclusao: boolean;
   expiraEm: Date | null;
   acessos: number;
+  excluidoEm?: Date | null;
   criadoEm: Date;
 };
 
@@ -128,5 +134,18 @@ export type EventoSegurancaLinha = {
   ip: string;
   agente: string;
   detalhe: Record<string, unknown>;
+  criadoEm: Date;
+};
+
+export type AprovacaoLinha = {
+  id: string;
+  tipo: string;
+  alvoId: string;
+  alvoEmail: string;
+  motivo: string;
+  solicitadoPor: string;
+  aprovadoPor: string | null;
+  status: string;
+  expiraEm: Date;
   criadoEm: Date;
 };
