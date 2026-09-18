@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ArrowLeft, Eye, EyeOff, Link2, Pencil, Printer, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { TelaEstado } from "@/components/tela-estado";
 import { useTheme } from "next-themes";
 import { useNota } from "@/lib/notas/api-client";
 import { useSessao } from "@/hooks/use-sessao";
@@ -41,15 +42,13 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
 
   if (isError || !nota) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-20 text-center">
-        <p className="fonte-display text-xl font-bold">Nota não encontrada</p>
-        <p className="text-muted-foreground mt-2 text-sm">
-          O endereço pode estar errado ou a nota foi excluída.
-        </p>
-        <Button onClick={() => navegar("/notas")} className="mt-5 gap-2 rounded-xl">
-          <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar às notas
-        </Button>
-      </div>
+      <TelaEstado
+        variante="nao_encontrado"
+        titulo="Nota não encontrada"
+        descricao="O endereço pode estar errado ou a nota foi movida para a lixeira."
+        acao={{ rotulo: "Voltar às notas", onClick: () => navegar("/notas") }}
+        incorporado
+      />
     );
   }
 
