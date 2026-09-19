@@ -5,6 +5,7 @@ import { banco } from "@/lib/banco";
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao";
 import type { LinkLinha } from "@/lib/banco/tipos";
 import { gerarToken } from "@/lib/api/token";
+import { ehUuid } from "@/lib/identificador";
 
 export const dynamic = "force-dynamic";
 
@@ -55,8 +56,12 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   if (Object.keys(dados).length === 0) return erroApi("Nada para atualizar.");
 
   const db = await banco();
-  const existe = await db.links.findFirst({ where: { id, professorId: usuario.id } });
-  if (!existe) return erroApi("Link não encontrado.", 404);
+  const existe = ehUuid(id)
+    ? await db.links.findFirst({
+        where: { id, professorId: usuario.id, excluidoEm: null },
+      })
+    : null;
+  if (!existe) return erroApi("Link não encontrado.", 404, "NAO_ENCONTRADO");
   const link = (await db.links.update({
     where: { id },
     data: dados,
@@ -73,6 +78,11 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
 
   const db = await banco();
-  await db.links.deleteMany({ where: { id, professorId: usuario.id } });
+  if (!ehUuid(id)) return erroApi("Link não encontrado.", 404, "NAO_ENCONTRADO");
+  // Vai para a lixeira (soft delete), preservando o token.
+  await db.links.updateMany({
+    where: { id, professorId: usuario.id, excluidoEm: null },
+    data: { excluidoEm: new Date() },
+  });
   return json({ ok: true });
 }

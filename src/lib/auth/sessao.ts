@@ -10,6 +10,7 @@ import type { Papel } from "@/lib/banco/tipos";
 export const COOKIE_ACESSO = "sessao";
 export const COOKIE_REFRESH = "sessao_refresh";
 const UMA_HORA = 60 * 60;
+const VINTE_QUATRO_HORAS = 24 * 60 * 60;
 const TRINTA_DIAS = 30 * 24 * 60 * 60;
 
 const chave = new TextEncoder().encode(AUTH_SECRET);
@@ -35,13 +36,14 @@ async function silenciar(promessa: PromiseLike<unknown>): Promise<void> {
   }
 }
 
-function opcoesCookie(maxIdade: number) {
+function opcoesCookie(maxIdade?: number) {
   return {
     httpOnly: true as const,
     sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: maxIdade,
+    // Sem maxIdade o cookie é de sessão e some ao fechar o navegador.
+    ...(maxIdade === undefined ? {} : { maxAge: maxIdade }),
   };
 }
 
@@ -66,19 +68,23 @@ export async function lerAcesso(token: string): Promise<string | null> {
   }
 }
 
-/** Cria a sessão persistente (refresh) e grava os dois cookies. */
+/** Cria a sessão (refresh) e grava os dois cookies. */
 export async function iniciarSessao(
   usuarioId: string,
   req?: NextRequest,
   papel: Papel = "professor",
+  manterConectado = true,
 ): Promise<{ acesso: string }> {
   const db = banco();
   const refresh = randomBytes(32).toString("hex");
-  const expira = new Date(Date.now() + TRINTA_DIAS * 1000);
+  // Sessão persistente dura 30 dias; a de sessão curta dura 24 horas.
+  const validade = manterConectado ? TRINTA_DIAS : VINTE_QUATRO_HORAS;
+  const expira = new Date(Date.now() + validade * 1000);
   await db.sessoes.create({
     data: {
       usuarioId,
       tokenHash: hashOpaco(refresh),
+      persistente: manterConectado,
       expiraEm: expira,
       ip:
         req?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -93,7 +99,7 @@ export async function iniciarSessao(
   const acesso = await emitirAcesso(usuarioId, papel);
   const jar = await cookies();
   jar.set(COOKIE_ACESSO, acesso, opcoesCookie(UMA_HORA));
-  jar.set(COOKIE_REFRESH, refresh, opcoesCookie(TRINTA_DIAS));
+  jar.set(COOKIE_REFRESH, refresh, opcoesCookie(manterConectado ? TRINTA_DIAS : undefined));
   return { acesso };
 }
 
@@ -121,7 +127,7 @@ export async function renovarSessao(req: NextRequest): Promise<SessaoUsuario | n
   // Invalida o refresh anterior; concorrência perde (sem sessão dupla).
   const apagadas = await db.sessoes.deleteMany({ where: { tokenHash: hashOpaco(refresh) } });
   if (apagadas.count !== 1) return null;
-  await iniciarSessao(usuario.id, req, usuario.papel as Papel);
+  await iniciarSessao(usuario.id, req, usuario.papel as Papel, sessao.persistente);
   return mapearUsuario(usuario);
 }
 

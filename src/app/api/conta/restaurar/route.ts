@@ -3,14 +3,14 @@
 import { NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { banco } from "@/lib/banco";
-import { CRON_SECRET } from "@/lib/ambiente";
+import { CRON_SECRET, LIXEIRA_DIAS } from "@/lib/ambiente";
 import { sessaoProfessor, json, erroApi, naoAutenticado } from "@/lib/api/sessao";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/conta/restaurar. Cancela solicitação de exclusão dentro da carência.
 export async function POST(req: NextRequest) {
-  const sessao = await sessaoProfessor(req);
+  const sessao = await sessaoProfessor(req, { permitirCarencia: true });
   if (!sessao) return naoAutenticado();
   const { usuario } = sessao;
   const db = await banco();
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/conta/restaurar. Remove contas com carência vencida.
 // Exige sempre o segredo do agendador (CRON_SECRET).
+// Sem "confirmar=1" apenas pré-visualiza o que seria removido (dry-run).
 export async function DELETE(req: NextRequest) {
   if (!CRON_SECRET) return erroApi("Agendador não configurado.", 503);
   const cabecalho = req.headers.get("authorization") ?? "";
@@ -49,7 +50,8 @@ export async function DELETE(req: NextRequest) {
     cabecalho.length === esperado.length &&
     timingSafeEqual(Buffer.from(cabecalho), Buffer.from(esperado));
   if (!confere) return erroApi("Acesso negado.", 403);
-  return json({ removidas: await removerVencidas() });
+  const confirmar = req.nextUrl.searchParams.get("confirmar") === "1";
+  return json({ previa: !confirmar, ...(await removerVencidas(confirmar)) });
 }
 
 // GET /api/conta/restaurar. Variante para agendadores que disparam GET
@@ -62,32 +64,50 @@ export async function GET(req: NextRequest) {
     cabecalho.length === esperado.length &&
     timingSafeEqual(Buffer.from(cabecalho), Buffer.from(esperado));
   if (!confere) return erroApi("Acesso negado.", 403);
-  return json({ removidas: await removerVencidas() });
+  const confirmar = req.nextUrl.searchParams.get("confirmar") === "1";
+  return json({ previa: !confirmar, ...(await removerVencidas(confirmar)) });
 }
 
-async function removerVencidas(): Promise<number> {
+async function removerVencidas(confirmar: boolean): Promise<{
+  contas: number;
+  notas: number;
+  links: number;
+}> {
   const db = banco();
-  // Purga em lotes só as contas com exclusão solicitada e carência vencida.
   const agora = new Date();
-  let removidas = 0;
-  for (;;) {
-    const lote = await db.profiles.findMany({
-      where: {
-        exclusaoSolicitadaEm: { not: null },
-        expiraEm: { lt: agora },
-      },
-      select: { id: true },
-      take: 100,
-    });
-    if (lote.length === 0) break;
-    for (const perfil of lote) {
-      try {
-        await db.usuarios.delete({ where: { id: perfil.id } });
-        removidas++;
-      } catch {
-        // Falhas isoladas não interrompem a purga.
-      }
+  const limiteLixeira = new Date(agora.getTime() - LIXEIRA_DIAS * 24 * 60 * 60 * 1000);
+
+  // Contas com carência vencida, ignorando administradores.
+  const perfis = await db.profiles.findMany({
+    where: {
+      exclusaoSolicitadaEm: { not: null },
+      expiraEm: { lt: agora },
+      usuario: { papel: { not: "admin" } },
+    },
+    select: { id: true },
+    take: 500,
+  });
+  if (confirmar) {
+    for (const perfil of perfis) {
+      await db.usuarios.delete({ where: { id: perfil.id } }).catch(() => undefined);
     }
   }
-  return removidas;
+
+  // Itens da lixeira além do prazo de retenção.
+  const notas = await db.notas.findMany({
+    where: { excluidoEm: { lt: limiteLixeira } },
+    select: { id: true },
+  });
+  const links = await db.links.findMany({
+    where: { excluidoEm: { lt: limiteLixeira } },
+    select: { id: true },
+  });
+  if (confirmar && notas.length > 0) {
+    await db.notas.deleteMany({ where: { id: { in: notas.map((n) => n.id) } } });
+  }
+  if (confirmar && links.length > 0) {
+    await db.links.deleteMany({ where: { id: { in: links.map((l) => l.id) } } });
+  }
+
+  return { contas: perfis.length, notas: notas.length, links: links.length };
 }

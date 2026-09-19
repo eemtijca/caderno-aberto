@@ -42,6 +42,10 @@ model Profiles {
   email                String        @default("")
   escola               String        @default("")
   preferencias         Json          @default("{}") @db.JsonB
+  statusConta          String        @default("ativo") @map("status_conta")
+  motivo               String        @default("")
+  suspensoEm           DateTime?     @map("suspenso_em") @db.Timestamptz
+  exclusaoOrigem       String?       @map("exclusao_origem")
   criadoEm             DateTime      @default(now()) @map("criado_em") @db.Timestamptz
   atualizadoEm         DateTime      @default(now()) @map("atualizado_em") @db.Timestamptz
   exclusaoSolicitadaEm DateTime?     @map("exclusao_solicitada_em") @db.Timestamptz
@@ -107,6 +111,7 @@ model Notas {
   blocos         Json         @default("[]") @db.JsonB
   aparencia      Json         @default("{}") @db.JsonB
   busca          String       @default("")
+  excluidoEm     DateTime?    @map("excluido_em") @db.Timestamptz
   criadoEm       DateTime     @default(now()) @map("criado_em") @db.Timestamptz
   atualizadoEm   DateTime     @default(now()) @map("atualizado_em") @db.Timestamptz
   disciplina     Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: SetNull, onUpdate: NoAction)
@@ -117,6 +122,7 @@ model Notas {
   @@index([professorId, atualizadoEm(sort: Desc)], map: "notas_professor_atualizado_idx")
   @@index([professorId, disciplinaId], map: "notas_professor_disciplina_idx")
   @@index([professorId, status], map: "notas_professor_status_idx")
+  @@index([professorId, excluidoEm], map: "notas_professor_excluido_idx")
   @@index([turmasIds], type: Gin, map: "notas_turmas_ids_idx")
   @@map("notas")
 }
@@ -136,6 +142,7 @@ model Links {
   pausadoNaExclusao Boolean      @default(false) @map("pausado_na_exclusao")
   expiraEm          DateTime?    @map("expira_em") @db.Timestamptz
   acessos           Int          @default(0)
+  excluidoEm        DateTime?    @map("excluido_em") @db.Timestamptz
   criadoEm          DateTime     @default(now()) @map("criado_em") @db.Timestamptz
   professor         Profiles     @relation(fields: [professorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   nota              Notas?       @relation(fields: [notaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -143,6 +150,7 @@ model Links {
   disciplina        Disciplinas? @relation(fields: [disciplinaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([professorId], map: "links_professor_idx")
+  @@index([professorId, excluidoEm], map: "links_professor_excluido_idx")
   @@index([notaId], map: "links_nota_idx")
   @@index([turmaId], map: "links_turma_idx")
   @@index([disciplinaId], map: "links_disciplina_idx")
@@ -154,6 +162,7 @@ model Sessoes {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   usuarioId   String   @map("usuario_id") @db.Uuid
   tokenHash   String   @unique(map: "sessoes_token_hash_key") @map("token_hash")
+  persistente Boolean  @default(true)
   criadoEm    DateTime @default(now()) @map("criado_em") @db.Timestamptz
   expiraEm    DateTime @map("expira_em") @db.Timestamptz
   ultimoUsoEm DateTime @default(now()) @map("ultimo_uso_em") @db.Timestamptz
@@ -225,4 +234,21 @@ model TentativasLimite {
   @@id([chave, feitaEm], map: "tentativas_limite_pkey")
   @@index([feitaEm], map: "tentativas_limite_feita_idx")
   @@map("tentativas_limite")
+}
+
+// Aprovação em duas etapas (quatro olhos) para ações destrutivas de administração.
+model AprovacoesAcao {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tipo          String
+  alvoId        String    @map("alvo_id") @db.Uuid
+  alvoEmail     String    @map("alvo_email")
+  motivo        String    @default("")
+  solicitadoPor String    @map("solicitado_por") @db.Uuid
+  aprovadoPor   String?   @map("aprovado_por") @db.Uuid
+  status        String    @default("pendente")
+  expiraEm      DateTime  @map("expira_em") @db.Timestamptz
+  criadoEm      DateTime  @default(now()) @map("criado_em") @db.Timestamptz
+
+  @@index([status, criadoEm(sort: Desc)], map: "aprovacoes_status_idx")
+  @@map("aprovacoes_acao")
 }

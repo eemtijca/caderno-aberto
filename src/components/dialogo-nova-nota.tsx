@@ -191,7 +191,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
             ) : disciplinas && disciplinas.length > 0 ? (
               <Select value={disciplinaId} onValueChange={setDisciplinaId}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione…" />
+                  <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
                   {disciplinas.map((d) => (
@@ -249,7 +249,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
             <Label>
               Turmas (
               {turmasQ.isLoading
-                ? "carregando…"
+                ? "carregando..."
                 : turmasDoAno.length > 0
                   ? "opcional"
                   : "nenhuma em " + anoLetivo}
@@ -288,7 +288,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">
-                Cadastre turmas em <b>Conta → Turmas</b> para vinculá-las aqui.
+                Cadastre turmas em <b>Configurações, seção Turmas</b>, para vinculá-las aqui.
               </p>
             )}
           </div>

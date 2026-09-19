@@ -48,30 +48,49 @@ A rota de leitura converte WebP e SVG para PNG quando recebe `png=1`. SVG é ser
 
 ## Backup e restauração
 
-- Exportar: Conta, opção de backup, ou `GET /api/backup`.
-- Restaurar: Conta, opção de restauração, ou `POST /api/backup`.
+- Exportar: Configurações, seção Dados, opção de backup, ou `GET /api/backup`.
+- Restaurar: Configurações, seção Dados, opção de restauração, ou `POST /api/backup`.
 
 A restauração é substitutiva: apaga links, notas, turmas e disciplinas do professor e recria a partir do arquivo. Baixe um backup antes. As imagens antigas do armazenamento não são removidas fisicamente no fluxo.
 
 ## Exclusão de conta e purga
 
 1. O professor solicita a exclusão informando a senha e a palavra `EXCLUIR`.
-2. A conta entra em carência de 24 horas. O login fica bloqueado ao fim do prazo, os links públicos ficam indisponíveis e os links ativos são pausados.
-3. `POST /api/conta/restaurar` cancela a exclusão dentro do prazo e reativa os links pausados.
-4. A purga remove definitivamente as contas com prazo vencido.
+2. A sessão é encerrada e a conta entra em carência de 24 horas. As rotas privadas passam a recusar a conta, os links públicos ficam indisponíveis e os links ativos são pausados.
+3. Para recuperar, o professor faz login novamente e confirma a restauração na tela de recuperação. Em seguida, `POST /api/conta/restaurar` cancela a exclusão dentro do prazo e reativa os links pausados. Se preferir seguir com a exclusão, basta sair.
+4. A purga remove definitivamente as contas com prazo vencido, ignorando contas de administração.
 
-### Acionar a purga manualmente
+### Suspensão pela administração
+
+O administrador pode **desativar** um professor (reversível) informando motivo e a própria senha. A conta perde o acesso, as sessões e os códigos pendentes são revogados, e o login passa a exibir a tela de status "Conta desativada" com o motivo. Reativar exige a senha do administrador. A conta de bootstrap (`ADMIN_EMAIL`) e o último administrador ativo não podem ser suspensos nem excluídos.
+
+### Lixeira e retenção
+
+Notas e links excluídos vão para a lixeira (`excluidoEm`) e podem ser restaurados por `LIXEIRA_DIAS` dias (padrão 30), inclusive pelo atalho Desfazer no aviso. A purga agendada remove o que passa do prazo.
+
+### Acionar a manutenção manualmente
+
+A rota pré-visualiza por padrão. Para remover de fato, acrescente `?confirmar=1`.
 
 ```bash
-curl -X DELETE https://app.exemplo.br/api/conta/restaurar \
+# Pré-visualização (dry-run)
+curl -X DELETE "https://app.exemplo.br/api/conta/restaurar" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+# Execução
+curl -X DELETE "https://app.exemplo.br/api/conta/restaurar?confirmar=1" \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-Resposta `{ "removidas": 2 }`. Sem `CRON_SECRET` configurado, a rota responde `503`.
+Resposta `{ "previa": false, "contas": 2, "notas": 1, "links": 0 }`. Sem `CRON_SECRET` configurado, a rota responde `503`.
 
 ### Agendador
 
-O `vercel.json` registra o Cron diário em `GET /api/conta/restaurar` e a Vercel envia o `Authorization` automaticamente. Fora da Vercel, agende a mesma chamada com o cabeçalho (cron do host ou `schedule` do GitHub Actions).
+O `vercel.json` registra o Cron diário em `GET /api/conta/restaurar?confirmar=1` e a Vercel envia o `Authorization` automaticamente. Fora da Vercel, agende a mesma chamada com o cabeçalho (cron do host ou `schedule` do GitHub Actions).
+
+### Snapshot antes de restaurar
+
+Toda restauração de backup guarda um snapshot JSON do estado anterior em `{professorId}/backups/`. Os arquivos ficam listados em Configurações, seção Dados, para download e reimportação. Com `BACKUP_BEFORE_MIGRATE=1`, o entrypoint também grava um dump lógico das tabelas antes de aplicar migrações pendentes.
 
 ## Links públicos
 
@@ -94,6 +113,7 @@ O `vercel.json` registra o Cron diário em `GET /api/conta/restaurar` e a Vercel
 | E-mail não enviado                 | Não se aplica: o acesso usa código gerido pela administração.                                                  |
 | Imagem não aparece                 | Caminho fora da pasta do professor ou imagem não referenciada nos blocos. Confira o armazenamento.             |
 | Login falha com mensagem genérica  | Credenciais incorretas, conta não ativada por código ou carência de exclusão vencida. Verifique o log.         |
+| App abre na tela de recuperação    | Conta com exclusão solicitada e dentro da carência. Restaure pela tela ou conclua a exclusão saindo.           |
 | Muitas tentativas (429)            | Limite por IP atingido. Aguarde a janela de 5 minutos ou ajuste `AUTH_LIMITE_*`.                               |
 | Link público indisponível          | Link pausado, expirado, revogado ou professor em exclusão. Verifique a vista Links.                            |
 | Testes de isolamento falham        | Banco não migrado ou papel `app_teste` ausente. Rode `npm run test:api`, que aplica o script.                  |

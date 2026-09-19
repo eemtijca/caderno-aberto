@@ -102,7 +102,7 @@ export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onP
               </SelectItem>
             ))}
             <SelectItem value="livre" className="text-xs">
-              Personalizado…
+              Personalizado...
             </SelectItem>
           </SelectContent>
         </Select>
@@ -122,7 +122,7 @@ export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onP
       <TextareaAuto
         valor={bloco.texto}
         onChange={(texto) => onPatch({ texto })}
-        placeholder="Texto do parágrafo. Use **negrito**, $fórmulas$ e \resultado{…}"
+        placeholder="Texto do parágrafo. Use **negrito**, $fórmulas$ e \resultado{...}"
         ariaLabel="Texto do parágrafo"
       />
     </div>
@@ -313,10 +313,10 @@ export function EditorChamada({ bloco, onPatch }: { bloco: BlocoChamada; onPatch
         onChange={(texto) => onPatch({ texto })}
         placeholder={
           bloco.estilo === "atencao"
-            ? "O alerta para a turma…"
+            ? "O alerta para a turma..."
             : bloco.estilo === "diaadia"
-              ? "A conexão com o cotidiano…"
-              : "$P$ (W); $U$ (V)…"
+              ? "A conexão com o cotidiano..."
+              : "$P$ (W); $U$ (V)..."
         }
         ariaLabel="Texto da chamada"
       />
@@ -382,12 +382,12 @@ export function EditorFigura({ bloco, onPatch }: { bloco: BlocoFigura; onPatch: 
             disabled={enviando}
           >
             <ImagePlus className="h-3.5 w-3.5" aria-hidden />
-            {enviando ? "Enviando…" : "Enviar imagem"}
+            {enviando ? "Enviando..." : "Enviar imagem"}
           </Button>
           <Input
             value={bloco.url}
             onChange={(e) => onPatch({ url: e.target.value })}
-            placeholder="…ou cole uma URL (https://…)"
+            placeholder="...ou cole uma URL (https://...)"
             className="h-8 flex-1 rounded-lg text-xs"
             aria-label="URL da imagem"
           />
@@ -670,7 +670,7 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                 <TextareaAuto
                   valor={q.enunciado}
                   onChange={(enunciado) => mudarQuestao(i, q.id, { enunciado })}
-                  placeholder="Enunciado da questão…"
+                  placeholder="Enunciado da questão..."
                   ariaLabel={`Enunciado da questão ${j + 1}`}
                 />
                 {q.alternativas.length > 0 ? (

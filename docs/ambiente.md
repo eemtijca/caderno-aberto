@@ -23,6 +23,11 @@ Todas as variáveis passam por `src/lib/ambiente.ts`, validado com zod na partid
 | `STORAGE_S3_SECRET_KEY`  | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Chave secreta.                                                                              |
 | `AUTH_LIMITE_TENTATIVAS` | Não                        | `30`                                                  | Tentativas por IP a cada 5 minutos nas rotas de autenticação.                               |
 | `AUTH_LIMITE_CODIGO`     | Não                        | `5`                                                   | Tentativas de verificação de código por e-mail a cada 5 minutos.                            |
+| `APROVACAO_DUPLA`        | Não                        | `0`                                                   | Com `1`, ações destrutivas de admin exigem aprovação de um segundo administrador.           |
+| `MANUTENCAO`             | Não                        | `0`                                                   | Com `1`, somente administradores e rotas essenciais acessam a aplicação.                    |
+| `LIXEIRA_DIAS`           | Não                        | `30`                                                  | Retenção de notas e links na lixeira antes da purga.                                        |
+| `BACKUP_BEFORE_MIGRATE`  | Não                        | `0`                                                   | Com `1`, o entrypoint grava um dump lógico antes de aplicar migrações.                      |
+| `BACKUP_DIR`             | Não                        | `/data/backups`                                       | Diretório dos dumps anteriores à migração.                                                  |
 | `CODIGO_EXPIRA_MINUTOS`  | Não                        | `60`                                                  | Validade do código de acesso, em minutos.                                                   |
 
 ## Conexão com o banco

@@ -4,7 +4,7 @@ import type { NotaDados } from "./tipos";
 export const DEMO_NOTA: NotaDados = {
   id: "demo-landing",
   slug: "movimento-uniforme-demo",
-  titulo: "Movimento Uniforme — da régua ao GPS",
+  titulo: "Movimento Uniforme: da régua ao GPS",
   disciplinaId: "demo-fisica",
   disciplina: { id: "demo-fisica", nome: "Física", cor: "ciano", icone: "Atom", ordem: 1 },
   anoLetivo: 2026,

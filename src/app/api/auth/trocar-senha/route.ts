@@ -33,13 +33,17 @@ export async function POST(req: NextRequest) {
   }
 
   // Derruba as sessões antigas e reabre a atual em seguida.
-  await db.$transaction(async (tx) => {
-    await tx.usuarios.update({
+  const novaHash = await hashSenha(nova);
+  const alterado = await db.$transaction(async (tx) => {
+    const r = await tx.usuarios.updateMany({
       where: { id: usuario.id },
-      data: { senhaHash: await hashSenha(nova) },
+      data: { senhaHash: novaHash },
     });
+    if (r.count === 0) return false;
     await tx.sessoes.deleteMany({ where: { usuarioId: usuario.id } });
+    return true;
   });
+  if (!alterado) return naoAutenticado();
   await iniciarSessao(usuario.id, req, usuario.papel === "admin" ? "admin" : "professor");
 
   return json({ ok: true });

@@ -23,6 +23,16 @@ const esquema = z.object({
   AUTH_LIMITE_CODIGO: z.coerce.number().int().positive().default(5),
   // Validade do código de acesso, em minutos.
   CODIGO_EXPIRA_MINUTOS: z.coerce.number().int().positive().default(60),
+  // E-mail do administrador de bootstrap, protegido contra exclusão/suspensão.
+  ADMIN_EMAIL: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  // Liga a aprovação em duas etapas (quatro olhos) para ações destrutivas.
+  APROVACAO_DUPLA: z.enum(["0", "1"]).default("0"),
+  // Dump do banco antes de aplicar migrações no entrypoint.
+  BACKUP_BEFORE_MIGRATE: z.enum(["0", "1"]).default("0"),
+  // Modo manutenção: bloqueia o acesso de quem não é administrador.
+  MANUTENCAO: z.enum(["0", "1"]).default("0"),
+  // Retenção da lixeira, em dias.
+  LIXEIRA_DIAS: z.coerce.number().int().positive().default(30),
 });
 
 const parsed = esquema.safeParse(process.env);
@@ -51,6 +61,11 @@ const env = parsed.success
       AUTH_LIMITE_TENTATIVAS: 30,
       AUTH_LIMITE_CODIGO: 5,
       CODIGO_EXPIRA_MINUTOS: 60,
+      ADMIN_EMAIL: undefined,
+      APROVACAO_DUPLA: "0" as const,
+      BACKUP_BEFORE_MIGRATE: "0" as const,
+      MANUTENCAO: "0" as const,
+      LIXEIRA_DIAS: 30,
     };
 
 if (env.STORAGE_DRIVER === "s3") {
@@ -88,3 +103,8 @@ export const APP_URL = env.APP_URL ?? "";
 export const LIMITE_TENTATIVAS_LOGIN = env.AUTH_LIMITE_TENTATIVAS;
 export const LIMITE_CODIGO = env.AUTH_LIMITE_CODIGO;
 export const CODIGO_EXPIRA_MINUTOS = env.CODIGO_EXPIRA_MINUTOS;
+export const ADMIN_EMAIL = env.ADMIN_EMAIL;
+export const APROVACAO_DUPLA = env.APROVACAO_DUPLA === "1";
+export const BACKUP_BEFORE_MIGRATE = env.BACKUP_BEFORE_MIGRATE === "1";
+export const MANUTENCAO = env.MANUTENCAO === "1";
+export const LIXEIRA_DIAS = env.LIXEIRA_DIAS;

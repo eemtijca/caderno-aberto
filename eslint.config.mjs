@@ -27,7 +27,6 @@ const eslintConfig = [
       "next-env.d.ts",
       "generated/**",
       "examples/**",
-      "skills",
       "tools/**",
       "public/**",
       "test-results/**",

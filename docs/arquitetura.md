@@ -22,7 +22,7 @@ flowchart LR
 - `src/app/api/`: rotas HTTP. Cada rota resolve a sessão com `sessaoProfessor`, filtra pelo dono no banco e responde com `json` ou `erroApi`. Todas usam `dynamic = "force-dynamic"`, exceto `GET /api`.
 - `src/app/`: páginas. Apenas `src/app/page.tsx` (shell com rotas hash) e `src/app/l/[token]` (página pública com metadados e OpenGraph).
 - `src/components/`: interface. O editor, as vistas de domínio, os diálogos e os componentes de `ui/` (shadcn).
-- `src/hooks/`: `use-sessao` (ciclo de autenticação e carência) e utilitários de interface.
+- `src/hooks/`: `use-sessao` (ciclo de autenticação e carência) e utilitários de interface, como o título da aba (`use-titulo-aba`).
 - `src/proxy.ts`: middleware que aplica CSRF, CSP com nonce e cabeçalhos de segurança, além de propagar o identificador do usuário.
 - `src/lib/auth/`: hash de senha (scrypt), sessões (JWT de acesso e refresh opaco com rotação) e validação de entrada.
 - `src/lib/api/`: helpers de sessão, serialização, token de link, limite de tentativas e resolução de links públicos.

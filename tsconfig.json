@@ -31,5 +31,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "skills", "tools", "download", "upload"]
+  "exclude": ["node_modules", "tools", "download", "upload"]
 }

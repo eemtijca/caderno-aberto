@@ -64,8 +64,8 @@ export class Cliente {
   patch(c: string, b?: unknown) {
     return this.pedir("PATCH", c, b);
   }
-  del(c: string) {
-    return this.pedir("DELETE", c);
+  del(c: string, b?: unknown) {
+    return this.pedir("DELETE", c, b);
   }
 
   cookie(nome: string): string | undefined {

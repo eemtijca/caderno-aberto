@@ -13,6 +13,7 @@ As principais ameaças consideradas são enumeração de contas, força bruta de
 - scrypt com `N=131072`, `r=8`, `p=1`, sal de 16 bytes e chave de 64 bytes. Hashes antigos continuam válidos e são regravados no login, sem interromper a operação.
 - Senha com no mínimo 8 e no máximo 256 caracteres.
 - JWT de acesso com validade de 1 hora e refresh opaco com rotação e trava de concorrência, em que apenas uma renovação vence. O refresh é armazenado apenas como SHA-256.
+- Com "manter conectado", o refresh é persistente por 30 dias; sem ele, o cookie é de sessão (some ao fechar o navegador) e a sessão no banco dura 24 horas. A escolha é preservada na rotação do refresh.
 - Cookies `HttpOnly`, `SameSite=Lax` e `Secure` em produção.
 - Troca de senha exige a senha atual e invalida todas as sessões. A recuperação por código também invalida todas as sessões e inicia uma nova.
 - Respostas de autenticação genéricas, sem enumeração de contas. O login confere a senha mesmo para e-mail inexistente ou conta não ativada, com um hash falso, para equalizar o tempo de resposta.
@@ -39,6 +40,15 @@ As principais ameaças consideradas são enumeração de contas, força bruta de
 - Tokens de links públicos têm 128 bits de entropia, com expiração, pausa e revogação. As imagens públicas só são servidas quando referenciadas pelos blocos das notas alcançáveis pelo link.
 - A restauração de backup valida o lote, os tipos e os tokens, que são criptográficos. A restauração é substitutiva, portanto baixe um backup antes.
 - Os e-mails são considerados dado pessoal: aparecem mascarados na auditoria e não vão para os logs.
+
+## Ações destrutivas
+
+- O login só revela o estado da conta depois de a senha conferir, preservando a não enumeração para terceiros.
+- Suspender e excluir contas exigem motivo e a senha do administrador (step-up). O último administrador ativo e a conta de bootstrap são protegidos.
+- Com `APROVACAO_DUPLA=1`, uma ação destrutiva só é executada após aprovação de um segundo administrador e não pode ser aprovada por quem a solicitou.
+- Notas e links usam exclusão reversível (lixeira) e a purga só remove itens vencidos.
+- A restauração de backup faz dry-run, guarda um snapshot do estado anterior e exige a palavra `SUBSTITUIR`.
+- A purga agendada pré-visualiza por padrão e exige `?confirmar=1` para executar.
 
 ## Segredos e configuração
 

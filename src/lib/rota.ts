@@ -4,19 +4,54 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+export type SecaoConfig =
+  "visao" | "perfil" | "seguranca" | "disciplinas" | "turmas" | "dados" | "exclusao";
+
+export const SECOES_CONFIG: SecaoConfig[] = [
+  "visao",
+  "perfil",
+  "seguranca",
+  "disciplinas",
+  "turmas",
+  "dados",
+  "exclusao",
+];
+
+export const ROTULOS_CONFIG: Record<SecaoConfig, string> = {
+  visao: "Configurações",
+  perfil: "Perfil",
+  seguranca: "Segurança",
+  disciplinas: "Disciplinas",
+  turmas: "Turmas",
+  dados: "Dados",
+  exclusao: "Exclusão",
+};
+
 export type Rota =
   | { vista: "inicio" }
   | { vista: "notas" }
   | { vista: "organizacao" }
   | { vista: "links" }
+  | { vista: "lixeira" }
   | { vista: "editor"; id: string }
   | { vista: "leitura"; id: string }
   | { vista: "publica"; token: string }
-  | { vista: "conta" }
+  | { vista: "configuracoes"; secao: SecaoConfig }
+  | { vista: "recuperacao" }
   | { vista: "entrar" }
   | { vista: "codigo" }
   | { vista: "solicitar" }
   | { vista: "admin" };
+
+function analisarConfig(partes: string[]): Rota {
+  const secao = partes[1] as SecaoConfig | undefined;
+  // "conta" é alias histórico de Configurações.
+  if (partes[0] === "conta") return { vista: "configuracoes", secao: "visao" };
+  return {
+    vista: "configuracoes",
+    secao: secao && SECOES_CONFIG.includes(secao) ? secao : "visao",
+  };
+}
 
 export function analisarHash(hash: string): Rota {
   // Descarta "#/", a query e segmentos vazios antes de rotear.
@@ -30,6 +65,8 @@ export function analisarHash(hash: string): Rota {
       return { vista: "organizacao" };
     case "links":
       return { vista: "links" };
+    case "lixeira":
+      return { vista: "lixeira" };
     case "editor":
       return partes[1] ? { vista: "editor", id: partes[1] } : { vista: "notas" };
     case "nota":
@@ -37,7 +74,10 @@ export function analisarHash(hash: string): Rota {
     case "l":
       return partes[1] ? { vista: "publica", token: partes[1] } : { vista: "inicio" };
     case "conta":
-      return { vista: "conta" };
+    case "configuracoes":
+      return analisarConfig(partes);
+    case "recuperacao":
+      return { vista: "recuperacao" };
     case "entrar":
       return { vista: "entrar" };
     case "codigo":

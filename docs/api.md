@@ -33,16 +33,20 @@ Rotas HTTP do Caderno Aberto. Todas ficam sob `/api` e respondem JSON, exceto do
 | PATCH, DELETE     | `/api/admin/usuarios/[id]`              | Admin             | Edita ou exclui conta             |
 | POST              | `/api/admin/usuarios/[id]/codigo`       | Admin             | Reemite código                    |
 | DELETE            | `/api/admin/usuarios/[id]/sessoes`      | Admin             | Encerra sessões da conta          |
+| GET               | `/api/admin/aprovacoes`                 | Admin             | Lista ações destrutivas pendentes |
+| POST              | `/api/admin/aprovacoes/[id]`            | Admin             | Aprova ou recusa uma ação         |
 | GET               | `/api/admin/auditoria`                  | Admin             | Lista eventos de segurança        |
 | GET               | `/api/conta`                            | Sessão opcional   | Sessão, usuário e perfil          |
 | PATCH             | `/api/conta`                            | Sessão            | Atualiza nome e escola            |
 | POST              | `/api/conta/excluir`                    | Sessão            | Solicita exclusão com carência    |
 | POST              | `/api/conta/restaurar`                  | Sessão            | Cancela a exclusão pendente       |
-| GET, DELETE       | `/api/conta/restaurar`                  | Segredo           | Purga contas vencidas (Cron)      |
+| GET, DELETE       | `/api/conta/restaurar`                  | Segredo           | Purga contas e lixeira (Cron)     |
+| GET               | `/api/lixeira`                          | Sessão            | Lista notas e links na lixeira    |
 | GET               | `/api/notas`                            | Sessão            | Lista e filtra notas              |
 | POST              | `/api/notas`                            | Sessão            | Cria nota                         |
 | GET, PUT, DELETE  | `/api/notas/[id]`                       | Sessão            | Consulta, atualiza ou exclui nota |
 | POST              | `/api/notas/[id]/duplicar`              | Sessão            | Duplica nota como rascunho        |
+| POST              | `/api/notas/[id]/restaurar`             | Sessão            | Restaura nota da lixeira          |
 | GET               | `/api/notas/[id]/exportar`              | Sessão            | Exporta em `json`, `md` ou `tex`  |
 | GET, POST         | `/api/disciplinas`                      | Sessão            | Lista ou cria disciplinas         |
 | PUT, DELETE       | `/api/disciplinas/[id]`                 | Sessão            | Atualiza ou exclui disciplina     |
@@ -50,8 +54,11 @@ Rotas HTTP do Caderno Aberto. Todas ficam sob `/api` e respondem JSON, exceto do
 | PUT, DELETE       | `/api/turmas/[id]`                      | Sessão            | Atualiza ou exclui turma          |
 | GET, POST         | `/api/links`                            | Sessão            | Lista ou cria links               |
 | PUT, DELETE       | `/api/links/[id]`                       | Sessão            | Atualiza ou exclui link           |
+| POST              | `/api/links/[id]/restaurar`             | Sessão            | Restaura link da lixeira          |
 | GET               | `/api/busca`                            | Sessão opcional   | Busca global                      |
 | GET, POST         | `/api/backup`                           | Sessão            | Exporta ou restaura backup        |
+| POST              | `/api/backup/validar`                   | Sessão            | Dry-run da restauração            |
+| GET               | `/api/backup/snapshots`                 | Sessão            | Lista ou baixa snapshots          |
 | POST              | `/api/importar`                         | Sessão            | Importa uma nota `.md` ou `.json` |
 | POST, GET, DELETE | `/api/imagens`                          | Sessão            | Envia, serve ou exclui imagens    |
 | GET               | `/api/publico/[token]`                  | Público           | Dados da vista do aluno           |
@@ -75,7 +82,7 @@ Corpo: `email`, `codigo` (8 caracteres) e `novaSenha` (8 a 256). Localiza um có
 
 ### `POST /api/auth/entrar`
 
-Corpo: `email` e `senha`. Responde `200` com `{ "ok": true }` e grava os cookies de sessão. Exige a conta ativada. Credenciais inválidas, conta inexistente, conta não ativada ou conta com carência vencida respondem `401` com `{ "erro": "E-mail ou senha incorretos." }`.
+Corpo: `email`, `senha` e `manterConectado` (opcional, padrão `true`). Responde `200` com `{ "ok": true }` e grava os cookies de sessão. Com `manterConectado: true`, o cookie de refresh é persistente por 30 dias; com `false`, é um cookie de sessão (some ao fechar o navegador) e a sessão no banco dura 24 horas. Credenciais inválidas, conta inexistente ou carência vencida respondem `401` com `{ "erro": "E-mail ou senha incorretos." }`. Depois de a senha conferir, o estado da conta é revelado: `403` com `CONTA_PENDENTE` (primeiro acesso não concluído) ou `CONTA_SUSPENSA` (conta desativada, com `motivo` e `suspensoEm` em `detalhe`).
 
 ### `POST /api/auth/sair`
 
@@ -119,11 +126,17 @@ Revoga um código pendente. Código já utilizado responde `409`.
 
 ### `GET` e `POST /api/admin/usuarios`
 
-`GET` lista até 300 contas com perfil, papel e estado de ativação. `POST` recebe `nome`, `email` e `papel` (`admin` ou `professor`), cria a conta inativa e devolve `{ usuario, codigo, expiraEm }` com status `201`. E-mail já cadastrado responde `400`.
+`GET` lista até 300 contas com perfil, papel, estado de ativação, `statusConta`, `motivo` e `suspensoEm`. `POST` recebe `nome`, `email` e `papel` (`admin` ou `professor`), cria a conta inativa e devolve `{ usuario, codigo, expiraEm }` com status `201`. E-mail já cadastrado responde `400`.
 
 ### `PATCH` e `DELETE /api/admin/usuarios/[id]`
 
-`PATCH` recebe `nome`, `email`, `papel` e `ativado`, todos opcionais. Mudar o papel ou desativar encerra as sessões; desativar também revoga códigos pendentes e passa a recusar o acesso imediatamente. `DELETE` remove a conta em cascata. A própria conta não pode ser excluída, desativada nem rebaixada.
+`PATCH` recebe `nome`, `email`, `papel` e `ativado` para edição comum. Para suspender, envia `statusConta: "suspenso"` com `motivo` (mínimo de 5 caracteres) e `senha`; para reativar, `statusConta: "ativo"` com `senha`. Mudar o papel, desativar ou suspender encerra as sessões; desativar e suspender também revogam códigos pendentes.
+
+`DELETE` exige `motivo` e `senha` e remove a conta em cascata. A própria conta não pode ser excluída, desativada nem rebaixada; o último administrador ativo e a conta de bootstrap (`ADMIN_EMAIL`) são protegidos (respostas `400` ou `403`). Com `APROVACAO_DUPLA=1`, a ação não é executada: responde `202` com `{ "ok": true, "pendente": true, "aprovacaoId": "..." }` e aguarda outro administrador.
+
+### `GET /api/admin/aprovacoes` e `POST /api/admin/aprovacoes/[id]`
+
+`GET` lista as ações destrutivas pendentes. `POST` recebe `acao` (`aprovar` ou `recusar`) e `senha`. Quem solicitou não pode aprovar. A aprovação executa a ação e revalida as proteções de administrador.
 
 ### `POST /api/admin/usuarios/[id]/codigo`
 
@@ -162,23 +175,33 @@ Sessão opcional. Responde `200` com:
 }
 ```
 
-Sem sessão, `usuario` e `perfil` são `null`.
+Sem sessão, `usuario` e `perfil` são `null`. A conta em carência de exclusão ainda é devolvida, com `exclusaoSolicitadaEm` e `expiraEm` preenchidos, para alimentar a tela de recuperação.
 
 ### `PATCH /api/conta`
 
-Corpo: `nome` (até 120) e `escola` (até 160), ambos opcionais. Responde `200` com o perfil atualizado.
+Corpo: `nome` (até 120) e `escola` (até 160), ambos opcionais. Responde `200` com o perfil atualizado. Conta em carência de exclusão responde `401`.
 
 ### `POST /api/conta/excluir`
 
-Corpo: `senha` e `confirmacao` igual a `EXCLUIR`. Responde `200` com `{ "ok": true, "expiraEm": "ISO" }`, grava a carência de 24 horas e pausa apenas os links ativos. Senha incorreta responde `403`.
+Corpo: `senha` e `confirmacao` igual a `EXCLUIR`. Responde `200` com `{ "ok": true, "expiraEm": "ISO" }`, grava a carência de 24 horas e pausa apenas os links ativos. Senha incorreta responde `403`. A conta de administração responde `403`.
 
 ### `POST /api/conta/restaurar`
 
-Cancela a exclusão pendente e reativa os links que haviam sido pausados. Responde `200` com `{ "ok": true }`. Carência vencida responde `410`.
+Cancela a exclusão pendente e reativa os links que haviam sido pausados. Aceita a conta em carência. Responde `200` com `{ "ok": true }`. Carência vencida responde `410`.
 
 ### `GET` e `DELETE /api/conta/restaurar`
 
-Purga contas com carência vencida, em lotes de 100. Exige `Authorization: Bearer <CRON_SECRET>`. Responde `200` com `{ "removidas": 2 }`. Segredo ausente responde `503`; segredo incorreto responde `403`. O `GET` existe para o Cron da Vercel e executa a mesma operação destrutiva.
+Executa a manutenção agendada: purga contas com carência vencida (ignorando administradores) e remove itens da lixeira com mais de `LIXEIRA_DIAS` dias. Exige `Authorization: Bearer <CRON_SECRET>`. **Sem `?confirmar=1` apenas pré-visualiza** e responde `200` com `{ "previa": true, "contas": n, "notas": n, "links": n }`; com `?confirmar=1`, executa. Segredo ausente responde `503`; segredo incorreto responde `403`. O `GET` existe para o Cron da Vercel.
+
+## Lixeira
+
+### `GET /api/lixeira`
+
+Lista notas e links com `excluidoEm` preenchido, além do prazo de retenção. Responde `200` com `{ "dias", "expiraEm", "notas": [...], "links": [...] }`.
+
+### `POST /api/notas/[id]/restaurar` e `POST /api/links/[id]/restaurar`
+
+Restaura o item da lixeira. Ao restaurar uma nota, os links dela também voltam. Item fora da lixeira responde `404`.
 
 ## Notas
 
@@ -274,10 +297,18 @@ Baixa `backup-caderno-AAAA-MM-DD.json` com `versao`, `exportadoEm`, `professor`,
 
 ### `POST /api/backup`
 
-Restauração substitutiva. Corpo com `notas` (obrigatório), `imagens` (até 1000, com `dados` em base64) e demais coleções. Apaga links, notas, turmas e disciplinas do professor antes de recriar, preservando o perfil. Responde `200` com `{ "ok": true, "notas": 12 }`. Formato inválido responde `400` com `{ "erro": "Arquivo de backup inválido." }`.
+Restauração substitutiva. Corpo com `notas` (obrigatório), `imagens` (até 1000, com `dados` em base64) e demais coleções. Grava um snapshot do estado atual, apaga links, notas, turmas e disciplinas do professor e recria a partir do arquivo, preservando o perfil. Responde `200` com `{ "ok": true, "notas": 12, "snapshot": "caminho" }`. Formato inválido responde `400` com `{ "erro": "Arquivo de backup inválido." }`.
 
 > [!WARNING]
 > A restauração substitui todos os dados do professor e não é transacional. Baixe um backup antes de enviar outro.
+
+### `POST /api/backup/validar`
+
+Dry-run da restauração. Recebe o mesmo corpo e responde `200` com `{ "backup": { "versao", "exportadoEm", "professorNome", "contagem", "imagens" }, "atual": { "notas", "disciplinas", "turmas", "links" } }`, sem escrever nada. Formato inválido responde `400`.
+
+### `GET /api/backup/snapshots` e `GET /api/backup/snapshots?caminho=`
+
+Lista os snapshots recentes (`{ "snapshots": [{ "caminho", "criadoEm" }] }`) ou baixa um snapshot em JSON, restrito à pasta do professor.
 
 ### `POST /api/importar`
 

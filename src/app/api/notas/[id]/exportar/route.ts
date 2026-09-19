@@ -7,6 +7,7 @@ import { linhaParaNota, mapaTurmasProfessor } from "@/lib/api/serializacao";
 import type { DisciplinaLinha, NotaLinha } from "@/lib/banco/tipos";
 import { gerarTex } from "@/lib/notas/render-latex";
 import { gerarMarkdown } from "@/lib/notas/render-markdown";
+import { ehUuid } from "@/lib/identificador";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +23,15 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
   const db = await banco();
   // Exporta apenas a nota do professor autenticado.
-  const linha = (await db.notas.findFirst({
-    where: {
-      id,
-      professorId: usuario.id,
-    },
-  })) as unknown as NotaLinha | null;
-  if (!linha) return erroApi("Nota não encontrada.", 404);
+  const linha = ehUuid(id)
+    ? ((await db.notas.findFirst({
+        where: {
+          id,
+          professorId: usuario.id,
+        },
+      })) as unknown as NotaLinha | null)
+    : null;
+  if (!linha) return erroApi("Nota não encontrada.", 404, "NAO_ENCONTRADO");
 
   const disciplina = linha.disciplinaId
     ? ((await db.disciplinas.findFirst({

@@ -4,6 +4,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { EVENTO_SESSAO_EXPIRADA } from "@/lib/notas/api-client";
+import { mapearErro } from "@/lib/api/erro";
 
 export type Papel = "admin" | "professor";
 
@@ -17,6 +19,10 @@ export interface PerfilProfessor {
   nome: string;
   escola: string;
   email: string;
+  /** Início da carência de exclusão, quando solicitada. */
+  exclusaoSolicitadaEm?: string | null;
+  /** Fim da carência, base para a purga. */
+  expiraEm?: string | null;
 }
 
 interface SessaoValor {
@@ -24,18 +30,20 @@ interface SessaoValor {
   usuario: UsuarioSessao | null;
   perfil: PerfilProfessor | null;
   ehAdmin: boolean;
-  entrar: (email: string, senha: string) => Promise<void>;
+  entrar: (email: string, senha: string, manterConectado?: boolean) => Promise<void>;
   sair: () => Promise<void>;
   atualizarPerfil: (dados: { nome?: string; escola?: string }) => Promise<void>;
   trocarSenha: (senhaAtual: string, novaSenha: string) => Promise<void>;
   solicitarAcesso: (nome: string, email: string) => Promise<void>;
   solicitarCodigo: (email: string) => Promise<void>;
   usarCodigo: (email: string, codigo: string, novaSenha: string) => Promise<void>;
-  excluirConta: (senha: string, confirmacao?: string) => Promise<void>;
   /** Solicitação resolve a expiração da carência. */
   solicitarExclusao: (senha: string, confirmacao: string) => Promise<{ expiraEm: string }>;
   restaurarConta: () => Promise<void>;
   recarregarPerfil: () => Promise<void>;
+  /** True quando a sessão expirou em uma chamada de API. */
+  sessaoExpirada: boolean;
+  limparAvisoSessao: () => void;
 }
 
 const ContextoSessao = createContext<SessaoValor | null>(null);
@@ -54,6 +62,7 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
   const [carregando, setCarregando] = useState(true);
   const [usuario, setUsuario] = useState<UsuarioSessao | null>(null);
   const [perfil, setPerfil] = useState<PerfilProfessor | null>(null);
+  const [sessaoExpirada, setSessaoExpirada] = useState(false);
   const usuarioRef = useRef<string | null>(null);
 
   const aplicarConta = useCallback(
@@ -105,19 +114,39 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
     void carregarConta().finally(() => setCarregando(false));
   }, [carregarConta]);
 
+  // Uma resposta 401 em qualquer chamada limpa a sessão e volta ao login.
+  useEffect(() => {
+    const aoExpirar = () => {
+      qc.clear();
+      setUsuario(null);
+      setPerfil(null);
+      usuarioRef.current = null;
+      setSessaoExpirada(true);
+      if (typeof window !== "undefined" && !window.location.hash.startsWith("#/entrar")) {
+        window.location.hash = "#/entrar";
+      }
+    };
+    window.addEventListener(EVENTO_SESSAO_EXPIRADA, aoExpirar);
+    return () => window.removeEventListener(EVENTO_SESSAO_EXPIRADA, aoExpirar);
+  }, [qc]);
+
   const valor: SessaoValor = {
     carregando,
     usuario,
     perfil,
     ehAdmin: usuario?.papel === "admin",
 
-    async entrar(email, senha) {
+    async entrar(email, senha, manterConectado = true) {
       const r = await fetch("/api/auth/entrar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, senha }),
+        body: JSON.stringify({ email, senha, manterConectado }),
       });
-      if (!r.ok) throw new Error(await lerErro(r, "E-mail ou senha incorretos."));
+      if (!r.ok) {
+        const corpo = await r.json().catch(() => null);
+        throw mapearErro(r.status, corpo, "E-mail ou senha incorretos.");
+      }
+      setSessaoExpirada(false);
       await carregarConta();
     },
 
@@ -187,15 +216,6 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
       return d;
     },
 
-    async excluirConta(senha, confirmacao) {
-      const r = await fetch("/api/conta/excluir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senha, confirmacao }),
-      });
-      if (!r.ok) throw new Error(await lerErro(r, "Falha ao excluir a conta."));
-    },
-
     async restaurarConta() {
       const r = await fetch("/api/conta/restaurar", { method: "POST" });
       if (!r.ok) throw new Error(await lerErro(r, "Falha ao restaurar a conta."));
@@ -205,6 +225,9 @@ export function ProvedorSessao({ children }: { children: React.ReactNode }) {
     async recarregarPerfil() {
       await carregarConta();
     },
+
+    sessaoExpirada,
+    limparAvisoSessao: () => setSessaoExpirada(false),
   };
 
   return <ContextoSessao.Provider value={valor}>{children}</ContextoSessao.Provider>;

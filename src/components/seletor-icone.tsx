@@ -1,52 +1,56 @@
 "use client";
 
-// Grade de ícones de disciplina, sem rótulos visíveis (nome acessível via aria-label).
+// Menu suspenso de ícones de disciplina, com ícone e rótulo em cada opção.
 
 import { ICONES_DISCIPLINA, MAPA_ICONES, ROTULOS_ICONES } from "@/lib/notas/cores";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export function SeletorIcone({
   valor,
   onChange,
   className,
+  id,
 }: {
   valor: string;
   onChange: (nome: string) => void;
   className?: string;
+  id?: string;
 }) {
+  const IconeAtual = MAPA_ICONES[valor] ?? MAPA_ICONES.BookOpen;
   return (
-    <div
-      role="radiogroup"
-      aria-label="Ícone da disciplina"
-      className={cn(
-        "grid grid-cols-[repeat(8,2rem)] gap-1 sm:grid-cols-[repeat(8,2.25rem)]",
-        className,
-      )}
-    >
-      {ICONES_DISCIPLINA.map((nome) => {
-        const Icone = MAPA_ICONES[nome] ?? MAPA_ICONES.BookOpen;
-        const ativo = valor === nome;
-        const rotulo = ROTULOS_ICONES[nome] ?? nome;
-        return (
-          <button
-            key={nome}
-            type="button"
-            role="radio"
-            aria-checked={ativo}
-            aria-label={rotulo}
-            title={rotulo}
-            onClick={() => onChange(nome)}
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-lg border transition-colors sm:h-9 sm:w-9",
-              ativo
-                ? "border-primary bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground border-transparent",
-            )}
-          >
-            <Icone className="h-4 w-4" aria-hidden />
-          </button>
-        );
-      })}
-    </div>
+    <Select value={valor} onValueChange={onChange}>
+      <SelectTrigger
+        id={id}
+        aria-label="Ícone da disciplina"
+        className={cn("w-full rounded-lg", className)}
+      >
+        <SelectValue>
+          <span className="flex items-center gap-2">
+            <IconeAtual className="h-4 w-4" aria-hidden />
+            {ROTULOS_ICONES[valor] ?? valor}
+          </span>
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {ICONES_DISCIPLINA.map((nome) => {
+          const Icone = MAPA_ICONES[nome] ?? MAPA_ICONES.BookOpen;
+          return (
+            <SelectItem key={nome} value={nome}>
+              <span className="flex items-center gap-2">
+                <Icone className="h-4 w-4" aria-hidden />
+                {ROTULOS_ICONES[nome] ?? nome}
+              </span>
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
   );
 }

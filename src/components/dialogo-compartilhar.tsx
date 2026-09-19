@@ -15,12 +15,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
 import {
   urlDoLink,
   useCriarLink,
   useEditarLink,
   useExcluirLink,
   useLinks,
+  useRestaurarLink,
+  type LinkInfo,
 } from "@/lib/notas/api-client";
 
 export function DialogoCompartilhar({
@@ -36,8 +39,38 @@ export function DialogoCompartilhar({
   const criar = useCriarLink();
   const editar = useEditarLink();
   const excluir = useExcluirLink();
+  const restaurar = useRestaurarLink();
   const [nome, setNome] = useState("");
   const [copiado, setCopiado] = useState<string | null>(null);
+  const [confirmar, setConfirmar] = useState<{
+    tipo: "regenerar" | "excluir";
+    link: LinkInfo;
+  } | null>(null);
+
+  const executar = async () => {
+    if (!confirmar) return;
+    const { tipo, link } = confirmar;
+    if (tipo === "regenerar") {
+      await editar.mutateAsync({ id: link.id, dados: { regenerar: true } });
+      toast.success("Novo link gerado", {
+        description: "O endereço antigo deixará de funcionar.",
+      });
+    } else {
+      await excluir.mutateAsync(link.id);
+      toast.success("Link movido para a lixeira", {
+        action: {
+          label: "Desfazer",
+          onClick: () => {
+            void restaurar
+              .mutateAsync(link.id)
+              .then(() => toast.success("Link restaurado"))
+              .catch(() => toast.error("Não foi possível restaurar"));
+          },
+        },
+      });
+    }
+    setConfirmar(null);
+  };
 
   // Mostra apenas os links da nota aberta, não os de turma/disciplina.
   const meusLinks = (links ?? []).filter((l) => l.tipo === "nota" && l.notaId === notaId);
@@ -79,7 +112,7 @@ export function DialogoCompartilhar({
                     ?.writeText(urlDoLink(r.link.token))
                     .catch(() => undefined);
                 } catch (e) {
-                  toast.error("Não foi possível criar o link.", {
+                  toast.error("Não foi possível criar o link", {
                     description: e instanceof Error ? e.message : undefined,
                   });
                 }
@@ -159,7 +192,7 @@ export function DialogoCompartilhar({
                           await editar.mutateAsync({ id: l.id, dados: { ativo: !l.ativo } });
                           toast.success(l.ativo ? "Link pausado" : "Link reativado");
                         } catch (e) {
-                          toast.error("Não foi possível atualizar o link.", {
+                          toast.error("Não foi possível atualizar o link", {
                             description: e instanceof Error ? e.message : undefined,
                           });
                         }
@@ -173,16 +206,7 @@ export function DialogoCompartilhar({
                       size="sm"
                       className="h-7 gap-1.5 rounded-md text-[0.72rem]"
                       disabled={editar.isPending}
-                      onClick={async () => {
-                        try {
-                          await editar.mutateAsync({ id: l.id, dados: { regenerar: true } });
-                          toast.success("Novo link gerado");
-                        } catch (e) {
-                          toast.error("Não foi possível gerar novo endereço.", {
-                            description: e instanceof Error ? e.message : undefined,
-                          });
-                        }
-                      }}
+                      onClick={() => setConfirmar({ tipo: "regenerar", link: l })}
                     >
                       <RefreshCw className="h-3 w-3" aria-hidden /> Regenerar
                     </Button>
@@ -191,16 +215,7 @@ export function DialogoCompartilhar({
                       size="sm"
                       className="text-destructive hover:text-destructive h-7 gap-1.5 rounded-md text-[0.72rem]"
                       disabled={excluir.isPending}
-                      onClick={async () => {
-                        try {
-                          await excluir.mutateAsync(l.id);
-                          toast.success("Link excluído");
-                        } catch (e) {
-                          toast.error("Não foi possível excluir o link.", {
-                            description: e instanceof Error ? e.message : undefined,
-                          });
-                        }
-                      }}
+                      onClick={() => setConfirmar({ tipo: "excluir", link: l })}
                     >
                       <Trash2 className="h-3 w-3" aria-hidden /> Excluir
                     </Button>
@@ -218,6 +233,19 @@ export function DialogoCompartilhar({
           Links de turma e disciplina inteira ficam na vista <b>Links</b> do menu.
         </p>
       </DialogContent>
+
+      <ConfirmacaoDestrutiva
+        aberto={Boolean(confirmar)}
+        onOpenChange={(o) => !o && setConfirmar(null)}
+        titulo={confirmar?.tipo === "regenerar" ? "Gerar novo endereço?" : "Excluir o link?"}
+        descricao={
+          confirmar?.tipo === "regenerar"
+            ? "O endereço atual deixará de funcionar imediatamente e os alunos precisarão do novo link."
+            : "Os alunos que tiverem o endereço perdem o acesso. O link vai para a lixeira e pode ser restaurado por 30 dias."
+        }
+        textoConfirmar={confirmar?.tipo === "regenerar" ? "Gerar novo" : "Excluir link"}
+        onConfirmar={executar}
+      />
     </Dialog>
   );
 }

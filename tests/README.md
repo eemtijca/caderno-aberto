@@ -25,7 +25,7 @@ npm run test:e2e       # interface (exige o app no ar)
 - `test:unit` (`tests/unit/`): sem banco e sem rede. Também grava `.tex` de exemplo em `tests/tex/` para compilação manual com `tectonic`.
 - `test:api` (`tests/api/isolamento.test.ts`): prova as políticas RLS com massa fixa e limpeza ao final. O próprio comando aplica antes `prisma/scripts/rls-teste.sql`, que cria o papel `app_teste`, presente apenas em local e CI e ausente no Supabase. Exige `DATABASE_URL` com a migration aplicada.
 - `test:contratos` (`tests/api/contratos.test.ts`): verificações HTTP contra `TEST_BASE_URL` (padrão `http://127.0.0.1:3000`). A massa cria um admin no banco via `DATABASE_URL`, portanto ambas as variáveis são necessárias.
-- `test:codigos` e `test:seguranca`: fluxo de código, console admin, CSRF, cabeçalhos, cron e sessão, contra o app no ar.
+- `test:codigos`, `test:seguranca` e `test:destrutivas` (`tests/api/destrutivas.test.ts`): fluxo de código, console admin, CSRF, cabeçalhos, cron, sessão, suspensão com step-up, lixeira e dry-run do backup, contra o app no ar.
 - `test:e2e` (`e2e/`): Playwright em 3 navegadores. Sobe `npm run dev` sozinho e prepara o admin fixo no `globalSetup`. Fora do CI, execute localmente.
 
 ## Limites de tentativas

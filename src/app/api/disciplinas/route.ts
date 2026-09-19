@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     },
   })) as unknown as DisciplinaLinha[];
   disciplinas.sort((a, b) => a.ordem - b.ordem);
-  const notas = await db.notas.findMany({ where: { professorId: usuario.id } });
+  const notas = await db.notas.findMany({ where: { professorId: usuario.id, excluidoEm: null } });
 
   // Contagem por disciplina via mapa em memória.
   const contagem = new Map<string, number>();

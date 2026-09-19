@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const turmas = todas
     .filter((t) => !ano || t.anoLetivo === ano)
     .sort((a, b) => b.anoLetivo - a.anoLetivo || a.nome.localeCompare(b.nome, "pt-BR"));
-  const notas = await db.notas.findMany({ where: { professorId: usuario.id } });
+  const notas = await db.notas.findMany({ where: { professorId: usuario.id, excluidoEm: null } });
 
   const contagem = new Map<string, number>();
   for (const n of notas) {

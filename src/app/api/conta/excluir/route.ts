@@ -12,6 +12,11 @@ export async function POST(req: NextRequest) {
   if (!sessao) return naoAutenticado();
   const { usuario } = sessao;
 
+  // A conta de administração não pode ser removida pelo próprio usuário.
+  if (usuario.papel === "admin") {
+    return erroApi("A conta de administração não pode ser excluída.", 403);
+  }
+
   const corpo = await req.json().catch(() => null);
   const senha = typeof corpo?.senha === "string" ? corpo.senha : "";
   const confirmacao = typeof corpo?.confirmacao === "string" ? corpo.confirmacao : "";

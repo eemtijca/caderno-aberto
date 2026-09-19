@@ -12,15 +12,18 @@ import {
 import type { DisciplinaLinha, NotaLinha, TurmaLinha } from "@/lib/banco/tipos";
 import { normalizarAparencia, normalizarBlocos, type Bloco } from "@/lib/notas/tipos";
 import { normalizar, textoDeBusca } from "@/lib/notas/texto";
+import { ehUuid } from "@/lib/identificador";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 async function buscarNota(id: string, professorId: string): Promise<NotaLinha | null> {
+  // Id fora do formato de UUID nem chega ao banco.
+  if (!ehUuid(id)) return null;
   const db = await banco();
   // O filtro por professor garante o isolamento entre contas.
-  const linha = await db.notas.findFirst({ where: { id, professorId } });
+  const linha = await db.notas.findFirst({ where: { id, professorId, excluidoEm: null } });
   return (linha as unknown as NotaLinha | null) ?? null;
 }
 
@@ -159,7 +162,19 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
 
   const db = await banco();
-  // Exclusão escopada ao professor.
-  await db.notas.deleteMany({ where: { id, professorId: usuario.id } });
+  // Vai para a lixeira (soft delete) e leva os links da nota junto.
+  const nota = ehUuid(id)
+    ? await db.notas.findFirst({ where: { id, professorId: usuario.id, excluidoEm: null } })
+    : null;
+  if (!nota) return erroApi("Nota não encontrada.", 404, "NAO_ENCONTRADO");
+
+  const agora = new Date();
+  await db.$transaction(async (tx) => {
+    await tx.notas.update({ where: { id }, data: { excluidoEm: agora } });
+    await tx.links.updateMany({
+      where: { professorId: usuario.id, notaId: id, excluidoEm: null },
+      data: { excluidoEm: agora },
+    });
+  });
   return json({ ok: true });
 }

@@ -14,6 +14,8 @@ export interface ResumoNotaOg {
   anoLetivo: number;
   mes: number;
   sobre: string;
+  habilidades: string;
+  atualizadoEm: string;
 }
 
 export interface DadosLinkOg {
@@ -48,6 +50,8 @@ export const buscarDadosOg = cache(async (token: string): Promise<DadosOg | null
         anoLetivo: DEMO_NOTA.anoLetivo,
         mes: DEMO_NOTA.mes,
         sobre: DEMO_NOTA.sobre,
+        habilidades: DEMO_NOTA.habilidades,
+        atualizadoEm: DEMO_NOTA.atualizadoEm,
       },
       totalNotas: 1,
     };
@@ -73,6 +77,8 @@ export const buscarDadosOg = cache(async (token: string): Promise<DadosOg | null
           anoLetivo: primeira.anoLetivo,
           mes: primeira.mes,
           sobre: primeira.sobre,
+          habilidades: primeira.habilidades,
+          atualizadoEm: primeira.atualizadoEm.toISOString(),
         }
       : null,
     totalNotas: notas.length,

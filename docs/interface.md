@@ -21,7 +21,7 @@ O `@theme inline` mapeia os tokens semânticos para utilitários do Tailwind. A 
 
 Cada disciplina recebe uma das 10 cores de `src/lib/notas/cores.ts` (verde, teal, violeta, rosa, âmbar, laranja, ciano, fúcsia, lima e pedra), com classes para chip, borda, ponto, texto e tons suaves, em modo claro e escuro.
 
-Cada disciplina também escolhe um ícone entre 16 opções (`ICONES_DISCIPLINA`). A escolha usa `SeletorIcone` (`src/components/seletor-icone.tsx`), uma grade sem rótulos visíveis em que o nome do ícone existe apenas como `aria-label` e `title`.
+Cada disciplina também escolhe um ícone entre 16 opções (`ICONES_DISCIPLINA`). A escolha usa `SeletorIcone` (`src/components/seletor-icone.tsx`), um menu suspenso em que cada opção mostra o ícone e o rótulo do nome.
 
 ## Tipografia
 
@@ -55,20 +55,29 @@ Os elementos clicáveis usam `cursor: pointer` por uma regra global em `globals.
 
 ## Navegação
 
-- Rotas hash: `#/`, `#/notas`, `#/organizacao`, `#/links`, `#/conta`, `#/admin`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/codigo` e `#/solicitar`. Rota desconhecida volta ao início. A raiz anônima é a tela de login.
+- Rotas hash: `#/`, `#/notas`, `#/organizacao`, `#/links`, `#/lixeira`, `#/configuracoes` com as seções `#/configuracoes/perfil`, `#/configuracoes/seguranca`, `#/configuracoes/disciplinas`, `#/configuracoes/turmas`, `#/configuracoes/dados` e `#/configuracoes/exclusao`, `#/admin`, `#/recuperacao`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/codigo` e `#/solicitar`. O alias `#/conta` abre Configurações. Rota desconhecida volta ao início. A raiz anônima é a tela de login.
 - Rotas reais: `/` (shell), `/l/[token]` (página pública com metadados e OpenGraph) e `/api/**`.
 - Busca global com `Ctrl` ou `Cmd` mais `K`, com debounce, mínimo de 2 caracteres e tolerância a acentos.
-- No mobile, a barra superior concentra a busca, o seletor de tema e o menu de perfil (Conta e Sair). A barra inferior mantém cinco itens; o botão Mais abre um painel inferior (`Drawer`) com as opções que não cabem, como Turmas e Administração para contas admin.
+- No mobile, a barra superior concentra a busca, o seletor de tema e o menu de perfil (Configurações e Sair). A barra inferior mantém cinco itens; o botão Mais abre um painel inferior (`Drawer`) com as opções que não cabem, como Turmas e Administração para contas admin.
+- A tela de login oferece "Manter conectado neste dispositivo", marcado por padrão. Desmarcado, a sessão usa cookie de sessão e expira em 24 horas no servidor.
 
 ## Responsividade
 
-- Desktop (a partir de 1024px): barra lateral fixa de 256px com navegação completa e botão Nova nota.
-- Mobile (abaixo de 1024px): barra superior com logo, busca, seletor de tema e menu de perfil, e navegação inferior com cinco itens, incluindo o botão flutuante central de Nova nota. O perfil reúne Conta e Sair; o botão Mais abre um painel inferior com as opções restantes (Turmas e Administração, quando aplicável). O conteúdo reserva espaço para a barra inferior.
+- Desktop (a partir de 1024px): barra lateral fixa de 256px com navegação completa, botão Nova nota e um controle para recolher a barra a 76px, exibindo apenas os ícones. A preferência fica no navegador.
+- Mobile (abaixo de 1024px): barra superior com logo, busca, seletor de tema e menu de perfil, e navegação inferior com cinco itens, incluindo o botão flutuante central de Nova nota. O perfil reúne Configurações e Sair; o botão Mais abre um painel inferior com as opções restantes (Turmas e Administração, quando aplicável). O conteúdo reserva espaço para a barra inferior.
 - As grades usam `sm:grid-cols-2`, `sm:grid-cols-3` e `sm:grid-cols-4` conforme a vista. O editor alterna entre abas no mobile e duas colunas no desktop.
 
 ## Notificações
 
-Os avisos usam Sonner, no topo e centralizados, com cores por tipo e botão de fechar. O tema do aviso segue o tema da aplicação. Há uma implementação legada de toast shadcn no repositório, não renderizada.
+Os avisos usam Sonner, no topo e centralizados, com cores por tipo e botão de fechar. O tema do aviso segue o tema da aplicação. Ações reversíveis (notas e links na lixeira) oferecem **Desfazer** no próprio aviso. Há uma implementação legada de toast shadcn no repositório, não renderizada.
+
+## Telas de estado
+
+`TelaEstado` (`src/components/tela-estado.tsx`) padroniza erros e avisos: não encontrado, sessão expirada, sem permissão, removido, limite, erro interno, indisponível, offline, link inválido, pausado ou expirado, conta pendente, conta desativada e carência. As páginas do App Router (`not-found.tsx`, `error.tsx` e `global-error.tsx`) usam o mesmo padrão. Um aviso global aparece quando o navegador fica offline.
+
+## Confirmação de ações destrutivas
+
+`ConfirmacaoDestrutiva` (`src/components/confirmacao-destrutiva.tsx`) aplica fricção proporcional ao risco: exige digitar o alvo (e-mail ou palavra), informar motivo e confirmar com a senha conforme o caso. O botão de confirmar só habilita quando os campos conferem.
 
 ## Carregamento
 

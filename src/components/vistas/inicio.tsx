@@ -48,7 +48,7 @@ export function VistaInicio({
           </p>
           <h1 className="fonte-display mt-1 text-2xl font-bold">
             {saudacao}
-            {professor ? `, ${professor.replace(/^Prof(?:essor|essora|a|o)?\.?\s*/i, "")}` : ""}!
+            {professor ? `, ${professor.replace(/^Prof(?:essor|essora|a|o)?\.?\s*/i, "")}` : ""}.
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Escreva a nota e publique na web, no PDF de impressão e nos links.
@@ -93,7 +93,7 @@ export function VistaInicio({
           carregando={disciplinasQ.isLoading}
           valor={disciplinasQ.data?.length ?? 0}
           rotulo="disciplinas"
-          onClick={() => navegar("/conta")}
+          onClick={() => navegar("/configuracoes/disciplinas")}
           indice={2}
         />
         <Numero
@@ -151,8 +151,8 @@ export function VistaInicio({
           <div className="na-cascata border-border rounded-2xl border border-dashed p-8 text-center">
             <p className="font-semibold">Nenhuma nota ainda</p>
             <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm">
-              Comece criando sua primeira disciplina em Conta, ou crie a nota agora e defina a
-              disciplina na hora.
+              Comece criando sua primeira disciplina em Configurações, ou crie a nota agora e defina
+              a disciplina na hora.
             </p>
             <div className="mt-4 flex justify-center gap-2">
               <Button onClick={onNovaNota} className="gap-2 rounded-xl">
@@ -160,10 +160,10 @@ export function VistaInicio({
               </Button>
               <Button
                 variant="outline"
-                onClick={() => navegar("/conta")}
+                onClick={() => navegar("/configuracoes/disciplinas")}
                 className="gap-2 rounded-xl"
               >
-                <Settings className="h-4 w-4" aria-hidden /> Conta
+                <Settings className="h-4 w-4" aria-hidden /> Configurações
               </Button>
             </div>
           </div>
@@ -198,9 +198,7 @@ function Numero({
     >
       <Icone className="text-muted-foreground h-4 w-4" aria-hidden />
       {carregando ? (
-        <span className="na-pulso fonte-display text-2xl font-bold text-stone-300 tabular-nums dark:text-stone-600">
-          –
-        </span>
+        <Skeleton className="h-7 w-10 rounded-md" />
       ) : (
         <span className="fonte-display text-2xl font-bold tabular-nums">{valor}</span>
       )}

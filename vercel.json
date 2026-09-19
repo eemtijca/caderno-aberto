@@ -7,7 +7,7 @@
   "cleanUrls": true,
   "crons": [
     {
-      "path": "/api/conta/restaurar",
+      "path": "/api/conta/restaurar?confirmar=1",
       "schedule": "0 4 * * *"
     }
   ],

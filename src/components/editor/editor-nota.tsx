@@ -60,19 +60,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
 import { toast } from "sonner";
 
 import {
@@ -80,6 +70,7 @@ import {
   useDuplicarNota,
   useExcluirNota,
   useNota,
+  useRestaurarNota,
   useSalvarNota,
   useTurmas,
 } from "@/lib/notas/api-client";
@@ -215,8 +206,10 @@ function FormularioNota({
   const { perfil } = useSessao();
   const salvar = useSalvarNota(id);
   const excluir = useExcluirNota();
+  const restaurar = useRestaurarNota();
   const duplicar = useDuplicarNota();
   const [compartilharAberto, setCompartilharAberto] = useState(false);
+  const [confirmarExclusao, setConfirmarExclusao] = useState(false);
 
   const [titulo, setTitulo] = useState(notaInicial.titulo);
   const [disciplinaId, setDisciplinaId] = useState(notaInicial.disciplinaId);
@@ -387,11 +380,11 @@ function FormularioNota({
         >
           {estadoSalvamento === "salvando" ? (
             <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> salvando…
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> salvando...
             </>
           ) : estadoSalvamento === "erro" ? (
             <>
-              <CloudUpload className="h-3.5 w-3.5" aria-hidden /> Erro ao salvar. Tente novamente
+              <CloudUpload className="h-3.5 w-3.5" aria-hidden /> Erro ao salvar. Tente novamente.
             </>
           ) : (
             <>
@@ -451,7 +444,7 @@ function FormularioNota({
               toast.success("Nota duplicada", { description: "A cópia abriu como rascunho." });
               navegar(`/editor/${r.nota.id}`);
             } catch {
-              toast.error("Não foi possível duplicar.");
+              toast.error("Não foi possível duplicar");
             }
           }}
         >
@@ -468,45 +461,44 @@ function FormularioNota({
           </span>
         </label>
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg"
-              aria-label="Excluir nota"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir esta nota?</AlertDialogTitle>
-              <AlertDialogDescription>
-                &ldquo;{titulo || "Sem título"}&rdquo; será removida definitivamente, junto com seu
-                conteúdo e vinculações de turma. Não dá para desfazer.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive hover:bg-destructive/90 text-white"
-                onClick={async () => {
-                  try {
-                    await excluir.mutateAsync(id);
-                    toast.success("Nota excluída");
-                    navegar("/notas");
-                  } catch {
-                    toast.error("Não foi possível excluir.");
-                  }
-                }}
-              >
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button
+          variant="outline"
+          size="icon"
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg"
+          aria-label="Excluir nota"
+          onClick={() => setConfirmarExclusao(true)}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden />
+        </Button>
       </div>
+
+      <ConfirmacaoDestrutiva
+        aberto={confirmarExclusao}
+        onOpenChange={setConfirmarExclusao}
+        titulo="Mover esta nota para a lixeira?"
+        descricao={
+          <>
+            "{titulo || "Sem título"}" vai para a lixeira e os links dela são desativados. É
+            possível restaurar por 30 dias.
+          </>
+        }
+        textoConfirmar="Mover para a lixeira"
+        onConfirmar={async () => {
+          await excluir.mutateAsync(id);
+          toast.success("Nota movida para a lixeira", {
+            action: {
+              label: "Desfazer",
+              onClick: () => {
+                void restaurar
+                  .mutateAsync(id)
+                  .then(() => toast.success("Nota restaurada"))
+                  .catch(() => toast.error("Não foi possível restaurar"));
+              },
+            },
+          });
+          navegar("/notas");
+        }}
+      />
 
       {/* metadados */}
       <details className="group border-border bg-card rounded-2xl border" open={false}>
@@ -532,7 +524,7 @@ function FormularioNota({
               <Label className="text-xs">Disciplina</Label>
               <Select value={disciplinaId} onValueChange={marcar(setDisciplinaId)}>
                 <SelectTrigger className="w-full rounded-lg">
-                  <SelectValue placeholder="Selecione…" />
+                  <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
                   {(disciplinas ?? []).map((d) => (
@@ -612,7 +604,7 @@ function FormularioNota({
               id="sobre-editor"
               value={sobre}
               onChange={(e) => marcar(setSobre)(e.target.value)}
-              placeholder="Conteúdo, subtópicos e contexto da aula…"
+              placeholder="Conteúdo, subtópicos e contexto da aula..."
               className="min-h-[64px] rounded-lg text-sm"
             />
           </div>
@@ -625,7 +617,7 @@ function FormularioNota({
               id="habilidades-editor"
               value={habilidades}
               onChange={(e) => marcar(setHabilidades)(e.target.value)}
-              placeholder="EM13CNT107, EM13CNT203…"
+              placeholder="EM13CNT107, EM13CNT203..."
               className="rounded-lg font-mono text-sm"
             />
           </div>

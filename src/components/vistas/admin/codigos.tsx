@@ -161,8 +161,8 @@ export function SecaoCodigos({
                   <Badge variant={VARIANTE[c.status] ?? "outline"}>{c.status}</Badge>
                 </div>
                 <p className="text-muted-foreground mt-0.5 text-[0.72rem]">
-                  Criado em {new Date(c.criadoEm).toLocaleString("pt-BR")} · Expira em{" "}
-                  {new Date(c.expiraEm).toLocaleString("pt-BR")}
+                  Criado em {new Date(c.criadoEm).toLocaleString("pt-BR")}. Expira em{" "}
+                  {new Date(c.expiraEm).toLocaleString("pt-BR")}.
                 </p>
               </div>
               {c.status === "ativo" ? (
