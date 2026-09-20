@@ -14,6 +14,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,18 +24,22 @@ import {
 import type { NotaDados } from "@/lib/notas/tipos";
 import { corDisciplina } from "@/lib/notas/cores";
 import { contarQuestoes, MESES_CAP } from "@/lib/notas/texto";
+import { abrirExportacao } from "@/lib/exportar";
 
 export function CartaoNota({
   nota,
   onAbrir,
   onEditar,
   indice = 0,
+  selecao,
 }: {
   nota: NotaDados;
   onAbrir: () => void;
   onEditar?: () => void;
   /** posição na lista: atrasa a animação de cascata */
   indice?: number;
+  /** Quando presente, o cartão entra no modo de seleção múltipla. */
+  selecao?: { ativo: boolean; selecionado: boolean; onAlternar: () => void };
 }) {
   const cor = corDisciplina(nota.disciplina?.cor);
   // Sem questões, o resumo mostra a contagem de blocos.
@@ -42,11 +47,26 @@ export function CartaoNota({
 
   return (
     <article
-      className={`na-cascata group border-border bg-card relative rounded-2xl border p-4 transition-shadow hover:shadow-md sm:p-5 ${cor.borda} border-l-4`}
+      className={`na-cascata group border-border bg-card relative rounded-2xl border p-4 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5 ${cor.borda} border-l-4 ${
+        selecao?.selecionado ? "ring-primary ring-2" : ""
+      }`}
       style={{ "--na-i": indice } as React.CSSProperties}
     >
       <div className="flex items-start justify-between gap-3">
-        <button type="button" onClick={onAbrir} className="min-w-0 flex-1 text-left">
+        {selecao?.ativo ? (
+          <Checkbox
+            checked={selecao.selecionado}
+            onCheckedChange={() => selecao.onAlternar()}
+            aria-label={`Selecionar ${nota.titulo}`}
+            className="mt-0.5"
+          />
+        ) : null}
+        <button
+          type="button"
+          onClick={selecao?.ativo ? selecao.onAlternar : onAbrir}
+          aria-pressed={selecao?.ativo ? selecao.selecionado : undefined}
+          className="min-w-0 flex-1 text-left"
+        >
           <h3 className="fonte-display line-clamp-2 text-[1.02rem] leading-snug font-bold">
             {nota.titulo}
           </h3>
@@ -97,56 +117,58 @@ export function CartaoNota({
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={onAbrir}
-          className="border-border hover:bg-accent flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.82rem] font-semibold transition-colors"
-        >
-          <BookOpenText className="h-3.5 w-3.5" aria-hidden /> Ler
-        </button>
-        {onEditar ? (
+      {selecao?.ativo ? null : (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={onEditar}
-            className="text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-[0.82rem] font-semibold transition-colors"
+            onClick={onAbrir}
+            className="border-border hover:bg-accent flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.82rem] font-semibold transition-colors"
           >
-            <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar
+            <BookOpenText className="h-3.5 w-3.5" aria-hidden /> Ler
           </button>
-        ) : null}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          {onEditar ? (
             <button
               type="button"
+              onClick={onEditar}
               className="text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-[0.82rem] font-semibold transition-colors"
-              aria-label={`Exportar a nota ${nota.titulo}`}
             >
-              <Download className="h-3.5 w-3.5" aria-hidden /> Exportar
-              <ChevronDown className="h-3 w-3" aria-hidden />
+              <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar
             </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => window.open(`/api/notas/${nota.id}/exportar?formato=tex`, "_blank")}
-            >
-              <FileCode className="h-3.5 w-3.5" aria-hidden /> LaTeX (.tex)
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => window.open(`/api/notas/${nota.id}/exportar?formato=md`, "_blank")}
-            >
-              <FileText className="h-3.5 w-3.5" aria-hidden /> Markdown (.md)
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => window.open(`/api/notas/${nota.id}/exportar?formato=json`, "_blank")}
-            >
-              <FileJson className="h-3.5 w-3.5" aria-hidden /> Backup (.json)
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-[0.82rem] font-semibold transition-colors"
+                aria-label={`Exportar a nota ${nota.titulo}`}
+              >
+                <Download className="h-3.5 w-3.5" aria-hidden /> Exportar
+                <ChevronDown className="h-3 w-3" aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                className="gap-2"
+                onClick={() => abrirExportacao(`/api/notas/${nota.id}/exportar?formato=tex`)}
+              >
+                <FileCode className="h-3.5 w-3.5" aria-hidden /> Arquivo para impressão
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2"
+                onClick={() => abrirExportacao(`/api/notas/${nota.id}/exportar?formato=md`)}
+              >
+                <FileText className="h-3.5 w-3.5" aria-hidden /> Arquivo de texto
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="gap-2"
+                onClick={() => abrirExportacao(`/api/notas/${nota.id}/exportar?formato=json`)}
+              >
+                <FileJson className="h-3.5 w-3.5" aria-hidden /> Backup completo
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
     </article>
   );
 }

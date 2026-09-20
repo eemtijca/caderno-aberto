@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
         { campo: "título", texto: linha.titulo },
         { campo: "resumo", texto: linha.sobre },
         { campo: "habilidades", texto: linha.habilidades },
+        { campo: "disciplina", texto: linha.disciplinaNome },
+        { campo: "turmas", texto: (linha.turmasNomes ?? []).join(", ") },
         { campo: "conteúdo", texto: extrairTextoBlocos(blocos) },
       ];
       for (const { campo, texto } of campos) {

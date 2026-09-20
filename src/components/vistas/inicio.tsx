@@ -5,6 +5,7 @@
 import { ArrowRight, BookOpenText, CalendarRange, Eye, Link2, Plus, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
 import { useDisciplinas, useLinks, useNotas } from "@/lib/notas/api-client";
 import { useSessao } from "@/hooks/use-sessao";
 import { CartaoNota } from "@/components/notas/cartao-nota";
@@ -27,6 +28,7 @@ export function VistaInicio({
   const anoAtual = new Date().getFullYear();
   const publicadas = (notas ?? []).filter((n) => n.status === "publicada").length;
   const doMes = (notas ?? []).filter((n) => n.mes === mesAtual && n.anoLetivo === anoAtual);
+  const doMesVisiveis = doMes.slice(0, 6);
   // Ordena por atualização decrescente sem mutar a lista original.
   const recentes = [...(notas ?? [])]
     .sort((a, b) => (a.atualizadoEm < b.atualizadoEm ? 1 : -1))
@@ -54,7 +56,13 @@ export function VistaInicio({
             Escreva a nota e publique na web, no PDF de impressão e nos links.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <BotaoAtualizar
+            carregando={notasQ.isFetching || disciplinasQ.isFetching || linksQ.isFetching}
+            aoAtualizar={() =>
+              Promise.all([notasQ.refetch(), disciplinasQ.refetch(), linksQ.refetch()])
+            }
+          />
           {(notas ?? []).length > 0 ? (
             <Button
               variant="outline"
@@ -111,10 +119,14 @@ export function VistaInicio({
         <section className="space-y-3">
           <CabecalhoSecao
             titulo={`Notas de ${MESES_CAP[mesAtual - 1]}`}
-            acao={{ rotulo: "Ver turmas", onClick: () => navegar("/organizacao") }}
+            acao={{
+              rotulo:
+                doMes.length > doMesVisiveis.length ? `Ver todas (${doMes.length})` : "Ver todas",
+              onClick: () => navegar("/notas"),
+            }}
           />
           <div className="grid gap-3 sm:grid-cols-2">
-            {doMes.map((n, i) => (
+            {doMesVisiveis.map((n, i) => (
               <CartaoNota
                 key={n.id}
                 nota={n}

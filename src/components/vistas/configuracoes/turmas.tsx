@@ -3,7 +3,7 @@
 // Seção Turmas: cadastro e edição de turmas por ano letivo.
 
 import { useState } from "react";
-import { GraduationCap, Pencil, Plus, Trash2 } from "lucide-react";
+import { GraduationCap, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,19 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useCriarTurma, useEditarTurma, useExcluirTurma, useTurmas } from "@/lib/notas/api-client";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
+import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
+import {
+  useCriarTurma,
+  useEditarTurma,
+  useExcluirTurma,
+  useTurmas,
+  type TurmaLista,
+} from "@/lib/notas/api-client";
+import { useGuardaSaida } from "@/hooks/use-guarda-saida";
 
 const SERIES = ["1º ano", "2º ano", "3º ano", "Outro"];
 
@@ -43,14 +41,19 @@ export function SecaoTurmas() {
   const [editando, setEditando] = useState<string | null>(null);
   const [nomeEditado, setNomeEditado] = useState("");
   const [serieEditada, setSerieEditada] = useState("");
+  const [excluindo, setExcluindo] = useState<TurmaLista | null>(null);
+  useGuardaSaida(editando !== null);
 
   const anos = [...new Set((turmas ?? []).map((t) => t.anoLetivo))].sort((a, b) => b - a);
 
   return (
     <section className="na-cascata border-border bg-card rounded-2xl border p-5">
-      <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
-        <GraduationCap className="h-4.5 w-4.5" aria-hidden /> Turmas
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
+          <GraduationCap className="h-4.5 w-4.5" aria-hidden /> Suas turmas
+        </h2>
+        <BotaoAtualizar carregando={turmasQ.isFetching} aoAtualizar={turmasQ.refetch} />
+      </div>
       <p className="text-muted-foreground mt-1 text-sm">
         As turmas alimentam a organização automática (Ano, Turma, Mês) e os links por turma.
       </p>
@@ -99,6 +102,7 @@ export function SecaoTurmas() {
                         <Button
                           size="sm"
                           className="h-8 rounded-lg"
+                          disabled={editar.isPending}
                           onClick={async () => {
                             try {
                               await editar.mutateAsync({
@@ -114,6 +118,9 @@ export function SecaoTurmas() {
                             }
                           }}
                         >
+                          {editar.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          ) : null}
                           Salvar
                         </Button>
                         <Button
@@ -142,54 +149,21 @@ export function SecaoTurmas() {
                             setNomeEditado(t.nome);
                             setSerieEditada(t.serie);
                           }}
-                          className="text-muted-foreground/70 hover:bg-accent hover:text-foreground flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+                          className="text-muted-foreground/70 hover:bg-accent hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg transition-colors pointer-coarse:h-11 pointer-coarse:w-11"
                           aria-label={`Editar turma ${t.nome}`}
                           title="Editar"
                         >
                           <Pencil className="h-4 w-4" aria-hidden />
                         </button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <button
-                              type="button"
-                              className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
-                              aria-label={`Excluir turma ${t.nome}`}
-                              title="Excluir"
-                            >
-                              <Trash2 className="h-4 w-4" aria-hidden />
-                            </button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir turma {t.nome}?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {t.totalNotas > 0
-                                  ? t.totalNotas === 1
-                                    ? "Há 1 nota vinculada. Ela continua existindo, apenas perde esta turma."
-                                    : `Há ${t.totalNotas} notas vinculadas. Elas continuam existindo, apenas perdem esta turma.`
-                                  : "A turma será removida."}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive hover:bg-destructive/90 text-white"
-                                onClick={async () => {
-                                  try {
-                                    await excluir.mutateAsync(t.id);
-                                    toast.success("Turma excluída");
-                                  } catch (e) {
-                                    toast.error("Não foi possível excluir a turma", {
-                                      description: e instanceof Error ? e.message : undefined,
-                                    });
-                                  }
-                                }}
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <button
+                          type="button"
+                          onClick={() => setExcluindo(t)}
+                          className="text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive flex h-9 w-9 items-center justify-center rounded-lg transition-colors pointer-coarse:h-11 pointer-coarse:w-11"
+                          aria-label={`Excluir turma ${t.nome}`}
+                          title="Excluir"
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden />
+                        </button>
                       </div>
                     );
                   })}
@@ -223,6 +197,8 @@ export function SecaoTurmas() {
         </Select>
         <Input
           type="number"
+          min={2000}
+          max={2100}
           value={anoLetivo}
           onChange={(e) => setAnoLetivo(Number(e.target.value) || new Date().getFullYear())}
           className="h-9 w-24 rounded-lg"
@@ -241,9 +217,34 @@ export function SecaoTurmas() {
             }
           }}
         >
-          <Plus className="h-4 w-4" aria-hidden /> Criar
+          {criar.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            <Plus className="h-4 w-4" aria-hidden />
+          )}
+          Criar
         </Button>
       </div>
+
+      <ConfirmacaoDestrutiva
+        aberto={excluindo !== null}
+        onOpenChange={(o) => !o && setExcluindo(null)}
+        titulo={`Excluir turma ${excluindo?.nome ?? ""}?`}
+        descricao={
+          excluindo && excluindo.totalNotas > 0
+            ? excluindo.totalNotas === 1
+              ? "Há 1 nota vinculada. Ela continua existindo, apenas perde esta turma."
+              : `Há ${excluindo.totalNotas} notas vinculadas. Elas continuam existindo, apenas perdem esta turma.`
+            : "A turma será removida."
+        }
+        textoConfirmar="Excluir turma"
+        onConfirmar={async () => {
+          if (!excluindo) return;
+          await excluir.mutateAsync(excluindo.id);
+          toast.success("Turma excluída");
+          setExcluindo(null);
+        }}
+      />
     </section>
   );
 }

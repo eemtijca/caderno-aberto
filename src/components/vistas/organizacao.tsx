@@ -4,11 +4,14 @@
 // derivado dos metadados (nada é cadastrado aqui).
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Pencil, Plus, Settings } from "lucide-react";
+import { useIsFetching, useQueryClient } from "@tanstack/react-query";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
+import { ChevronDown, Pencil, Plus, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client";
 import { corDisciplina } from "@/lib/notas/cores";
 import { MESES_CAP } from "@/lib/notas/texto";
@@ -17,6 +20,12 @@ export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void 
   const notasQ = useNotas();
   const disciplinasQ = useDisciplinas();
   const { data: turmas } = useTurmas();
+  const qc = useQueryClient();
+  // Cobre também as consultas do acordeão, que usam chaves por ano.
+  const emBusca =
+    useIsFetching({ queryKey: ["notas"] }) +
+    useIsFetching({ queryKey: ["turmas"] }) +
+    useIsFetching({ queryKey: ["disciplinas"] });
   const notas = notasQ.data;
   const disciplinas = disciplinasQ.data;
   const carregando = notasQ.isLoading || disciplinasQ.isLoading;
@@ -35,13 +44,25 @@ export function VistaOrganizacao({ navegar }: { navegar: (para: string) => void 
             Visões montadas automaticamente a partir dos metadados das notas.
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => navegar("/configuracoes/turmas")}
-          className="gap-2 rounded-xl"
-        >
-          <Settings className="h-4 w-4" aria-hidden /> Gerenciar turmas
-        </Button>
+        <div className="flex items-center gap-2">
+          <BotaoAtualizar
+            carregando={emBusca > 0}
+            aoAtualizar={() =>
+              Promise.all([
+                qc.invalidateQueries({ queryKey: ["notas"] }),
+                qc.invalidateQueries({ queryKey: ["turmas"] }),
+                qc.invalidateQueries({ queryKey: ["disciplinas"] }),
+              ])
+            }
+          />
+          <Button
+            variant="outline"
+            onClick={() => navegar("/configuracoes/turmas")}
+            className="gap-2 rounded-xl"
+          >
+            <Settings className="h-4 w-4" aria-hidden /> Gerenciar turmas
+          </Button>
+        </div>
       </div>
 
       {carregando ? (
@@ -97,6 +118,7 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
   const turmasQ = useTurmas(ano);
   const notasQ = useNotas({ ano });
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
+  const [semTurmaAberta, setSemTurmaAberta] = useState(false);
   const { data: turmas, isLoading: carregandoTurmas } = turmasQ;
   const { data: notas } = notasQ;
 
@@ -144,11 +166,12 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
                   aria-expanded={aberta}
                   className="bg-card hover:bg-accent/60 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors"
                 >
-                  {aberta ? (
-                    <ChevronDown className="text-muted-foreground h-4 w-4" aria-hidden />
-                  ) : (
-                    <ChevronRight className="text-muted-foreground h-4 w-4" aria-hidden />
-                  )}
+                  <ChevronDown
+                    className={`text-muted-foreground h-4 w-4 shrink-0 transition-transform duration-200 ${
+                      aberta ? "rotate-180" : ""
+                    }`}
+                    aria-hidden
+                  />
                   <span className="fonte-display w-12 font-bold">{t.nome}</span>
                   <span className="text-muted-foreground text-sm">{t.serie}</span>
                   <Badge variant="secondary" className="ml-auto rounded-md text-[0.68rem]">
@@ -156,7 +179,7 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
                   </Badge>
                 </button>
                 {aberta ? (
-                  <div className="bg-background/60 space-y-3 px-4 pt-1 pb-4">
+                  <div className="na-entra bg-background/60 space-y-3 px-4 pt-1 pb-4">
                     {meses.length === 0 ? (
                       <p className="text-muted-foreground text-sm">Sem notas nesta turma.</p>
                     ) : (
@@ -183,17 +206,34 @@ function AcordeaoTurmas({ ano, navegar }: { ano: number; navegar: (para: string)
       )}
 
       {semTurma.length > 0 ? (
-        <details className="border-border bg-card/50 rounded-2xl border border-dashed">
-          <summary className="text-muted-foreground cursor-pointer list-none px-4 py-3 text-sm font-semibold">
-            {semTurma.length} {semTurma.length === 1 ? "nota sem turma" : "notas sem turma"} em{" "}
-            {ano}
-          </summary>
-          <div className="space-y-1.5 px-4 pb-4">
-            {semTurma.map((n) => (
-              <LinhaNota key={n.id} nota={n} navegar={navegar} />
-            ))}
-          </div>
-        </details>
+        <Collapsible
+          open={semTurmaAberta}
+          onOpenChange={setSemTurmaAberta}
+          className="border-border bg-card/50 rounded-2xl border border-dashed"
+        >
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="text-muted-foreground flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold"
+            >
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                  semTurmaAberta ? "rotate-180" : ""
+                }`}
+                aria-hidden
+              />
+              {semTurma.length} {semTurma.length === 1 ? "nota sem turma" : "notas sem turma"} em{" "}
+              {ano}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden">
+            <div className="space-y-1.5 px-4 pb-4">
+              {semTurma.map((n) => (
+                <LinhaNota key={n.id} nota={n} navegar={navegar} />
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       ) : null}
     </section>
   );
@@ -295,7 +335,7 @@ function LinhaNota({
       <button
         type="button"
         onClick={() => navegar(`/editor/${nota.id}`)}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors pointer-coarse:h-11 pointer-coarse:w-11"
         aria-label={`Editar a nota ${nota.titulo}`}
         title="Editar"
       >

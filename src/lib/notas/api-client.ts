@@ -247,6 +247,89 @@ export function useExcluirNota() {
   });
 }
 
+export interface ResultadoLote {
+  atualizados: number;
+  ausentes: string[];
+}
+
+const TAMANHO_LOTE = 100;
+
+/** Divide os ids em lotes de 100 para respeitar o teto da API. */
+function lotesDe(ids: string[]): string[][] {
+  const lotes: string[][] = [];
+  for (let i = 0; i < ids.length; i += TAMANHO_LOTE) lotes.push(ids.slice(i, i + TAMANHO_LOTE));
+  return lotes;
+}
+
+export async function loteNotas(dados: {
+  acao: "publicar" | "rascunho" | "lixeira" | "disciplina";
+  ids: string[];
+  disciplinaId?: string;
+}): Promise<ResultadoLote> {
+  let atualizados = 0;
+  const ausentes: string[] = [];
+  for (const lote of lotesDe(dados.ids)) {
+    const r = await pedir<ResultadoLote>("/api/notas/lote", {
+      method: "POST",
+      body: JSON.stringify({ acao: dados.acao, disciplinaId: dados.disciplinaId, ids: lote }),
+    });
+    atualizados += r.atualizados;
+    ausentes.push(...r.ausentes);
+  }
+  return { atualizados, ausentes };
+}
+
+export async function loteLinks(dados: {
+  acao: "pausar" | "reativar" | "excluir";
+  ids: string[];
+}): Promise<ResultadoLote> {
+  let atualizados = 0;
+  const ausentes: string[] = [];
+  for (const lote of lotesDe(dados.ids)) {
+    const r = await pedir<ResultadoLote>("/api/links/lote", {
+      method: "POST",
+      body: JSON.stringify({ acao: dados.acao, ids: lote }),
+    });
+    atualizados += r.atualizados;
+    ausentes.push(...r.ausentes);
+  }
+  return { atualizados, ausentes };
+}
+
+export async function loteLixeira(dados: {
+  notas: string[];
+  links: string[];
+}): Promise<{ notas: number; links: number; ausentes: string[] }> {
+  const resultados = await Promise.all([
+    ...lotesDe(dados.notas).map((lote) =>
+      pedir<{ restaurados: { notas: number; links: number }; ausentes: string[] }>(
+        "/api/lixeira/lote",
+        {
+          method: "POST",
+          body: JSON.stringify({ acao: "restaurar", notas: lote, links: [] }),
+        },
+      ),
+    ),
+    ...lotesDe(dados.links).map((lote) =>
+      pedir<{ restaurados: { notas: number; links: number }; ausentes: string[] }>(
+        "/api/lixeira/lote",
+        {
+          method: "POST",
+          body: JSON.stringify({ acao: "restaurar", notas: [], links: lote }),
+        },
+      ),
+    ),
+  ]);
+  return resultados.reduce(
+    (total, r) => ({
+      notas: total.notas + r.restaurados.notas,
+      links: total.links + r.restaurados.links,
+      ausentes: [...total.ausentes, ...r.ausentes],
+    }),
+    { notas: 0, links: 0, ausentes: [] as string[] },
+  );
+}
+
 export function useDuplicarNota() {
   const qc = useQueryClient();
   return useMutation({
