@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useSessao } from "@/hooks/use-sessao";
 
@@ -15,40 +16,64 @@ export function SecaoSeguranca() {
   const [senha, setSenha] = useState("");
   const [senha2, setSenha2] = useState("");
   const [salvandoSenha, setSalvandoSenha] = useState(false);
+  const divergente = senha2.length > 0 && senha !== senha2;
 
   return (
     <section className="na-cascata border-border bg-card rounded-2xl border p-5">
       <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
-        <ShieldAlert className="h-4.5 w-4.5" aria-hidden /> Segurança
+        <ShieldAlert className="h-4.5 w-4.5" aria-hidden /> Troca de senha
       </h2>
 
       <div className="mt-4 grid gap-5 sm:grid-cols-2">
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           <p className="text-sm font-bold">Trocar senha</p>
-          <Input
-            type="password"
-            value={senhaAtual}
-            onChange={(e) => setSenhaAtual(e.target.value)}
-            placeholder="Senha atual"
-            className="rounded-lg"
-            aria-label="Senha atual para trocar a senha"
-          />
-          <Input
-            type="password"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            placeholder="Nova senha (mín. 8 caracteres)"
-            className="rounded-lg"
-            aria-label="Nova senha"
-          />
-          <Input
-            type="password"
-            value={senha2}
-            onChange={(e) => setSenha2(e.target.value)}
-            placeholder="Repetir a nova senha"
-            className="rounded-lg"
-            aria-label="Repetir nova senha"
-          />
+          <div className="grid gap-1.5">
+            <Label htmlFor="senha-atual">Senha atual</Label>
+            <Input
+              id="senha-atual"
+              type="password"
+              value={senhaAtual}
+              onChange={(e) => setSenhaAtual(e.target.value)}
+              placeholder="Digite a senha atual"
+              autoComplete="current-password"
+              className="rounded-lg"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="senha-nova">Nova senha</Label>
+            <Input
+              id="senha-nova"
+              type="password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="Mínimo de 8 caracteres"
+              autoComplete="new-password"
+              aria-describedby="senha-nova-dica"
+              className="rounded-lg"
+            />
+            <p id="senha-nova-dica" className="text-muted-foreground text-[0.72rem]">
+              Use pelo menos 8 caracteres e evite a senha atual.
+            </p>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="senha-repetir">Repetir a nova senha</Label>
+            <Input
+              id="senha-repetir"
+              type="password"
+              value={senha2}
+              onChange={(e) => setSenha2(e.target.value)}
+              placeholder="Repita a nova senha"
+              autoComplete="new-password"
+              aria-describedby={divergente ? "senha-repetir-erro" : undefined}
+              aria-invalid={divergente || undefined}
+              className="rounded-lg"
+            />
+            {divergente ? (
+              <p id="senha-repetir-erro" role="alert" className="text-destructive text-[0.72rem]">
+                As senhas não conferem.
+              </p>
+            ) : null}
+          </div>
           <Button
             variant="outline"
             className="gap-2 rounded-lg"
@@ -56,7 +81,8 @@ export function SecaoSeguranca() {
             onClick={async () => {
               setSalvandoSenha(true);
               try {
-                await trocarSenha(senhaAtual, senha);
+                const manterConectado = localStorage.getItem("caderno.manterConectado") !== "0";
+                await trocarSenha(senhaAtual, senha, manterConectado);
                 setSenhaAtual("");
                 setSenha("");
                 setSenha2("");

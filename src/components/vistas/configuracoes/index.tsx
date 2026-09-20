@@ -2,6 +2,7 @@
 
 // Vista Configurações: hub com as seções e navegação secundária entre telas.
 
+import { useEffect, useRef } from "react";
 import {
   CalendarRange,
   ChevronRight,
@@ -102,6 +103,13 @@ export function VistaConfiguracoes({
 }
 
 function NavConfig({ secao, navegar }: { secao: SecaoConfig; navegar: (para: string) => void }) {
+  const ativoRef = useRef<HTMLButtonElement>(null);
+
+  // Mantém a aba ativa visível na rolagem horizontal do mobile.
+  useEffect(() => {
+    ativoRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [secao]);
+
   return (
     <nav
       aria-label="Seções das configurações"
@@ -112,6 +120,7 @@ function NavConfig({ secao, navegar }: { secao: SecaoConfig; navegar: (para: str
         return (
           <button
             key={chave}
+            ref={ativo ? ativoRef : undefined}
             type="button"
             onClick={() => navegar(`/configuracoes/${chave === "visao" ? "" : chave}`)}
             aria-current={ativo ? "page" : undefined}

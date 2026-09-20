@@ -24,6 +24,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Label } from "@/components/ui/label";
 import { SeletorTema } from "@/components/seletor-tema";
 import { TelaEstado } from "@/components/tela-estado";
+import { toast } from "sonner";
 import { useSessao } from "@/hooks/use-sessao";
 import { ErroApi } from "@/lib/api/erro";
 import type { Rota } from "@/lib/rota";
@@ -78,7 +79,19 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
   const [nome, setNome] = useState("");
   const [codigo, setCodigo] = useState("");
   const [tipo, setTipo] = useState<TipoSolicitacao>(() => tipoDoHash());
-  const [manterConectado, setManterConectado] = useState(true);
+  const [manterConectado, setManterConectado] = useState(() => {
+    if (typeof window === "undefined") return true;
+    // Lembra a escolha do dispositivo entre acessos.
+    return localStorage.getItem("caderno.manterConectado") !== "0";
+  });
+  const alternarManterConectado = (v: boolean) => {
+    setManterConectado(v);
+    try {
+      localStorage.setItem("caderno.manterConectado", v ? "1" : "0");
+    } catch {
+      // Sem armazenamento local, a escolha vale só nesta sessão.
+    }
+  };
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
@@ -107,9 +120,9 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
       } else if (modo === "codigo") {
         if (senha.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.");
         if (senha !== senha2) throw new Error("As senhas não conferem.");
-        await sessao.usarCodigo(email.trim(), codigo.trim(), senha);
-        setSucesso("Senha definida. O acesso foi restabelecido.");
-        setTimeout(() => navegar("/"), 1200);
+        await sessao.usarCodigo(email.trim(), codigo.trim(), senha, manterConectado);
+        toast.success("Senha definida", { description: "O acesso foi restabelecido." });
+        navegar("/");
       } else if (tipo === "primeiro_acesso") {
         if (nome.trim().length < 2) throw new Error("Informe seu nome completo.");
         await sessao.solicitarAcesso(nome.trim(), email.trim());
@@ -340,7 +353,6 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                       maxLength={8}
                       value={codigo}
                       onChange={(v) => setCodigo(v.toUpperCase())}
-                      autoFocus
                       inputMode="text"
                       autoComplete="one-time-code"
                       containerClassName="justify-between"
@@ -348,7 +360,11 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                     >
                       <InputOTPGroup className="w-full justify-between">
                         {Array.from({ length: 8 }).map((_, i) => (
-                          <InputOTPSlot key={i} index={i} className="h-10 w-8 rounded-md text-sm" />
+                          <InputOTPSlot
+                            key={i}
+                            index={i}
+                            className="h-10 w-7 rounded-md text-sm min-[380px]:w-8"
+                          />
                         ))}
                       </InputOTPGroup>
                     </InputOTP>
@@ -418,7 +434,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
                   <Checkbox
                     id="manter-conectado"
                     checked={manterConectado}
-                    onCheckedChange={(v) => setManterConectado(v === true)}
+                    onCheckedChange={(v) => alternarManterConectado(v === true)}
                   />
                   <Label htmlFor="manter-conectado" className="cursor-pointer text-sm font-normal">
                     Manter conectado neste dispositivo
