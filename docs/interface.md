@@ -82,7 +82,9 @@ Os avisos usam Sonner, no topo e centralizados, com cores por tipo e botão de f
 
 ## Listas, filtros e paginação
 
-Listas longas usam o paginador compartilhado (`src/components/paginacao.tsx` e `usePaginacao`): resumo do intervalo, botões numerados com elipses no desktop e indicador compacto no mobile. Ao trocar de página a rolagem volta ao topo e o conteúdo entra com animação. Tamanhos: 12 notas, 10 links, 10 itens por seção da lixeira, 10 aulas na coleção pública e 20 nas listas do admin.
+Listas longas usam o paginador compartilhado (`src/components/paginacao.tsx`): resumo do intervalo, botões numerados com elipses no desktop e indicador compacto no mobile. Ao trocar de página a rolagem volta ao topo e o conteúdo entra com animação. Notas, Links, Lixeira e coleção pública paginam no cliente (`usePaginacao`), sobre dados já completos. Tamanhos: 12 notas, 10 links, 10 itens por seção da lixeira, 10 aulas na coleção pública e 20 nas listas do admin.
+
+As listas do console de administração (Solicitações, Códigos, Usuários, Aprovações e Auditoria) paginam no servidor (`usePaginacaoServidor`): cada página é buscada com `pagina` e `porPagina`, o rodapé exibe o total real devolvido pela API e o filtro de cada aba reinicia a paginação. Assim os contadores do topo e a listagem ficam coerentes mesmo com centenas de registros.
 
 Os filtros de Notas ficam em um botão com contador de ativos: painel em popover no desktop e bottom sheet no mobile, agrupado por disciplina, ano, mês e turma. Os filtros aplicados viram chips removíveis abaixo da busca e sobrevivem à navegação dentro da sessão (`useEstadoSessao`), assim como a posição de rolagem por rota.
 
@@ -90,7 +92,7 @@ Os filtros de Notas ficam em um botão com contador de ativos: painel em popover
 
 As consultas usam `staleTime: 0`: ao entrar em uma tela, dados velhos são refeitos automaticamente. Todas as telas com dados exibem o `BotaoAtualizar` (`RefreshCw` girando enquanto busca, com rótulo apenas quando faz sentido), incluindo a leitura, o editor (salvar e atualizar), a página pública e as seções de Configurações e Administração.
 
-Listas com ações em lote (Notas, Links e Lixeira) têm um modo de seleção: o botão Selecionar mostra os checkboxes, o clique no item marca em vez de abrir, o cabeçalho oferece Selecionar todos (todos os itens filtrados, inclusive entre páginas) e uma barra flutuante (`BarraLote`) concentra as ações, a contagem e o cancelar, posicionada acima da navegação inferior no mobile. `Esc` sai do modo. As ações rodam em servidor por lotes de até 100 ids, e itens ausentes ficam selecionados para nova tentativa.
+Listas com ações em lote (Notas, Links e Lixeira) têm um modo de seleção: o botão Selecionar mostra os checkboxes, o clique no item marca em vez de abrir, o cabeçalho oferece Selecionar todos (todos os itens filtrados, inclusive entre páginas) e uma barra flutuante (`BarraLote`) concentra as ações, a contagem e o cancelar, posicionada acima da navegação inferior no mobile. A barra sobe ao entrar no modo de seleção, desce ao sair com transição suave e fica fixa à viewport durante a rolagem, renderizada em portal no `body`. `Esc` sai do modo. As ações rodam em servidor por lotes de até 100 ids, e itens ausentes ficam selecionados para nova tentativa. Na Lixeira, o botão Limpar lixeira esvazia a lixeira em definitivo, exigindo digitar LIMPAR para confirmar.
 
 ## Carregamento
 

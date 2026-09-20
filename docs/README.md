@@ -33,6 +33,7 @@ As decisões estruturais ficam registradas como ADRs (Architecture Decision Reco
 - [ADR-007: impressão em portal no body](adr/007-impressao-em-portal.md)
 - [ADR-008: histórico de edição estrutural dos blocos](adr/008-historico-de-edicao.md)
 - [ADR-009: ações em lote por recurso](adr/009-acoes-em-lote.md)
+- [ADR-010: esvaziar a lixeira](adr/010-esvaziar-lixeira.md)
 
 Novas decisões seguem o formato descrito em [../CONTRIBUTING.md](../CONTRIBUTING.md).
 

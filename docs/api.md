@@ -41,7 +41,7 @@ Rotas HTTP do Caderno Aberto. Todas ficam sob `/api` e respondem JSON, exceto do
 | POST              | `/api/conta/excluir`                    | Sessão            | Solicita exclusão com carência      |
 | POST              | `/api/conta/restaurar`                  | Sessão            | Cancela a exclusão pendente         |
 | GET, DELETE       | `/api/conta/restaurar`                  | Segredo           | Purga contas e lixeira (Cron)       |
-| GET               | `/api/lixeira`                          | Sessão            | Lista notas e links na lixeira      |
+| GET, DELETE       | `/api/lixeira`                          | Sessão            | Lista ou esvazia a lixeira          |
 | GET               | `/api/notas`                            | Sessão            | Lista e filtra notas                |
 | POST              | `/api/notas`                            | Sessão            | Cria nota                           |
 | GET, PUT, DELETE  | `/api/notas/[id]`                       | Sessão            | Consulta, atualiza ou exclui nota   |
@@ -102,13 +102,15 @@ Corpo: `atual`, `nova` e `manterConectado` (opcional, padrão `true`). Responde 
 
 Todas as rotas abaixo exigem `papel = 'admin'`. Respondem `401` sem sessão e `403` para outros papéis.
 
+As listas de `solicitacoes`, `codigos`, `usuarios`, `aprovacoes` e `auditoria` são paginadas no servidor: aceitam `pagina` (padrão 1) e `porPagina` (padrão 20, máximo 100) e respondem com a coleção, mais `total`, `pagina` e `porPagina`.
+
 ### `GET /api/admin/resumo`
 
 Resposta `200` com `{ solicitacoesPendentes, codigosAtivos, usuarios, usuariosInativos }`.
 
 ### `GET /api/admin/solicitacoes?status=`
 
-Lista as solicitações (até 200), filtrando por `status` (`pendente`, `atendida` ou `cancelada`) quando informado. Cada item traz `id`, `nome`, `email`, `tipo`, `status`, `criadoEm` e `atendidaEm`.
+Lista as solicitações, filtrando por `status` (`pendente`, `atendida` ou `cancelada`) quando informado. Cada item traz `id`, `nome`, `email`, `tipo`, `status`, `criadoEm` e `atendidaEm`.
 
 ### `POST /api/admin/solicitacoes/[id]/atender`
 
@@ -128,7 +130,7 @@ Revoga um código pendente. Código já utilizado responde `409`.
 
 ### `GET` e `POST /api/admin/usuarios`
 
-`GET` lista até 300 contas com perfil, papel, estado de ativação, `statusConta`, `motivo` e `suspensoEm`. `POST` recebe `nome`, `email` e `papel` (`admin` ou `professor`), cria a conta inativa e devolve `{ usuario, codigo, expiraEm }` com status `201`. E-mail já cadastrado responde `400`.
+`GET` lista as contas com perfil, papel, estado de ativação, `statusConta`, `motivo` e `suspensoEm`. `POST` recebe `nome`, `email` e `papel` (`admin` ou `professor`), cria a conta inativa e devolve `{ usuario, codigo, expiraEm }` com status `201`. E-mail já cadastrado responde `400`.
 
 ### `PATCH` e `DELETE /api/admin/usuarios/[id]`
 
@@ -150,7 +152,7 @@ Encerra todas as sessões da conta. Resposta `200` com `{ "ok": true, "removidas
 
 ### `GET` e `DELETE /api/admin/auditoria`
 
-`GET` aceita `?acao=` e lista até 200 eventos de segurança, do mais recente ao mais antigo, com e-mail mascarado. `detalhe` carrega dados específicos do evento.
+`GET` aceita `?acao=` e lista os eventos de segurança, do mais recente ao mais antigo, com e-mail mascarado. `detalhe` carrega dados específicos do evento.
 
 `DELETE` limpa a trilha e exige `confirmacao` igual a `LIMPAR` e `senha` do próprio administrador (step-up). Responde `200` com `{ "ok": true, "removidos": n }` e registra o evento `LIMPAR_AUDITORIA` com a contagem. Confirmação ausente responde `400`; senha incorreta responde `403`.
 
@@ -202,6 +204,10 @@ Executa a manutenção agendada: purga contas com carência vencida (ignorando a
 ### `GET /api/lixeira`
 
 Lista notas e links com `excluidoEm` preenchido, além do prazo de retenção. Responde `200` com `{ "dias", "expiraEm", "notas": [...], "links": [...] }`.
+
+### `DELETE /api/lixeira`
+
+Esvazia a lixeira do professor. Remove em definitivo as notas e os links com `excluidoEm` preenchido; os links das notas saem por cascade. Responde `200` com `{ "ok": true, "notas": n, "links": n }`. Não é possível desfazer.
 
 ### `POST /api/notas/[id]/restaurar` e `POST /api/links/[id]/restaurar`
 
