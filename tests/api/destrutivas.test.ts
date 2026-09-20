@@ -87,7 +87,7 @@ describe("salvaguardas destrutivas", () => {
   });
 
   it("não exclui o último administrador", async () => {
-    const lista = await admin.get("/api/admin/usuarios");
+    const lista = await admin.get("/api/admin/usuarios?porPagina=100");
     const admins = lista.dados.usuarios.filter((u: { papel: string }) => u.papel === "admin");
     if (admins.length === 1) {
       const eu = admins[0];

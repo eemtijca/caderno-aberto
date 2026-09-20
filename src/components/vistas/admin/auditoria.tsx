@@ -2,7 +2,7 @@
 
 // Aba de auditoria: trilha de eventos de segurança, com filtro e limpeza.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { BotaoAtualizar } from "@/components/botao-atualizar";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Paginacao } from "@/components/paginacao";
 import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
-import { usePaginacao } from "@/hooks/use-paginacao";
+import { usePaginacaoServidor } from "@/hooks/use-paginacao-servidor";
 import { adminApi, type Evento } from "./api";
 
 const VARIANTE: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -53,28 +53,23 @@ const ACOES_CONHECIDAS = [
 ];
 
 export function SecaoAuditoria() {
-  const [itens, setItens] = useState<Evento[]>([]);
-  const [carregando, setCarregando] = useState(true);
   const [acao, setAcao] = useState("");
   const [confirmarLimpeza, setConfirmarLimpeza] = useState(false);
-  const paginacao = usePaginacao(itens, 20, `${acao}:${itens.length}`);
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
-    try {
-      const { eventos } = await adminApi.auditoria(acao || undefined);
-      setItens(eventos);
-    } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Falha ao carregar.");
-    } finally {
-      setCarregando(false);
-    }
-  }, [acao]);
+  const paginacao = usePaginacaoServidor<Evento>({
+    chave: acao,
+    buscar: useCallback(
+      async (pagina, porPagina) => {
+        const r = await adminApi.auditoria(acao || undefined, pagina, porPagina);
+        return { itens: r.eventos, total: r.total };
+      },
+      [acao],
+    ),
+    aoErro: (erro) => toast.error(erro.message),
+  });
 
-  useEffect(() => {
-    void carregar();
-  }, [carregar]);
-
+  const itens = paginacao.itens;
+  const carregando = paginacao.carregando;
   const acoes = useMemo(
     () => [...new Set([...ACOES_CONHECIDAS, ...itens.map((e) => e.acao)])].sort(),
     [itens],
@@ -97,7 +92,11 @@ export function SecaoAuditoria() {
           </SelectContent>
         </Select>
 
-        <BotaoAtualizar carregando={carregando} aoAtualizar={carregar} rotulo="Atualizar" />
+        <BotaoAtualizar
+          carregando={carregando}
+          aoAtualizar={paginacao.recarregar}
+          rotulo="Atualizar"
+        />
 
         <Button
           variant="outline"
@@ -157,7 +156,7 @@ export function SecaoAuditoria() {
           toast.success("Auditoria limpa", {
             description: `${r.removidos} ${r.removidos === 1 ? "evento removido" : "eventos removidos"}.`,
           });
-          await carregar();
+          await paginacao.recarregar();
         }}
       />
     </div>

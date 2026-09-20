@@ -7,6 +7,7 @@ import { exigirAdmin } from "@/lib/api/admin";
 import { confereSenhaAdmin } from "@/lib/api/admin-guarda";
 import { registrarEvento } from "@/lib/api/auditoria";
 import { mascararEmail } from "@/lib/auth/validacao";
+import { parametrosPagina } from "@/lib/api/paginacao";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +17,18 @@ export async function GET(req: NextRequest) {
   if (!guarda.ok) return guarda.resposta;
 
   const acao = req.nextUrl.searchParams.get("acao") ?? "";
+  const where = acao ? { acao } : {};
+  const { pagina, porPagina, skip, take } = parametrosPagina(req);
   const db = banco();
-  const linhas = await db.eventosSeguranca.findMany({
-    where: acao ? { acao } : {},
-    orderBy: { criadoEm: "desc" },
-    take: 200,
-  });
+  const [linhas, total] = await Promise.all([
+    db.eventosSeguranca.findMany({
+      where,
+      orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+      skip,
+      take,
+    }),
+    db.eventosSeguranca.count({ where }),
+  ]);
   return json({
     eventos: linhas.map((e) => ({
       id: e.id,
@@ -31,6 +38,9 @@ export async function GET(req: NextRequest) {
       criadoEm: e.criadoEm.toISOString(),
       detalhe: e.detalhe,
     })),
+    total,
+    pagina,
+    porPagina,
   });
 }
 

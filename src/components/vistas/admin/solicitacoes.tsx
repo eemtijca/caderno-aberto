@@ -2,12 +2,12 @@
 
 // Aba de solicitações de acesso: fila de pedidos e geração de código.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { KeyRound, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { BotaoAtualizar } from "@/components/botao-atualizar";
 import { Paginacao } from "@/components/paginacao";
-import { usePaginacao } from "@/hooks/use-paginacao";
+import { usePaginacaoServidor } from "@/hooks/use-paginacao-servidor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,28 +21,26 @@ export function SecaoSolicitacoes({
   aoAtualizar?: () => void;
 }) {
   const [filtro, setFiltro] = useState<"pendente" | "todas">("pendente");
-  const [itens, setItens] = useState<Solicitacao[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const paginacao = usePaginacao(itens, 20, `${filtro}:${itens.length}`);
   const [processando, setProcessando] = useState<string | null>(null);
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
-    try {
-      const { solicitacoes } = await adminApi.solicitacoes(
-        filtro === "pendente" ? "pendente" : undefined,
-      );
-      setItens(solicitacoes);
-    } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Falha ao carregar.");
-    } finally {
-      setCarregando(false);
-    }
-  }, [filtro]);
+  const paginacao = usePaginacaoServidor<Solicitacao>({
+    chave: filtro,
+    buscar: useCallback(
+      async (pagina, porPagina) => {
+        const r = await adminApi.solicitacoes(
+          filtro === "pendente" ? "pendente" : undefined,
+          pagina,
+          porPagina,
+        );
+        return { itens: r.solicitacoes, total: r.total };
+      },
+      [filtro],
+    ),
+    aoErro: (erro) => toast.error(erro.message),
+  });
 
-  useEffect(() => {
-    void carregar();
-  }, [carregar]);
+  const itens = paginacao.itens;
+  const carregando = paginacao.carregando;
 
   const atender = async (id: string) => {
     setProcessando(id);
@@ -50,7 +48,7 @@ export function SecaoSolicitacoes({
       const emitido = await adminApi.atender(id);
       aoEmitir(emitido);
       toast.success("Código gerado");
-      await carregar();
+      await paginacao.recarregar();
       aoAtualizar?.();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Falha ao atender.");
@@ -64,7 +62,7 @@ export function SecaoSolicitacoes({
     try {
       await adminApi.cancelar(id);
       toast.success("Solicitação cancelada");
-      await carregar();
+      await paginacao.recarregar();
       aoAtualizar?.();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Falha ao cancelar.");
@@ -84,7 +82,11 @@ export function SecaoSolicitacoes({
             Todas
           </Chip>
         </div>
-        <BotaoAtualizar carregando={carregando} aoAtualizar={carregar} rotulo="Atualizar" />
+        <BotaoAtualizar
+          carregando={carregando}
+          aoAtualizar={paginacao.recarregar}
+          rotulo="Atualizar"
+        />
       </div>
 
       {carregando ? (

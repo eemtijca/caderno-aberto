@@ -2,12 +2,12 @@
 
 // Aba de códigos: emissão avulsa, listagem e revogação.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { KeyRound, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { BotaoAtualizar } from "@/components/botao-atualizar";
 import { Paginacao } from "@/components/paginacao";
-import { usePaginacao } from "@/hooks/use-paginacao";
+import { usePaginacaoServidor } from "@/hooks/use-paginacao-servidor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,29 +42,21 @@ export function SecaoCodigos({
   aoEmitir: (c: CodigoEmitido) => void;
   aoAtualizar?: () => void;
 }) {
-  const [itens, setItens] = useState<Codigo[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const paginacao = usePaginacao(itens, 20, itens.length);
   const [email, setEmail] = useState("");
   const [tipo, setTipo] = useState<TipoCodigo>("primeiro_acesso");
   const [enviando, setEnviando] = useState(false);
   const [revogando, setRevogando] = useState<string | null>(null);
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
-    try {
-      const { codigos } = await adminApi.codigos();
-      setItens(codigos);
-    } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Falha ao carregar.");
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
+  const paginacao = usePaginacaoServidor<Codigo>({
+    buscar: useCallback(async (pagina, porPagina) => {
+      const r = await adminApi.codigos(pagina, porPagina);
+      return { itens: r.codigos, total: r.total };
+    }, []),
+    aoErro: (erro) => toast.error(erro.message),
+  });
 
-  useEffect(() => {
-    void carregar();
-  }, [carregar]);
+  const itens = paginacao.itens;
+  const carregando = paginacao.carregando;
 
   const gerar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +67,7 @@ export function SecaoCodigos({
       aoEmitir(emitido);
       setEmail("");
       toast.success("Código gerado");
-      await carregar();
+      await paginacao.recarregar();
       aoAtualizar?.();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Falha ao gerar.");
@@ -89,7 +81,7 @@ export function SecaoCodigos({
     try {
       await adminApi.revogarCodigo(id);
       toast.success("Código revogado");
-      await carregar();
+      await paginacao.recarregar();
       aoAtualizar?.();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Falha ao revogar.");
@@ -144,7 +136,11 @@ export function SecaoCodigos({
       </form>
 
       <div className="flex justify-end">
-        <BotaoAtualizar carregando={carregando} aoAtualizar={carregar} rotulo="Atualizar" />
+        <BotaoAtualizar
+          carregando={carregando}
+          aoAtualizar={paginacao.recarregar}
+          rotulo="Atualizar"
+        />
       </div>
 
       {carregando ? (

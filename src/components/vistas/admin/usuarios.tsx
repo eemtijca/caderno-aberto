@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { BotaoAtualizar } from "@/components/botao-atualizar";
 import { Paginacao } from "@/components/paginacao";
-import { usePaginacao } from "@/hooks/use-paginacao";
+import { usePaginacaoServidor } from "@/hooks/use-paginacao-servidor";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,9 +66,6 @@ export function SecaoUsuarios({
   aoAtualizar?: () => void;
 }) {
   const { usuario } = useSessao();
-  const [itens, setItens] = useState<UsuarioAdmin[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const paginacao = usePaginacao(itens, 20, itens.length);
   const [criando, setCriando] = useState(false);
   const [form, setForm] = useState({ nome: "", email: "", papel: "professor" });
   const [salvando, setSalvando] = useState(false);
@@ -78,22 +75,20 @@ export function SecaoUsuarios({
   const [reativando, setReativando] = useState<UsuarioAdmin | null>(null);
   const [processando, setProcessando] = useState<string | null>(null);
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
-    try {
-      const { usuarios } = await adminApi.usuarios();
-      setItens(usuarios);
-    } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Falha ao carregar.");
-    } finally {
-      setCarregando(false);
-    }
-    aoAtualizar?.();
-  }, [aoAtualizar]);
+  const paginacao = usePaginacaoServidor<UsuarioAdmin>({
+    buscar: useCallback(
+      async (pagina, porPagina) => {
+        const r = await adminApi.usuarios(pagina, porPagina);
+        aoAtualizar?.();
+        return { itens: r.usuarios, total: r.total };
+      },
+      [aoAtualizar],
+    ),
+    aoErro: (erro) => toast.error(erro.message),
+  });
 
-  useEffect(() => {
-    void carregar();
-  }, [carregar]);
+  const itens = paginacao.itens;
+  const carregando = paginacao.carregando;
 
   const criar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +104,7 @@ export function SecaoUsuarios({
         email: r.usuario.email,
         tipo: "primeiro_acesso",
       });
-      await carregar();
+      await paginacao.recarregar();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Falha ao criar.");
     } finally {
@@ -146,10 +141,14 @@ export function SecaoUsuarios({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-muted-foreground text-sm">
-          {itens.length} {itens.length === 1 ? "conta" : "contas"}
+          {paginacao.total} {paginacao.total === 1 ? "conta" : "contas"}
         </p>
         <div className="flex gap-2">
-          <BotaoAtualizar carregando={carregando} aoAtualizar={carregar} rotulo="Atualizar" />
+          <BotaoAtualizar
+            carregando={carregando}
+            aoAtualizar={paginacao.recarregar}
+            rotulo="Atualizar"
+          />
           <Button size="sm" className="gap-1.5 rounded-lg" onClick={() => setCriando(true)}>
             <UserPlus className="h-4 w-4" aria-hidden /> Nova conta
           </Button>
@@ -327,7 +326,7 @@ export function SecaoUsuarios({
         aoFechar={() => setEditando(null)}
         aoSalvar={async () => {
           setEditando(null);
-          await carregar();
+          await paginacao.recarregar();
         }}
       />
 
@@ -357,7 +356,7 @@ export function SecaoUsuarios({
             r.pendente ? { description: "Outro administrador deve aprovar a ação." } : undefined,
           );
           setExcluindo(null);
-          await carregar();
+          await paginacao.recarregar();
         }}
       />
 
@@ -391,7 +390,7 @@ export function SecaoUsuarios({
             r.pendente ? { description: "Outro administrador deve aprovar a ação." } : undefined,
           );
           setSuspendendo(null);
-          await carregar();
+          await paginacao.recarregar();
         }}
       />
 
@@ -413,7 +412,7 @@ export function SecaoUsuarios({
           await adminApi.editarUsuario(reativando.id, { statusConta: "ativo", senha });
           toast.success("Conta reativada");
           setReativando(null);
-          await carregar();
+          await paginacao.recarregar();
         }}
       />
     </div>
