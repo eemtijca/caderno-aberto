@@ -2,7 +2,8 @@
 
 // Roteador SPA por hash. Funciona em qualquer hospedagem e permite links públicos diretos (#/l/<token> para alunos).
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { confirmarSaidaSePreciso } from "@/hooks/use-guarda-saida";
 
 export type SecaoConfig =
   "visao" | "perfil" | "seguranca" | "disciplinas" | "turmas" | "dados" | "exclusao";
@@ -35,7 +36,7 @@ export type Rota =
   | { vista: "lixeira" }
   | { vista: "editor"; id: string }
   | { vista: "leitura"; id: string }
-  | { vista: "publica"; token: string }
+  | { vista: "publica"; token: string; aulaId?: string }
   | { vista: "configuracoes"; secao: SecaoConfig }
   | { vista: "recuperacao" }
   | { vista: "entrar" }
@@ -71,8 +72,12 @@ export function analisarHash(hash: string): Rota {
       return partes[1] ? { vista: "editor", id: partes[1] } : { vista: "notas" };
     case "nota":
       return partes[1] ? { vista: "leitura", id: partes[1] } : { vista: "notas" };
-    case "l":
-      return partes[1] ? { vista: "publica", token: partes[1] } : { vista: "inicio" };
+    case "l": {
+      if (!partes[1]) return { vista: "inicio" };
+      // #/l/<token>/aula/<id> abre diretamente uma aula da coleção.
+      const aulaId = partes[2] === "aula" && partes[3] ? partes[3] : undefined;
+      return { vista: "publica", token: partes[1], aulaId };
+    }
     case "conta":
     case "configuracoes":
       return analisarConfig(partes);
@@ -99,17 +104,36 @@ export function useRota(): {
     typeof window === "undefined" ? { vista: "inicio" } : analisarHash(window.location.hash),
   );
 
+  // Guarda a posição de rolagem por rota para restaurá-la ao voltar.
+  const hashAnterior = useRef(typeof window === "undefined" ? "#/" : window.location.hash);
+
   useEffect(() => {
     const aoMudar = () => {
-      // Ao trocar de vista, volta ao topo da página.
-      setRota(analisarHash(window.location.hash));
-      window.scrollTo({ top: 0 });
+      const anterior = hashAnterior.current;
+      const alvo = window.location.hash;
+      let salvo: string | null = null;
+      try {
+        sessionStorage.setItem(`caderno.scroll:${anterior}`, String(window.scrollY));
+        salvo = sessionStorage.getItem(`caderno.scroll:${alvo}`);
+      } catch {
+        salvo = null;
+      }
+      hashAnterior.current = alvo;
+      setRota(analisarHash(alvo));
+      // Espera o novo conteúdo montar antes de devolver a posição.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: salvo ? Number(salvo) || 0 : 0 });
+        }),
+      );
     };
     window.addEventListener("hashchange", aoMudar);
     return () => window.removeEventListener("hashchange", aoMudar);
   }, []);
 
   const navegar = useCallback((para: string) => {
+    // Respeita telas com alterações pendentes antes de trocar de vista.
+    if (!confirmarSaidaSePreciso()) return;
     // Normaliza para "#/..." e força re-render quando o hash não muda.
     const alvo = para.startsWith("#") ? para : `#${para.startsWith("/") ? para : `/${para}`}`;
     if (window.location.hash === alvo) {
