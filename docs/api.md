@@ -14,55 +14,57 @@ Rotas HTTP do Caderno Aberto. Todas ficam sob `/api` e respondem JSON, exceto do
 
 ## Resumo das rotas
 
-| Método            | Caminho                                 | Acesso            | Descrição                         |
-| ----------------- | --------------------------------------- | ----------------- | --------------------------------- |
-| GET               | `/api`                                  | Público           | Nome e versão da aplicação        |
-| POST              | `/api/auth/solicitar`                   | Público           | Solicita código de acesso         |
-| POST              | `/api/auth/usar-codigo`                 | Público           | Define a senha com o código       |
-| POST              | `/api/auth/entrar`                      | Público           | Inicia sessão                     |
-| POST              | `/api/auth/sair`                        | Público           | Encerra sessão                    |
-| POST              | `/api/auth/renovar`                     | Público (refresh) | Renova a sessão                   |
-| POST              | `/api/auth/trocar-senha`                | Sessão            | Troca a senha                     |
-| GET               | `/api/admin/resumo`                     | Admin             | Contadores do painel              |
-| GET               | `/api/admin/solicitacoes`               | Admin             | Lista solicitações                |
-| POST              | `/api/admin/solicitacoes/[id]/atender`  | Admin             | Gera código e atende o pedido     |
-| POST              | `/api/admin/solicitacoes/[id]/cancelar` | Admin             | Recusa o pedido                   |
-| GET, POST         | `/api/admin/codigos`                    | Admin             | Lista ou emite código             |
-| DELETE            | `/api/admin/codigos/[id]`               | Admin             | Revoga um código                  |
-| GET, POST         | `/api/admin/usuarios`                   | Admin             | Lista ou cria contas              |
-| PATCH, DELETE     | `/api/admin/usuarios/[id]`              | Admin             | Edita ou exclui conta             |
-| POST              | `/api/admin/usuarios/[id]/codigo`       | Admin             | Reemite código                    |
-| DELETE            | `/api/admin/usuarios/[id]/sessoes`      | Admin             | Encerra sessões da conta          |
-| GET               | `/api/admin/aprovacoes`                 | Admin             | Lista ações destrutivas pendentes |
-| POST              | `/api/admin/aprovacoes/[id]`            | Admin             | Aprova ou recusa uma ação         |
-| GET               | `/api/admin/auditoria`                  | Admin             | Lista eventos de segurança        |
-| GET               | `/api/conta`                            | Sessão opcional   | Sessão, usuário e perfil          |
-| PATCH             | `/api/conta`                            | Sessão            | Atualiza nome e escola            |
-| POST              | `/api/conta/excluir`                    | Sessão            | Solicita exclusão com carência    |
-| POST              | `/api/conta/restaurar`                  | Sessão            | Cancela a exclusão pendente       |
-| GET, DELETE       | `/api/conta/restaurar`                  | Segredo           | Purga contas e lixeira (Cron)     |
-| GET               | `/api/lixeira`                          | Sessão            | Lista notas e links na lixeira    |
-| GET               | `/api/notas`                            | Sessão            | Lista e filtra notas              |
-| POST              | `/api/notas`                            | Sessão            | Cria nota                         |
-| GET, PUT, DELETE  | `/api/notas/[id]`                       | Sessão            | Consulta, atualiza ou exclui nota |
-| POST              | `/api/notas/[id]/duplicar`              | Sessão            | Duplica nota como rascunho        |
-| POST              | `/api/notas/[id]/restaurar`             | Sessão            | Restaura nota da lixeira          |
-| GET               | `/api/notas/[id]/exportar`              | Sessão            | Exporta em `json`, `md` ou `tex`  |
-| GET, POST         | `/api/disciplinas`                      | Sessão            | Lista ou cria disciplinas         |
-| PUT, DELETE       | `/api/disciplinas/[id]`                 | Sessão            | Atualiza ou exclui disciplina     |
-| GET, POST         | `/api/turmas`                           | Sessão            | Lista ou cria turmas              |
-| PUT, DELETE       | `/api/turmas/[id]`                      | Sessão            | Atualiza ou exclui turma          |
-| GET, POST         | `/api/links`                            | Sessão            | Lista ou cria links               |
-| PUT, DELETE       | `/api/links/[id]`                       | Sessão            | Atualiza ou exclui link           |
-| POST              | `/api/links/[id]/restaurar`             | Sessão            | Restaura link da lixeira          |
-| GET               | `/api/busca`                            | Sessão opcional   | Busca global                      |
-| GET, POST         | `/api/backup`                           | Sessão            | Exporta ou restaura backup        |
-| POST              | `/api/backup/validar`                   | Sessão            | Dry-run da restauração            |
-| GET               | `/api/backup/snapshots`                 | Sessão            | Lista ou baixa snapshots          |
-| POST              | `/api/importar`                         | Sessão            | Importa uma nota `.md` ou `.json` |
-| POST, GET, DELETE | `/api/imagens`                          | Sessão            | Envia, serve ou exclui imagens    |
-| GET               | `/api/publico/[token]`                  | Público           | Dados da vista do aluno           |
-| GET               | `/api/publico/[token]/imagens`          | Público           | Imagens referenciadas por um link |
+| Método            | Caminho                                 | Acesso            | Descrição                           |
+| ----------------- | --------------------------------------- | ----------------- | ----------------------------------- |
+| GET               | `/api`                                  | Público           | Nome e versão da aplicação          |
+| POST              | `/api/auth/solicitar`                   | Público           | Solicita código de acesso           |
+| POST              | `/api/auth/usar-codigo`                 | Público           | Define a senha com o código         |
+| POST              | `/api/auth/entrar`                      | Público           | Inicia sessão                       |
+| POST              | `/api/auth/sair`                        | Público           | Encerra sessão                      |
+| POST              | `/api/auth/renovar`                     | Público (refresh) | Renova a sessão                     |
+| POST              | `/api/auth/trocar-senha`                | Sessão            | Troca a senha                       |
+| GET               | `/api/admin/resumo`                     | Admin             | Contadores do painel                |
+| GET               | `/api/admin/solicitacoes`               | Admin             | Lista solicitações                  |
+| POST              | `/api/admin/solicitacoes/[id]/atender`  | Admin             | Gera código e atende o pedido       |
+| POST              | `/api/admin/solicitacoes/[id]/cancelar` | Admin             | Recusa o pedido                     |
+| GET, POST         | `/api/admin/codigos`                    | Admin             | Lista ou emite código               |
+| DELETE            | `/api/admin/codigos/[id]`               | Admin             | Revoga um código                    |
+| GET, POST         | `/api/admin/usuarios`                   | Admin             | Lista ou cria contas                |
+| PATCH, DELETE     | `/api/admin/usuarios/[id]`              | Admin             | Edita ou exclui conta               |
+| POST              | `/api/admin/usuarios/[id]/codigo`       | Admin             | Reemite código                      |
+| DELETE            | `/api/admin/usuarios/[id]/sessoes`      | Admin             | Encerra sessões da conta            |
+| GET               | `/api/admin/aprovacoes`                 | Admin             | Lista ações destrutivas pendentes   |
+| POST              | `/api/admin/aprovacoes/[id]`            | Admin             | Aprova ou recusa uma ação           |
+| GET, DELETE       | `/api/admin/auditoria`                  | Admin             | Lista ou limpa eventos de segurança |
+| GET               | `/api/conta`                            | Sessão opcional   | Sessão, usuário e perfil            |
+| PATCH             | `/api/conta`                            | Sessão            | Atualiza nome e escola              |
+| POST              | `/api/conta/excluir`                    | Sessão            | Solicita exclusão com carência      |
+| POST              | `/api/conta/restaurar`                  | Sessão            | Cancela a exclusão pendente         |
+| GET, DELETE       | `/api/conta/restaurar`                  | Segredo           | Purga contas e lixeira (Cron)       |
+| GET               | `/api/lixeira`                          | Sessão            | Lista notas e links na lixeira      |
+| GET               | `/api/notas`                            | Sessão            | Lista e filtra notas                |
+| POST              | `/api/notas`                            | Sessão            | Cria nota                           |
+| GET, PUT, DELETE  | `/api/notas/[id]`                       | Sessão            | Consulta, atualiza ou exclui nota   |
+| POST              | `/api/notas/lote`                       | Sessão            | Ações em lote nas notas             |
+| POST              | `/api/notas/[id]/duplicar`              | Sessão            | Duplica nota como rascunho          |
+| POST              | `/api/notas/[id]/restaurar`             | Sessão            | Restaura nota da lixeira            |
+| GET               | `/api/notas/[id]/exportar`              | Sessão            | Exporta em `json`, `md` ou `tex`    |
+| GET, POST         | `/api/disciplinas`                      | Sessão            | Lista ou cria disciplinas           |
+| PUT, DELETE       | `/api/disciplinas/[id]`                 | Sessão            | Atualiza ou exclui disciplina       |
+| GET, POST         | `/api/turmas`                           | Sessão            | Lista ou cria turmas                |
+| PUT, DELETE       | `/api/turmas/[id]`                      | Sessão            | Atualiza ou exclui turma            |
+| GET, POST         | `/api/links`                            | Sessão            | Lista ou cria links                 |
+| PUT, DELETE       | `/api/links/[id]`                       | Sessão            | Atualiza ou exclui link             |
+| POST              | `/api/links/lote`                       | Sessão            | Ações em lote nos links             |
+| POST              | `/api/links/[id]/restaurar`             | Sessão            | Restaura link da lixeira            |
+| GET               | `/api/busca`                            | Sessão opcional   | Busca global                        |
+| GET, POST         | `/api/backup`                           | Sessão            | Exporta ou restaura backup          |
+| POST              | `/api/backup/validar`                   | Sessão            | Dry-run da restauração              |
+| GET               | `/api/backup/snapshots`                 | Sessão            | Lista ou baixa snapshots            |
+| POST              | `/api/importar`                         | Sessão            | Importa uma nota `.md` ou `.json`   |
+| POST, GET, DELETE | `/api/imagens`                          | Sessão            | Envia, serve ou exclui imagens      |
+| GET               | `/api/publico/[token]`                  | Público           | Dados da vista do aluno             |
+| GET               | `/api/publico/[token]/imagens`          | Público           | Imagens referenciadas por um link   |
 
 ## Saúde
 
@@ -78,7 +80,7 @@ Corpo: `email` (formato válido), `tipo` (`primeiro_acesso` ou `recuperacao`) e 
 
 ### `POST /api/auth/usar-codigo`
 
-Corpo: `email`, `codigo` (8 caracteres) e `novaSenha` (8 a 256). Localiza um código ativo, consome de forma atômica e define a senha. No primeiro acesso, ativa a conta; na recuperação, invalida todas as sessões. Responde `200` com `{ "ok": true }` e inicia sessão. Código inválido ou expirado responde `400` com `{ "erro": "Código inválido ou expirado." }`; excesso de tentativas responde `429`.
+Corpo: `email`, `codigo` (8 caracteres), `novaSenha` (8 a 256) e `manterConectado` (opcional, padrão `true`). Localiza um código ativo, consome de forma atômica e define a senha. No primeiro acesso, ativa a conta; na recuperação, invalida todas as sessões. Responde `200` com `{ "ok": true }` e inicia sessão com a mesma regra de persistência do login. Código inválido ou expirado responde `400` com `{ "erro": "Código inválido ou expirado." }`; excesso de tentativas responde `429`.
 
 ### `POST /api/auth/entrar`
 
@@ -94,7 +96,7 @@ Usa o cookie `sessao_refresh`. Responde `200` com `{ "ok": true }` e rotação d
 
 ### `POST /api/auth/trocar-senha`
 
-Corpo: `atual` e `nova`. Responde `200` com `{ "ok": true }` e reemite a sessão. Senha atual incorreta responde `403` com `{ "erro": "Senha incorreta." }`. A nova senha não pode ser igual à atual.
+Corpo: `atual`, `nova` e `manterConectado` (opcional, padrão `true`). Responde `200` com `{ "ok": true }` e reemite a sessão com a mesma regra de persistência do login. Senha atual incorreta responde `403` com `{ "erro": "Senha incorreta." }`. A nova senha não pode ser igual à atual.
 
 ## Administração
 
@@ -146,9 +148,11 @@ Reemite o código da conta. `tipo` é opcional e assume `primeiro_acesso` para c
 
 Encerra todas as sessões da conta. Resposta `200` com `{ "ok": true, "removidas": n }`.
 
-### `GET /api/admin/auditoria?acao=`
+### `GET` e `DELETE /api/admin/auditoria`
 
-Lista até 200 eventos de segurança, do mais recente ao mais antigo, com e-mail mascarado. `detalhe` carrega dados específicos do evento.
+`GET` aceita `?acao=` e lista até 200 eventos de segurança, do mais recente ao mais antigo, com e-mail mascarado. `detalhe` carrega dados específicos do evento.
+
+`DELETE` limpa a trilha e exige `confirmacao` igual a `LIMPAR` e `senha` do próprio administrador (step-up). Responde `200` com `{ "ok": true, "removidos": n }` e registra o evento `LIMPAR_AUDITORIA` com a contagem. Confirmação ausente responde `400`; senha incorreta responde `403`.
 
 ## Conta
 
@@ -203,6 +207,10 @@ Lista notas e links com `excluidoEm` preenchido, além do prazo de retenção. R
 
 Restaura o item da lixeira. Ao restaurar uma nota, os links dela também voltam. Item fora da lixeira responde `404`.
 
+### `POST /api/lixeira/lote`
+
+Restauração em lote com `acao` igual a `restaurar`, `notas` e `links` (cada lista com até 100 ids). Restaurar notas reativa os links que foram para a lixeira junto. Responde `200` com `{ "ok": true, "restaurados": { "notas": n, "links": n }, "ausentes": [...] }`. Sem ids válidos responde `400`.
+
 ## Notas
 
 ### `GET /api/notas`
@@ -243,6 +251,10 @@ Responde `201` com `{ "nota": {...} }`. Título ausente, disciplina ausente ou d
 
 `GET` retorna `{ "nota": {...} }` ou `404`. `PUT` aceita atualização parcial de `titulo`, `disciplinaId`, `turmasIds`, `anoLetivo` (2000 a 2100), `mes`, `sobre`, `habilidades`, `status`, `blocos` e `aparencia`, e responde `200` com a nota. `DELETE` responde `200` com `{ "ok": true }`. Os links da nota são removidos em cascata.
 
+### `POST /api/notas/lote`
+
+Ações em lote, de 1 a 100 identificadores por requisição. Corpo: `acao` (`publicar`, `rascunho`, `lixeira` ou `disciplina`), `ids` e, quando a ação é `disciplina`, `disciplinaId`. A lixeira leva os links das notas junto, como no excluir individual; a troca de disciplina recalcula os campos denormalizados e o índice de busca. Responde `200` com `{ "ok": true, "atualizados": n, "ausentes": [...] }`. Ids inexistentes ou de outro professor voltam em `ausentes` sem falhar o lote; ação desconhecida, lista vazia ou acima de 100 respondem `400`.
+
 ### `POST /api/notas/[id]/duplicar`
 
 Cria uma cópia com o título acrescido de `(cópia)`, no status `rascunho`. Responde `201` com `{ "nota": {...} }`.
@@ -282,6 +294,10 @@ Formatos: `json` (padrão), `md` e `tex`. A resposta é um anexo nomeado pelo sl
 ### `PUT` e `DELETE /api/links/[id]`
 
 `PUT` aceita `nome`, `ativo`, `expiraEm` (nulo remove a expiração) e `regenerar` igual a `true` para emitir novo token. Expiração no passado responde `400` com `{ "erro": "A expiração não pode estar no passado." }`. `DELETE` responde `200` com `{ "ok": true }`.
+
+### `POST /api/links/lote`
+
+Ações em lote, de 1 a 100 identificadores por requisição. Corpo: `acao` (`pausar`, `reativar` ou `excluir`) e `ids`. Pausar e reativar mudam `ativo`; excluir faz o soft delete para a lixeira. Responde `200` com `{ "ok": true, "atualizados": n, "ausentes": [...] }` nas mesmas regras de validação e isolamento das notas.
 
 ## Busca
 
