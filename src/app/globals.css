@@ -191,13 +191,15 @@
   }
 }
 
+/* O fill-mode backwards não retém o transform final, que criaria containing
+   block para descendentes fixed (como a barra de ações em lote). */
 .na-entra {
-  animation: na-entra 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: na-entra 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
 }
 
 /* cascata de cards: --na-i (índice) atrasa cada item, com teto para listas longas */
 .na-cascata {
-  animation: na-entra 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: na-entra 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
   animation-delay: min(calc(var(--na-i, 0) * 45ms), 540ms);
 }
 

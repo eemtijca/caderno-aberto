@@ -432,96 +432,92 @@ export function VistaNotas({
         </div>
       )}
 
-      {selecao.ativo ? (
-        <BarraLote
-          quantidade={selecao.quantidade}
-          ocupada={processandoLote}
-          aoCancelar={selecao.desativar}
-          acoes={
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
-                disabled={selecao.quantidade === 0 || processandoLote}
-                onClick={() =>
-                  void executarLote(
-                    "publicar",
-                    (n) => `${n} ${n === 1 ? "nota publicada" : "notas publicadas"}`,
-                  )
-                }
-              >
-                Publicar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
-                disabled={selecao.quantidade === 0 || processandoLote}
-                onClick={() =>
-                  void executarLote(
-                    "rascunho",
-                    (n) => `${n} ${n === 1 ? "nota em rascunho" : "notas em rascunho"}`,
-                  )
-                }
-              >
-                Rascunho
-              </Button>
+      <BarraLote
+        aberto={selecao.ativo}
+        quantidade={selecao.quantidade}
+        ocupada={processandoLote}
+        aoCancelar={selecao.desativar}
+        acoes={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() =>
+                void executarLote(
+                  "publicar",
+                  (n) => `${n} ${n === 1 ? "nota publicada" : "notas publicadas"}`,
+                )
+              }
+            >
+              Publicar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() =>
+                void executarLote(
+                  "rascunho",
+                  (n) => `${n} ${n === 1 ? "nota em rascunho" : "notas em rascunho"}`,
+                )
+              }
+            >
+              Rascunho
+            </Button>
 
-              <Popover open={escolherDisciplina} onOpenChange={setEscolherDisciplina}>
-                <PopoverTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
-                    disabled={selecao.quantidade === 0 || processandoLote}
-                  >
-                    <GraduationCap className="h-3.5 w-3.5" aria-hidden /> Disciplina
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="max-h-72 w-56 overflow-y-auto p-1.5">
-                  {(disciplinas ?? []).length === 0 ? (
-                    <p className="text-muted-foreground p-2 text-sm">
-                      Nenhuma disciplina cadastrada.
-                    </p>
-                  ) : (
-                    (disciplinas ?? []).map((d) => (
-                      <button
-                        key={d.id}
-                        type="button"
-                        className="hover:bg-accent flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm"
-                        onClick={() =>
-                          void executarLote(
-                            "disciplina",
-                            (n) =>
-                              `${n} ${n === 1 ? "nota movida" : "notas movidas"} de disciplina`,
-                            d.id,
-                          )
-                        }
-                      >
-                        <span
-                          className={`h-2.5 w-2.5 rounded-full ${corDisciplina(d.cor).ponto}`}
-                        />
-                        {d.nome}
-                      </button>
-                    ))
-                  )}
-                </PopoverContent>
-              </Popover>
+            <Popover open={escolherDisciplina} onOpenChange={setEscolherDisciplina}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+                  disabled={selecao.quantidade === 0 || processandoLote}
+                >
+                  <GraduationCap className="h-3.5 w-3.5" aria-hidden /> Disciplina
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="max-h-72 w-56 overflow-y-auto p-1.5">
+                {(disciplinas ?? []).length === 0 ? (
+                  <p className="text-muted-foreground p-2 text-sm">
+                    Nenhuma disciplina cadastrada.
+                  </p>
+                ) : (
+                  (disciplinas ?? []).map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      className="hover:bg-accent flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm"
+                      onClick={() =>
+                        void executarLote(
+                          "disciplina",
+                          (n) => `${n} ${n === 1 ? "nota movida" : "notas movidas"} de disciplina`,
+                          d.id,
+                        )
+                      }
+                    >
+                      <span className={`h-2.5 w-2.5 rounded-full ${corDisciplina(d.cor).ponto}`} />
+                      {d.nome}
+                    </button>
+                  ))
+                )}
+              </PopoverContent>
+            </Popover>
 
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
-                disabled={selecao.quantidade === 0 || processandoLote}
-                onClick={() => setConfirmarLixeira(true)}
-              >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden /> Lixeira
-              </Button>
-            </>
-          }
-        />
-      ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() => setConfirmarLixeira(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden /> Lixeira
+            </Button>
+          </>
+        }
+      />
 
       <ConfirmacaoDestrutiva
         aberto={confirmarLixeira}

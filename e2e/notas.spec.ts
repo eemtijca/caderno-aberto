@@ -440,4 +440,53 @@ test.describe("Notas", () => {
     await page.waitForTimeout(400);
     await expect(page.getByPlaceholder("Buscar bloco...")).not.toBeFocused();
   });
+
+  test("barra de lote fica fixa acima da navbar no mobile", async ({ page }) => {
+    await loginNovo(page);
+    const disc = await (
+      await page.request.post("/api/disciplinas", {
+        data: { nome: `Barra ${Date.now()}`, cor: "verde", icone: "BookOpen" },
+      })
+    ).json();
+    for (let i = 1; i <= 13; i++) {
+      const r = await page.request.post("/api/notas", {
+        data: {
+          titulo: `Aula barra ${String(i).padStart(2, "0")}`,
+          disciplinaId: disc.disciplina.id,
+          anoLetivo: 2026,
+          mes: 9,
+          comModelo: false,
+        },
+      });
+      expect(r.ok()).toBeTruthy();
+    }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/#/notas");
+    await page.reload();
+    await expect(page.getByText("1-12 de 13 notas")).toBeVisible({ timeout: 10000 });
+
+    await page.getByRole("button", { name: "Selecionar" }).click();
+    const barra = page.getByRole("region", { name: "Ações em lote" });
+    await expect(barra).toBeVisible();
+
+    // Com a lista longa, a barra já aparece na viewport mesmo no topo da rolagem.
+    await expect(barra).toBeInViewport({ ratio: 0.5 });
+    const antes = await barra.boundingBox();
+    expect(antes).not.toBeNull();
+
+    // Ela fica presa à viewport: não acompanha a rolagem do conteúdo.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect
+      .poll(async () => {
+        const depois = await barra.boundingBox();
+        return depois && antes ? Math.abs(depois.y - antes.y) : 999;
+      })
+      .toBeLessThan(2);
+
+    // Fica na metade inferior, acima da navbar inferior.
+    const caixa = await barra.boundingBox();
+    expect(caixa!.y).toBeGreaterThan(844 / 2);
+    expect(caixa!.y + caixa!.height).toBeLessThanOrEqual(844);
+  });
 });

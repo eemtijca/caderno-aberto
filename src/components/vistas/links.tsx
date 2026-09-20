@@ -213,44 +213,43 @@ export function VistaLinks() {
         </div>
       )}
 
-      {selecao.ativo ? (
-        <BarraLote
-          quantidade={selecao.quantidade}
-          ocupada={processandoLote}
-          aoCancelar={selecao.desativar}
-          acoes={
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
-                disabled={selecao.quantidade === 0 || processandoLote}
-                onClick={() => void executarLote("pausar", [...selecao.selecionados])}
-              >
-                Pausar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
-                disabled={selecao.quantidade === 0 || processandoLote}
-                onClick={() => void executarLote("reativar", [...selecao.selecionados])}
-              >
-                Reativar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
-                disabled={selecao.quantidade === 0 || processandoLote}
-                onClick={() => setConfirmarLote(true)}
-              >
-                Excluir
-              </Button>
-            </>
-          }
-        />
-      ) : null}
+      <BarraLote
+        aberto={selecao.ativo}
+        quantidade={selecao.quantidade}
+        ocupada={processandoLote}
+        aoCancelar={selecao.desativar}
+        acoes={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() => void executarLote("pausar", [...selecao.selecionados])}
+            >
+              Pausar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() => void executarLote("reativar", [...selecao.selecionados])}
+            >
+              Reativar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() => setConfirmarLote(true)}
+            >
+              Excluir
+            </Button>
+          </>
+        }
+      />
 
       <ConfirmacaoDestrutiva
         aberto={confirmarLote}
