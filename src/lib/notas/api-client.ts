@@ -330,6 +330,12 @@ export async function loteLixeira(dados: {
   );
 }
 
+/** Esvazia a lixeira do professor em definitivo. */
+export async function limparLixeira(): Promise<{ notas: number; links: number }> {
+  const r = await pedir<{ notas: number; links: number }>("/api/lixeira", { method: "DELETE" });
+  return { notas: r.notas, links: r.links };
+}
+
 export function useDuplicarNota() {
   const qc = useQueryClient();
   return useMutation({

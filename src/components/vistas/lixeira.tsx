@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
+  limparLixeira,
   loteLixeira,
   useLixeira,
   useRestaurarLink,
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { Paginacao } from "@/components/paginacao";
 import { BotaoAtualizar } from "@/components/botao-atualizar";
 import { BarraLote } from "@/components/barra-lote";
+import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
 import { usePaginacao } from "@/hooks/use-paginacao";
 import { useSelecao } from "@/hooks/use-selecao";
 
@@ -33,6 +35,8 @@ export function VistaLixeira() {
   const [restaurando, setRestaurando] = useState<string | null>(null);
   const [atualizando, setAtualizando] = useState(false);
   const [processandoLote, setProcessandoLote] = useState(false);
+  const [confirmarLimpeza, setConfirmarLimpeza] = useState(false);
+  const [limpando, setLimpando] = useState(false);
 
   const itens = [...(data?.notas ?? []), ...(data?.links ?? [])];
   const todosSelecionados = itens.length > 0 && itens.every((i) => selecao.selecionados.has(i.id));
@@ -91,6 +95,25 @@ export function VistaLixeira() {
     }
   };
 
+  const limparLixeiraTudo = async () => {
+    setLimpando(true);
+    try {
+      const r = await limparLixeira();
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["lixeira"] }),
+        qc.invalidateQueries({ queryKey: ["notas"] }),
+        qc.invalidateQueries({ queryKey: ["links"] }),
+        qc.invalidateQueries({ queryKey: ["disciplinas"] }),
+        qc.invalidateQueries({ queryKey: ["turmas"] }),
+      ]);
+      selecao.desativar();
+      const total = r.notas + r.links;
+      toast.success(`${total} ${total === 1 ? "item removido" : "itens removidos"} em definitivo`);
+    } finally {
+      setLimpando(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-8">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -106,6 +129,16 @@ export function VistaLixeira() {
           {itens.length > 0 ? (
             <Button variant="outline" aria-pressed={selecao.ativo} onClick={selecao.alternarModo}>
               {selecao.ativo ? "Sair da seleção" : "Selecionar"}
+            </Button>
+          ) : null}
+          {itens.length > 0 ? (
+            <Button
+              variant="outline"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-1.5"
+              disabled={limpando}
+              onClick={() => setConfirmarLimpeza(true)}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden /> Limpar lixeira
             </Button>
           ) : null}
         </div>
@@ -141,24 +174,37 @@ export function VistaLixeira() {
         </div>
       )}
 
-      {selecao.ativo ? (
-        <BarraLote
-          quantidade={selecao.quantidade}
-          ocupada={processandoLote}
-          aoCancelar={selecao.desativar}
-          acoes={
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
-              disabled={selecao.quantidade === 0 || processandoLote}
-              onClick={() => void restaurarEmLote()}
-            >
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Restaurar
-            </Button>
-          }
-        />
-      ) : null}
+      <BarraLote
+        aberto={selecao.ativo}
+        quantidade={selecao.quantidade}
+        ocupada={processandoLote}
+        aoCancelar={selecao.desativar}
+        acoes={
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+            disabled={selecao.quantidade === 0 || processandoLote}
+            onClick={() => void restaurarEmLote()}
+          >
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Restaurar
+          </Button>
+        }
+      />
+
+      <ConfirmacaoDestrutiva
+        aberto={confirmarLimpeza}
+        onOpenChange={setConfirmarLimpeza}
+        titulo="Limpar a lixeira?"
+        descricao="As notas e os links na lixeira serão removidos em definitivo, sem possibilidade de restauração."
+        alvo={{
+          rotulo: "Digite LIMPAR para confirmar",
+          valor: "LIMPAR",
+          placeholder: "LIMPAR",
+        }}
+        textoConfirmar="Limpar lixeira"
+        onConfirmar={limparLixeiraTudo}
+      />
     </div>
   );
 }

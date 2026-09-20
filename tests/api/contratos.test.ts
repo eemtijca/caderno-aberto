@@ -312,6 +312,29 @@ describe("ações em lote", () => {
     expect(restaurar.dados.restaurados.links === 1, "restaura o link").toBe(true);
   });
 
+  it("esvazia a lixeira em definitivo", async () => {
+    const criada = await c.post("/api/notas", {
+      titulo: "Para esvaziar",
+      disciplinaId: discId,
+      anoLetivo: 2026,
+      mes: 5,
+      comModelo: false,
+    });
+    await c.del(`/api/notas/${criada.dados.nota.id}`);
+    const antes = await c.get("/api/lixeira");
+    expect(antes.dados.notas.length >= 1, "nota na lixeira").toBe(true);
+
+    const limpar = await c.del("/api/lixeira");
+    expect(limpar.status === 200 && limpar.dados.ok === true, "esvazia responde ok").toBe(true);
+    expect(limpar.dados.notas >= 1, "contagem de notas removidas").toBe(true);
+
+    const depois = await c.get("/api/lixeira");
+    expect(
+      depois.dados.notas.length === 0 && depois.dados.links.length === 0,
+      "lixeira vazia depois",
+    ).toBe(true);
+  });
+
   it("valida entrada e isola entre professores", async () => {
     const vazia = await c.post("/api/notas/lote", { acao: "publicar", ids: [] });
     expect(vazia.status, "sem ids responde 400").toBe(400);

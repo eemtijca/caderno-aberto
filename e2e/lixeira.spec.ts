@@ -44,4 +44,28 @@ test.describe("Lixeira", () => {
     await page.goto("/#/notas");
     await expect(page.getByText("Nota Lixeira", { exact: true }).first()).toBeVisible();
   });
+
+  test("limpar lixeira exige confirmação textual e esvazia", async ({ page }) => {
+    await loginNovo(page);
+    await criarNotaEAbrir(page, "Nota Limpar", "Física Limpar");
+
+    await page.getByRole("button", { name: "Excluir nota" }).click();
+    await page.getByRole("button", { name: "Mover para a lixeira" }).click();
+    await expect(page.getByText(/movida para a lixeira/i)).toBeVisible({ timeout: 8000 });
+
+    await page.goto("/#/lixeira");
+    await expect(page.getByText("Nota Limpar", { exact: true }).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Limpar lixeira" }).click();
+    const dialogo = page.getByRole("alertdialog");
+    const confirmar = dialogo.getByRole("button", { name: "Limpar lixeira" });
+    // Sem a palavra de confirmação o botão de confirmar fica desabilitado.
+    await expect(confirmar).toBeDisabled();
+    await dialogo.getByLabel("Digite LIMPAR para confirmar").fill("LIMPAR");
+    await expect(confirmar).toBeEnabled();
+    await confirmar.click();
+
+    await expect(page.getByText(/em definitivo/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("A lixeira está vazia")).toBeVisible({ timeout: 10000 });
+  });
 });
