@@ -9,13 +9,15 @@ import {
   LogOut,
   MoreVertical,
   Pencil,
-  RefreshCw,
   Trash2,
   UserCheck,
   UserPlus,
   UserX,
 } from "lucide-react";
 import { toast } from "sonner";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
+import { Paginacao } from "@/components/paginacao";
+import { usePaginacaoServidor } from "@/hooks/use-paginacao-servidor";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,10 +58,14 @@ function iniciais(nome: string, email: string): string {
   return base.slice(0, 2).toUpperCase();
 }
 
-export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => void }) {
+export function SecaoUsuarios({
+  aoEmitir,
+  aoAtualizar,
+}: {
+  aoEmitir: (c: CodigoEmitido) => void;
+  aoAtualizar?: () => void;
+}) {
   const { usuario } = useSessao();
-  const [itens, setItens] = useState<UsuarioAdmin[]>([]);
-  const [carregando, setCarregando] = useState(true);
   const [criando, setCriando] = useState(false);
   const [form, setForm] = useState({ nome: "", email: "", papel: "professor" });
   const [salvando, setSalvando] = useState(false);
@@ -69,21 +75,20 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
   const [reativando, setReativando] = useState<UsuarioAdmin | null>(null);
   const [processando, setProcessando] = useState<string | null>(null);
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
-    try {
-      const { usuarios } = await adminApi.usuarios();
-      setItens(usuarios);
-    } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Falha ao carregar.");
-    } finally {
-      setCarregando(false);
-    }
-  }, []);
+  const paginacao = usePaginacaoServidor<UsuarioAdmin>({
+    buscar: useCallback(
+      async (pagina, porPagina) => {
+        const r = await adminApi.usuarios(pagina, porPagina);
+        aoAtualizar?.();
+        return { itens: r.usuarios, total: r.total };
+      },
+      [aoAtualizar],
+    ),
+    aoErro: (erro) => toast.error(erro.message),
+  });
 
-  useEffect(() => {
-    void carregar();
-  }, [carregar]);
+  const itens = paginacao.itens;
+  const carregando = paginacao.carregando;
 
   const criar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +104,7 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
         email: r.usuario.email,
         tipo: "primeiro_acesso",
       });
-      await carregar();
+      await paginacao.recarregar();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Falha ao criar.");
     } finally {
@@ -136,17 +141,14 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-muted-foreground text-sm">
-          {itens.length} {itens.length === 1 ? "conta" : "contas"}
+          {paginacao.total} {paginacao.total === 1 ? "conta" : "contas"}
         </p>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 rounded-lg"
-            onClick={() => void carregar()}
-          >
-            <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Atualizar
-          </Button>
+          <BotaoAtualizar
+            carregando={carregando}
+            aoAtualizar={paginacao.recarregar}
+            rotulo="Atualizar"
+          />
           <Button size="sm" className="gap-1.5 rounded-lg" onClick={() => setCriando(true)}>
             <UserPlus className="h-4 w-4" aria-hidden /> Nova conta
           </Button>
@@ -164,90 +166,93 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
           <p className="text-muted-foreground mt-1 text-sm">Crie a primeira conta de professor.</p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {itens.map((u) => (
-            <li
-              key={u.id}
-              className="border-border bg-card na-cascata flex items-center gap-3 rounded-2xl border p-4"
-            >
-              <Avatar className="h-10 w-10 shrink-0">
-                <AvatarFallback className="text-xs">{iniciais(u.nome, u.email)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="truncate font-semibold">{u.nome || "(sem nome)"}</span>
-                  <Badge variant={u.papel === "admin" ? "default" : "outline"}>
-                    {u.papel === "admin" ? "Admin" : "Professor"}
-                  </Badge>
-                  <Badge variant={u.ativado ? "secondary" : "outline"}>
-                    {u.ativado ? "Ativo" : "Pendente"}
-                  </Badge>
-                  {u.statusConta === "suspenso" ? (
-                    <Badge variant="destructive">Desativado</Badge>
-                  ) : u.statusConta === "excluindo" ? (
-                    <Badge variant="outline">Em exclusão</Badge>
-                  ) : null}
+        <div className="space-y-3">
+          <ul className="space-y-3">
+            {paginacao.itens.map((u) => (
+              <li
+                key={u.id}
+                className="border-border bg-card na-cascata flex items-center gap-3 rounded-2xl border p-4"
+              >
+                <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarFallback className="text-xs">{iniciais(u.nome, u.email)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="truncate font-semibold">{u.nome || "(sem nome)"}</span>
+                    <Badge variant={u.papel === "admin" ? "default" : "outline"}>
+                      {u.papel === "admin" ? "Admin" : "Professor"}
+                    </Badge>
+                    <Badge variant={u.ativado ? "secondary" : "outline"}>
+                      {u.ativado ? "Ativo" : "Pendente"}
+                    </Badge>
+                    {u.statusConta === "suspenso" ? (
+                      <Badge variant="destructive">Desativado</Badge>
+                    ) : u.statusConta === "excluindo" ? (
+                      <Badge variant="outline">Em exclusão</Badge>
+                    ) : null}
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 truncate text-sm">{u.email}</p>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-sm">{u.email}</p>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 rounded-lg"
-                    aria-label={`Ações para ${u.nome || u.email}`}
-                    title="Ações"
-                  >
-                    {processando === u.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                    ) : (
-                      <MoreVertical className="h-4 w-4" aria-hidden />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem className="gap-2" onSelect={() => setEditando(u)}>
-                    <Pencil className="h-4 w-4" aria-hidden /> Editar
-                  </DropdownMenuItem>
-                  {u.statusConta === "suspenso" ? (
-                    <DropdownMenuItem className="gap-2" onSelect={() => setReativando(u)}>
-                      <UserCheck className="h-4 w-4" aria-hidden /> Reativar
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 rounded-lg"
+                      aria-label={`Ações para ${u.nome || u.email}`}
+                      title="Ações"
+                    >
+                      {processando === u.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      ) : (
+                        <MoreVertical className="h-4 w-4" aria-hidden />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem className="gap-2" onSelect={() => setEditando(u)}>
+                      <Pencil className="h-4 w-4" aria-hidden /> Editar
                     </DropdownMenuItem>
-                  ) : (
+                    {u.statusConta === "suspenso" ? (
+                      <DropdownMenuItem className="gap-2" onSelect={() => setReativando(u)}>
+                        <UserCheck className="h-4 w-4" aria-hidden /> Reativar
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        className="gap-2"
+                        disabled={u.id === usuario?.id}
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setSuspendendo(u);
+                        }}
+                      >
+                        <UserX className="h-4 w-4" aria-hidden /> Desativar
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem className="gap-2" onSelect={() => void reemitir(u)}>
+                      <KeyRound className="h-4 w-4" aria-hidden /> Gerar código
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="gap-2" onSelect={() => void revogarSessoes(u)}>
+                      <LogOut className="h-4 w-4" aria-hidden /> Encerrar sessões
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      className="gap-2"
+                      className="text-destructive focus:text-destructive gap-2"
                       disabled={u.id === usuario?.id}
                       onSelect={(e) => {
                         e.preventDefault();
-                        setSuspendendo(u);
+                        setExcluindo(u);
                       }}
                     >
-                      <UserX className="h-4 w-4" aria-hidden /> Desativar
+                      <Trash2 className="h-4 w-4" aria-hidden /> Excluir
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem className="gap-2" onSelect={() => void reemitir(u)}>
-                    <KeyRound className="h-4 w-4" aria-hidden /> Gerar código
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2" onSelect={() => void revogarSessoes(u)}>
-                    <LogOut className="h-4 w-4" aria-hidden /> Encerrar sessões
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive gap-2"
-                    disabled={u.id === usuario?.id}
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      setExcluindo(u);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden /> Excluir
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </li>
-          ))}
-        </ul>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </li>
+            ))}
+          </ul>
+          <Paginacao paginacao={paginacao} rotulo="contas" />
+        </div>
       )}
 
       <Dialog open={criando} onOpenChange={setCriando}>
@@ -321,7 +326,7 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
         aoFechar={() => setEditando(null)}
         aoSalvar={async () => {
           setEditando(null);
-          await carregar();
+          await paginacao.recarregar();
         }}
       />
 
@@ -351,7 +356,7 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
             r.pendente ? { description: "Outro administrador deve aprovar a ação." } : undefined,
           );
           setExcluindo(null);
-          await carregar();
+          await paginacao.recarregar();
         }}
       />
 
@@ -385,7 +390,7 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
             r.pendente ? { description: "Outro administrador deve aprovar a ação." } : undefined,
           );
           setSuspendendo(null);
-          await carregar();
+          await paginacao.recarregar();
         }}
       />
 
@@ -400,13 +405,14 @@ export function SecaoUsuarios({ aoEmitir }: { aoEmitir: (c: CodigoEmitido) => vo
           </>
         }
         exigeSenha
+        varianteConfirmar="default"
         textoConfirmar="Reativar conta"
         onConfirmar={async ({ senha }) => {
           if (!reativando) return;
           await adminApi.editarUsuario(reativando.id, { statusConta: "ativo", senha });
           toast.success("Conta reativada");
           setReativando(null);
-          await carregar();
+          await paginacao.recarregar();
         }}
       />
     </div>
@@ -440,9 +446,17 @@ function DialogEditar({
   }, [usuario]);
 
   const euMesmo = usuario?.id === euId;
+  const nomeValido = nome.trim().length >= 2;
+  const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  const alterou =
+    Boolean(usuario) &&
+    (nome !== usuario!.nome ||
+      email !== usuario!.email ||
+      papel !== usuario!.papel ||
+      ativado !== usuario!.ativado);
 
   const salvar = async () => {
-    if (!usuario) return;
+    if (!usuario || !nomeValido || !emailValido) return;
     setSalvando(true);
     try {
       await adminApi.editarUsuario(usuario.id, { nome, email, papel, ativado });
@@ -471,8 +485,14 @@ function DialogEditar({
               id="edit-nome"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
+              aria-invalid={!nomeValido || undefined}
               className="rounded-lg"
             />
+            {!nomeValido ? (
+              <p role="alert" className="text-destructive text-[0.72rem]">
+                Informe ao menos 2 caracteres.
+              </p>
+            ) : null}
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="edit-email">E-mail</Label>
@@ -481,8 +501,19 @@ function DialogEditar({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={euMesmo}
+              aria-invalid={!emailValido || undefined}
               className="rounded-lg"
             />
+            {euMesmo ? (
+              <p className="text-muted-foreground text-[0.72rem]">
+                O próprio e-mail só muda pela administração de outro administrador.
+              </p>
+            ) : !emailValido ? (
+              <p role="alert" className="text-destructive text-[0.72rem]">
+                Informe um e-mail válido.
+              </p>
+            ) : null}
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="edit-papel">Papel</Label>
@@ -498,16 +529,17 @@ function DialogEditar({
           </div>
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div>
-              <p className="text-sm font-medium">Conta ativa</p>
+              <p className="text-sm font-medium">Primeiro acesso concluído</p>
               <p className="text-muted-foreground text-xs">
-                Contas pendentes precisam de um código de primeiro acesso.
+                Contas pendentes precisam de um código para definir a senha. Para cortar o acesso,
+                use Desativar no menu.
               </p>
             </div>
             <Switch
               checked={ativado}
               onCheckedChange={setAtivado}
               disabled={euMesmo}
-              aria-label="Conta ativa"
+              aria-label="Primeiro acesso concluído"
             />
           </div>
         </div>
@@ -515,7 +547,11 @@ function DialogEditar({
           <Button variant="outline" className="rounded-xl" onClick={aoFechar}>
             Cancelar
           </Button>
-          <Button className="rounded-xl" onClick={() => void salvar()} disabled={salvando}>
+          <Button
+            className="rounded-xl"
+            onClick={() => void salvar()}
+            disabled={salvando || !nomeValido || !emailValido || !alterou}
+          >
             {salvando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
             Salvar
           </Button>

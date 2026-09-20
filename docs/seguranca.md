@@ -25,6 +25,7 @@ As principais ameaças consideradas são enumeração de contas, força bruta de
 - Validade de `CODIGO_EXPIRA_MINUTOS` (padrão 60) e bloqueio por e-mail após `AUTH_LIMITE_CODIGO` tentativas erradas (padrão 5) na janela de 5 minutos, além do limite por IP.
 - O papel de administrador é reconferido no banco a cada requisição. Mudar o papel ou desativar a conta derruba as sessões e o acesso imediatamente.
 - Ações sensíveis (geração, revogação e uso de código, criação, edição e exclusão de usuário, login) ficam registradas em `eventos_seguranca`, com e-mail mascarado na leitura.
+- A limpeza da trilha exige senha do administrador e a confirmação digitada `LIMPAR`; a própria limpeza é registrada como `LIMPAR_AUDITORIA` com a contagem removida.
 
 ## Requisições
 

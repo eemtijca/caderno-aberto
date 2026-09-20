@@ -104,6 +104,7 @@ export default async function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          nonce={nonce || undefined}
         >
           <Provedores>
             {children}

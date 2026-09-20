@@ -44,6 +44,21 @@ test.describe("Navegação e roteamento", () => {
     }
   });
 
+  test("botão Nova nota fica centralizado com a sidebar recolhida", async ({ page }) => {
+    await criarEConfirmar(page);
+    await page.goto("/#/");
+    await page.getByRole("button", { name: "Recolher menu" }).click();
+
+    const sidebar = page.locator("aside").first();
+    const botao = sidebar.getByRole("button", { name: "Nova nota" });
+    const caixaSidebar = await sidebar.boundingBox();
+    const caixaBotao = await botao.boundingBox();
+    expect(caixaSidebar && caixaBotao).toBeTruthy();
+    const centroSidebar = caixaSidebar!.x + caixaSidebar!.width / 2;
+    const centroBotao = caixaBotao!.x + caixaBotao!.width / 2;
+    expect(Math.abs(centroSidebar - centroBotao)).toBeLessThanOrEqual(2);
+  });
+
   test("menu de perfil e botão Mais no mobile", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await criarEConfirmar(page);

@@ -13,7 +13,9 @@ function dividirMatematica(texto: string): { tipo: "texto" | "math"; valor: stri
   let i = 0;
   while (i < texto.length) {
     const c = texto[i];
-    if (c === "$") {
+    // "R$" e "US$" são moeda, não abertura de fórmula.
+    const moeda = i > 0 && /[\p{L}\d]/u.test(texto[i - 1]);
+    if (c === "$" && !moeda) {
       let j = i + 1;
       while (j < texto.length && texto[j] !== "$") {
         if (texto[j] === "\\") j++;
@@ -57,11 +59,18 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
   let i = 0;
   let contador = 0;
 
+  // Preserva as quebras de linha digitadas no editor.
+  const empilharTexto = () => {
+    if (!buffer) return;
+    buffer.split("\n").forEach((parte, i) => {
+      if (i > 0) nos.push(<br key={`${chaveBase}-br${contador++}`} />);
+      if (parte) nos.push(<Fragment key={`${chaveBase}-t${contador++}`}>{parte}</Fragment>);
+    });
+    buffer = "";
+  };
+
   const push = (no: ReactNode) => {
-    if (buffer) {
-      nos.push(<Fragment key={`${chaveBase}-t${contador++}`}>{buffer}</Fragment>);
-      buffer = "";
-    }
+    empilharTexto();
     nos.push(<Fragment key={`${chaveBase}-n${contador++}`}>{no}</Fragment>);
   };
 
@@ -139,7 +148,7 @@ function renderizarTexto(valor: string, chaveBase: string): ReactNode[] {
     buffer += valor[i];
     i++;
   }
-  if (buffer) nos.push(<Fragment key={`${chaveBase}-fim`}>{buffer}</Fragment>);
+  empilharTexto();
   return nos;
 }
 
@@ -147,7 +156,13 @@ export function renderizarInline(texto: string, chave = "in"): ReactNode[] {
   if (!texto) return [];
   return dividirMatematica(texto).map((seg, idx) =>
     seg.tipo === "math" ? (
-      <Matematica key={`${chave}-m${idx}`} latex={seg.valor} />
+      // Fórmulas longas rolam dentro da linha em vez de estourar a largura.
+      <span
+        key={`${chave}-m${idx}`}
+        className="inline-block max-w-full overflow-x-auto align-bottom"
+      >
+        <Matematica latex={seg.valor} />
+      </span>
     ) : (
       <Fragment key={`${chave}-s${idx}`}>{renderizarTexto(seg.valor, `${chave}-s${idx}`)}</Fragment>
     ),

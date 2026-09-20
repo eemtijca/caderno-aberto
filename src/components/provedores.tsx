@@ -13,7 +13,8 @@ export function Provedores({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 15_000,
+            // Dados velhos são refeitos quando a tela monta de novo.
+            staleTime: 0,
             refetchOnWindowFocus: false,
             retry: 1,
           },

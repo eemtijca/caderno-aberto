@@ -23,7 +23,9 @@ export default defineConfig({
   reporter: [["html"], ["list"]],
   globalSetup: "./e2e/global-setup.ts",
   use: {
-    baseURL: process.env.TEST_BASE_URL || "http://127.0.0.1:3000",
+    // localhost (e não 127.0.0.1): o Playwright só trata esse host como local e
+    // assim envia o cookie de sessão Secure do build de produção via page.request.
+    baseURL: process.env.TEST_BASE_URL || "http://localhost:3000",
     trace: "on-first-retry",
     headless: true,
   },
@@ -72,7 +74,7 @@ export default defineConfig({
       ? undefined
       : {
           command: "npm run dev",
-          url: "http://127.0.0.1:3000",
+          url: "http://localhost:3000",
           reuseExistingServer: !process.env.CI,
           timeout: 120 * 1000,
           // Ambiente completo para quando o próprio Playwright sobe o app.

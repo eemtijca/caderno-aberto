@@ -3,9 +3,10 @@
 // Seção Dados: backup completo, restauração blindada e snapshots de rollback.
 // A importação de uma nota avulsa fica na tela Notas.
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, FileJson, History, RefreshCw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
 import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -48,19 +49,27 @@ export function SecaoDados() {
   const [validando, setValidando] = useState(false);
   const [restaurando, setRestaurando] = useState(false);
   const [snapshots, setSnapshots] = useState<Snap[]>([]);
+  const [carregandoSnapshots, setCarregandoSnapshots] = useState(false);
 
   const recarregar = () => {
     qc.invalidateQueries();
     window.location.reload();
   };
 
-  const carregarSnapshots = () => {
-    void listarSnapshots().then(setSnapshots);
-  };
+  const carregarSnapshots = useCallback(async () => {
+    setCarregandoSnapshots(true);
+    try {
+      setSnapshots(await listarSnapshots());
+    } catch {
+      toast.error("Não foi possível listar os snapshots.");
+    } finally {
+      setCarregandoSnapshots(false);
+    }
+  }, []);
 
   useEffect(() => {
-    carregarSnapshots();
-  }, []);
+    void carregarSnapshots();
+  }, [carregarSnapshots]);
 
   const selecionarArquivo = async (arquivo: File) => {
     setValidando(true);
@@ -136,15 +145,19 @@ export function SecaoDados() {
         </div>
       </div>
 
-      {snapshots.length > 0 ? (
-        <div className="border-border mt-4 rounded-xl border p-4">
+      <div className="border-border mt-4 rounded-xl border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="flex items-center gap-2 text-sm font-bold">
             <History className="h-4 w-4" aria-hidden /> Snapshots recentes
           </p>
-          <p className="text-muted-foreground mt-1 text-[0.8rem] leading-snug">
-            Cópias automáticas do estado anterior a cada restauração. Baixe e reimporte para
-            desfazer.
-          </p>
+          <BotaoAtualizar carregando={carregandoSnapshots} aoAtualizar={carregarSnapshots} />
+        </div>
+        <p className="text-muted-foreground mt-1 text-[0.8rem] leading-snug">
+          Cópias automáticas do estado anterior a cada restauração. Baixe e reimporte para desfazer.
+        </p>
+        {snapshots.length === 0 ? (
+          <p className="text-muted-foreground mt-2 text-[0.82rem]">Nenhum snapshot ainda.</p>
+        ) : (
           <ul className="mt-2 space-y-1.5">
             {snapshots.map((s) => (
               <li key={s.caminho} className="flex items-center justify-between gap-2 text-sm">
@@ -159,8 +172,8 @@ export function SecaoDados() {
               </li>
             ))}
           </ul>
-        </div>
-      ) : null}
+        )}
+      </div>
 
       <ConfirmacaoDestrutiva
         aberto={Boolean(resumo)}

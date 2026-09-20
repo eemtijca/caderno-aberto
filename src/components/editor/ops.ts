@@ -1,7 +1,7 @@
 // Operações imutáveis sobre a lista de blocos do editor (atualizar, inserir,
 // remover, mover e duplicar), preservando a referência do que não mudou.
 
-import type { Bloco, BlocoFilho } from "@/lib/notas/tipos";
+import { idBloco, type Bloco, type BlocoFilho } from "@/lib/notas/tipos";
 
 type Caixa = Extract<Bloco, { tipo: "copiar" | "exemplo" | "dica" }>;
 
@@ -90,10 +90,10 @@ export function moverFilho(
   });
 }
 
-export function duplicarBloco(blocos: Bloco[], id: string): Bloco[] {
+export function duplicarBloco(blocos: Bloco[], id: string): { blocos: Bloco[]; id: string } {
   const i = blocos.findIndex((b) => b.id === id);
-  if (i === -1) return blocos;
-  const novoId = (): string => `b-${Math.random().toString(36).slice(2, 9)}`;
+  if (i === -1) return { blocos, id: "" };
+  const novoId = (): string => idBloco();
   // Clona em profundidade e renova os ids para evitar colisão com o original.
   const clone = JSON.parse(JSON.stringify(blocos[i])) as Bloco;
   clone.id = novoId();
@@ -108,7 +108,7 @@ export function duplicarBloco(blocos: Bloco[], id: string): Bloco[] {
   }
   const copia = [...blocos];
   copia.splice(i + 1, 0, clone);
-  return copia;
+  return { blocos: copia, id: clone.id };
 }
 
 export function reordenar(blocos: Bloco[], de: number, para: number): Bloco[] {

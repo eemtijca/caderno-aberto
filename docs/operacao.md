@@ -35,7 +35,7 @@ Com `DIRECT_URL` definida, o comando usa essa conexão.
 - O acesso não depende de e-mail. O primeiro administrador é criado com `npm run criar-admin` (variáveis `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME`), também executado na partida do Compose quando definidas.
 - A administração vê a fila de solicitações no console (`#/admin`), gera o código de 8 caracteres e o entrega ao professor. O código expira em `CODIGO_EXPIRA_MINUTOS` (padrão 60) e é exibido uma única vez.
 - Esqueceu a senha é equivalente: o professor solicita na tela de login e a administração gera um novo código.
-- Auditoria: as ações sensíveis ficam em `eventos_seguranca` e na aba Auditoria.
+- Auditoria: as ações sensíveis ficam em `eventos_seguranca` e na aba Auditoria, que permite filtrar por ação e limpar a trilha com senha e a confirmação `LIMPAR`; a limpeza em si fica registrada.
 
 Se um código não funcionar, confira a validade, o bloqueio por tentativas (`AUTH_LIMITE_CODIGO`) e regenere o código, já que o anterior é invalidado.
 

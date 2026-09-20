@@ -60,7 +60,9 @@ Aplicável a parágrafos, itens de lista, chamadas, células de tabela, legendas
 
 Macros adicionais: `\dec{a,b}` gera `a{,}b` e `\un{x}` gera uma unidade em romano. As funções trigonométricas `\sen`, `\tg`, `\cotg` e `\cossec` são reconhecidas. O KaTeX é configurado sem lançar erro de sintaxe e com `\htmlClass` como único recurso confiável, o que veta links e HTML.
 
-A barra de formato do editor insere negrito, itálico, fórmula, resposta em destaque e fórmula química.
+A barra de formato do editor insere negrito, itálico, fórmula, resposta em destaque e fórmula química. As quebras de linha digitadas são preservadas na prévia e na leitura, e valores como `R$ 10` são tratados como texto, não como fórmula.
+
+No desktop, a prévia acompanha o bloco que está sendo editado e usa um valor adiado para a digitação não travar em notas longas. Em telas menores, apenas o layout do breakpoint atual é montado, evitando renderização duplicada. No parágrafo, a barra fica fixa no cabeçalho do bloco; nos itens de lista, chamadas, enunciados e alternativas de questão, gabarito e legendas, ela surge ao focar o campo, sem deslocar o conteúdo. As células de tabela aceitam a marcação digitada manualmente.
 
 ## Aparência
 
@@ -78,16 +80,17 @@ A aparência é gravada por nota e aplicada como variáveis CSS ao contêiner de
 
 ## Metadados
 
-Disciplina, ano letivo, mês, turmas, resumo `Sobre`, habilidades BNCC/ENEM, status e aparência. A seção de metadados fica recolhida no editor. O título, a disciplina, o ano, o mês e as turmas definem a classificação exibida nas vistas de organização e nos links.
+Disciplina, ano letivo, mês, turmas, resumo `Sobre`, habilidades BNCC/ENEM, status e aparência. A seção de metadados fica recolhida no editor e abre com animação suave (`Collapsible`), com o resumo de período e turmas no gatilho. O título, a disciplina, o ano, o mês e as turmas definem a classificação exibida nas vistas de organização e nos links.
 
 ## Edição e atalhos
 
 - Reordenação por arrastar e soltar, com suporte a mouse e teclado.
-- Botões por bloco: arrastar, inserir abaixo, duplicar, mover para cima, mover para baixo e excluir.
-- Paleta de inserção com busca e categorias (Estrutura, Texto, Conteúdo, Caixas e Prática): bottom sheet no mobile e diálogo no desktop. Abre pelo botão de inserir de cada bloco ou pelo botão de adicionar bloco ao final.
-- Ao inserir um bloco, a tela rola suavemente até ele.
-- `Ctrl` ou `Cmd` mais `K` abre a busca global.
-- Salvamento automático com atraso de 900 ms e indicador de estado (`salvando`, `salvo` ou erro). Não há botão manual de salvar.
+- Botões por bloco: arrastar, inserir abaixo, duplicar, mover para cima, mover para baixo e excluir. Em telas largas ficam na lateral; em tablet e mobile, na linha do cabeçalho.
+- Desfazer e refazer operações estruturais com `Ctrl` ou `Cmd` mais `Z` e `Ctrl` ou `Cmd` mais `Shift` mais `Z`, ou pelos botões da barra de ações. Em campos de texto vale o desfazer nativo. A remoção de bloco oferece Desfazer no aviso. Ver [ADR-008](adr/008-historico-de-edicao.md).
+- Paleta de inserção com busca e categorias (Estrutura, Texto, Conteúdo, Caixas e Prática): bottom sheet no mobile e diálogo no desktop. Abre pelo botão de inserir de cada bloco ou pelo botão de adicionar bloco ao final. Em dispositivos de toque, o campo de busca não recebe foco automático, evitando o teclado virtual.
+- Ao inserir ou duplicar um bloco, a tela rola suavemente até a cópia, que é realçada por instantes.
+- `Ctrl` ou `Cmd` mais `K` abre a busca global; `Ctrl` ou `Cmd` mais `S` força o salvamento imediato.
+- Salvamento automático com atraso de 900 ms e indicador de estado (`salvando`, `salvo` ou erro). O erro oferece tentar novamente, e pendências são gravadas ao sair da vista; ao fechar a aba com alterações, o navegador pede confirmação. Não há botão manual de salvar.
 - Ações da nota: ler, exportar, compartilhar, duplicar (a cópia abre como rascunho) e alternar entre rascunho e publicada.
 - Em telas pequenas, abas Editar e Prévia; em telas grandes, duas colunas com prévia fixa.
 
@@ -109,4 +112,4 @@ Envelope com a nota completa, incluindo blocos, aparência, turmas e timestamps.
 
 ## Diálogo de nova nota
 
-Coleta título (mínimo de 2 caracteres), disciplina (seleção ou criação inline com cor e ícone), ano letivo (2000 a 2100), mês, turmas opcionais e o interruptor Começar do modelo. O modelo cria uma seção inicial com o título da nota, uma caixa COPIAR com definição e fórmula, um exemplo resolvido, uma dica e exercícios nos três níveis. Com o interruptor desligado, a nota começa com a seção de título e um parágrafo vazio. Ao confirmar, a nota é criada como rascunho e aberta no editor.
+Coleta título (mínimo de 2 caracteres), disciplina (seleção ou criação inline com cor e ícone), ano letivo (2000 a 2100), mês, turmas opcionais e o interruptor Começar do modelo. O modelo é neutro e instrutivo, serve a qualquer disciplina e cria uma seção com o título da nota, um parágrafo de abertura com orientação, uma caixa COPIAR com definição, fórmula, símbolos e ligação com o cotidiano, um exemplo resolvido com resolução em destaque, uma dica de erro comum e exercícios nos três níveis, com questão objetiva (alternativa correta marcada) e questão aberta (gabarito manual). Com o interruptor desligado, a nota começa com a seção de título e um parágrafo vazio. Ao confirmar, a nota é criada como rascunho e aberta no editor.

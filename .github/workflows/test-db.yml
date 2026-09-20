@@ -87,7 +87,9 @@ jobs:
       - name: Testes de ponta a ponta (Chromium)
         run: npm run test:e2e -- --project=chromium
         env:
-          TEST_BASE_URL: http://127.0.0.1:3000
+          # localhost: o page.request do Playwright só envia o cookie Secure
+          # do build de produção quando o host é tratado como local.
+          TEST_BASE_URL: http://localhost:3000
           DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
           AUTH_SECRET: segredo-dummy-de-32-bytes-para-testes-00
           PLAYWRIGHT_SKIP_WEBSERVER: "1"

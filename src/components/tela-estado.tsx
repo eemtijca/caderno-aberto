@@ -2,6 +2,7 @@
 
 // Tela reutilizável de erro/aviso. Padroniza os estados de status e domínio.
 
+import { useEffect, useRef } from "react";
 import {
   AlertTriangle,
   CloudOff,
@@ -153,14 +154,21 @@ export function TelaEstado({
 }: Props) {
   const preset = PRESETS[variante];
   const Icone = preset.icone;
+  const tituloRef = useRef<HTMLHeadingElement>(null);
+
+  // Leitores de tela recebem o aviso ao abrir; telas cheias focam o título.
+  useEffect(() => {
+    if (!incorporado) tituloRef.current?.focus();
+  }, [incorporado]);
+
   return (
     <div
       className={
         incorporado
           ? "mx-auto max-w-xl px-4 py-16 text-center"
-          : "flex min-h-screen flex-col items-center justify-center px-4 py-16 text-center"
+          : "flex min-h-dvh flex-col items-center justify-center px-4 py-16 text-center"
       }
-      role="status"
+      role={preset.tom === "perigo" ? "alert" : "status"}
     >
       <span
         className={`flex h-14 w-14 items-center justify-center rounded-2xl ${TONS[preset.tom]}`}
@@ -168,7 +176,13 @@ export function TelaEstado({
       >
         <Icone className="h-6 w-6" />
       </span>
-      <h1 className="fonte-display mt-4 text-xl font-bold">{titulo ?? preset.titulo}</h1>
+      <h1
+        ref={tituloRef}
+        tabIndex={-1}
+        className="fonte-display mt-4 text-xl font-bold outline-none"
+      >
+        {titulo ?? preset.titulo}
+      </h1>
       <div className="text-muted-foreground mt-2 max-w-md text-sm leading-relaxed">
         {descricao ?? preset.descricao}
       </div>
@@ -187,7 +201,7 @@ export function TelaEstado({
           ) : null}
         </div>
       ) : null}
-      <span className="text-muted-foreground/70 mt-8 inline-flex items-center gap-1.5 text-[0.7rem]">
+      <span className="text-muted-foreground mt-8 inline-flex items-center gap-1.5 text-[0.7rem]">
         <NotebookPen className="h-3.5 w-3.5" aria-hidden /> Caderno Aberto
       </span>
     </div>

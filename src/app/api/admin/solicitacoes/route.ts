@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { banco } from "@/lib/banco";
 import { json } from "@/lib/api/sessao";
 import { exigirAdmin } from "@/lib/api/admin";
+import { parametrosPagina } from "@/lib/api/paginacao";
 
 export const dynamic = "force-dynamic";
 
@@ -15,12 +16,18 @@ export async function GET(req: NextRequest) {
   if (!guarda.ok) return guarda.resposta;
 
   const status = req.nextUrl.searchParams.get("status") ?? "";
+  const where = STATUS.has(status) ? { status } : {};
+  const { pagina, porPagina, skip, take } = parametrosPagina(req);
   const db = banco();
-  const linhas = await db.solicitacoesAcesso.findMany({
-    where: STATUS.has(status) ? { status } : {},
-    orderBy: { criadoEm: "desc" },
-    take: 200,
-  });
+  const [linhas, total] = await Promise.all([
+    db.solicitacoesAcesso.findMany({
+      where,
+      orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+      skip,
+      take,
+    }),
+    db.solicitacoesAcesso.count({ where }),
+  ]);
 
   return json({
     solicitacoes: linhas.map((s) => ({
@@ -32,5 +39,8 @@ export async function GET(req: NextRequest) {
       criadoEm: s.criadoEm.toISOString(),
       atendidaEm: s.atendidaEm?.toISOString() ?? null,
     })),
+    total,
+    pagina,
+    porPagina,
   });
 }

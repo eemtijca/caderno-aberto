@@ -8,6 +8,7 @@ import { registrarEvento } from "@/lib/api/auditoria";
 import { normalizarEmail, normalizarNome } from "@/lib/auth/validacao";
 import { criarContaInativa } from "@/lib/auth/contas";
 import { emitirCodigo, type TipoCodigo } from "@/lib/auth/codigos";
+import { parametrosPagina } from "@/lib/api/paginacao";
 
 export const dynamic = "force-dynamic";
 
@@ -18,11 +19,16 @@ export async function GET(req: NextRequest) {
   const guarda = await exigirAdmin(req);
   if (!guarda.ok) return guarda.resposta;
 
+  const { pagina, porPagina, skip, take } = parametrosPagina(req);
   const db = banco();
-  const linhas = await db.codigosAcesso.findMany({
-    orderBy: { criadoEm: "desc" },
-    take: 200,
-  });
+  const [linhas, total] = await Promise.all([
+    db.codigosAcesso.findMany({
+      orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+      skip,
+      take,
+    }),
+    db.codigosAcesso.count(),
+  ]);
   const agora = new Date();
   return json({
     codigos: linhas.map((c) => ({
@@ -34,6 +40,9 @@ export async function GET(req: NextRequest) {
       usadoEm: c.usadoEm?.toISOString() ?? null,
       status: c.usadoEm ? "usado" : c.expiraEm < agora ? "expirado" : "ativo",
     })),
+    total,
+    pagina,
+    porPagina,
   });
 }
 

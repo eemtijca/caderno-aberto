@@ -40,7 +40,8 @@ As fontes são carregadas com `next/font/google`. Os títulos usam `--font-displ
 
 - Raio base de 12px (`--radius`), com derivados de 8px a 16px. Controles usam `rounded-lg` ou `rounded-xl`; cartões e painéis usam `rounded-2xl`; blocos de destaque usam `rounded-3xl`.
 - Sombras discretas (`shadow-sm` em cartões, `shadow-md` no estado interativo e `shadow-lg` no botão flutuante). A impressão remove todas as sombras.
-- Animações de entrada (`na-entra`, `na-cascata` e `na-pulso`) são curtas e respeitam `prefers-reduced-motion`.
+- Animações de entrada (`na-entra`, `na-cascata`, `na-pulso` e `na-realce`) são curtas e respeitam `prefers-reduced-motion`. A cascata tem teto de atraso para listas longas.
+- Painéis expansíveis usam `Collapsible` com `animate-collapsible-down` e `animate-collapsible-up` (metadados da nota e notas sem turma), e o conteúdo das abas entra com fade. O status de salvamento e o bloco recém-inserido ou duplicado recebem realce próprio.
 
 ## Temas
 
@@ -59,7 +60,7 @@ Os elementos clicáveis usam `cursor: pointer` por uma regra global em `globals.
 - Rotas reais: `/` (shell), `/l/[token]` (página pública com metadados e OpenGraph) e `/api/**`.
 - Busca global com `Ctrl` ou `Cmd` mais `K`, com debounce, mínimo de 2 caracteres e tolerância a acentos.
 - No mobile, a barra superior concentra a busca, o seletor de tema e o menu de perfil (Configurações e Sair). A barra inferior mantém cinco itens; o botão Mais abre um painel inferior (`Drawer`) com as opções que não cabem, como Turmas e Administração para contas admin.
-- A tela de login oferece "Manter conectado neste dispositivo", marcado por padrão. Desmarcado, a sessão usa cookie de sessão e expira em 24 horas no servidor.
+- A tela de login oferece "Manter conectado neste dispositivo", marcado por padrão e lembrado no navegador para os próximos acessos, inclusive no uso de código e na troca de senha. Desmarcado, a sessão usa cookie de sessão e expira em 24 horas no servidor.
 
 ## Responsividade
 
@@ -79,9 +80,23 @@ Os avisos usam Sonner, no topo e centralizados, com cores por tipo e botão de f
 
 `ConfirmacaoDestrutiva` (`src/components/confirmacao-destrutiva.tsx`) aplica fricção proporcional ao risco: exige digitar o alvo (e-mail ou palavra), informar motivo e confirmar com a senha conforme o caso. O botão de confirmar só habilita quando os campos conferem.
 
+## Listas, filtros e paginação
+
+Listas longas usam o paginador compartilhado (`src/components/paginacao.tsx`): resumo do intervalo, botões numerados com elipses no desktop e indicador compacto no mobile. Ao trocar de página a rolagem volta ao topo e o conteúdo entra com animação. Notas, Links, Lixeira e coleção pública paginam no cliente (`usePaginacao`), sobre dados já completos. Tamanhos: 12 notas, 10 links, 10 itens por seção da lixeira, 10 aulas na coleção pública e 20 nas listas do admin.
+
+As listas do console de administração (Solicitações, Códigos, Usuários, Aprovações e Auditoria) paginam no servidor (`usePaginacaoServidor`): cada página é buscada com `pagina` e `porPagina`, o rodapé exibe o total real devolvido pela API e o filtro de cada aba reinicia a paginação. Assim os contadores do topo e a listagem ficam coerentes mesmo com centenas de registros.
+
+Os filtros de Notas ficam em um botão com contador de ativos: painel em popover no desktop e bottom sheet no mobile, agrupado por disciplina, ano, mês e turma. Os filtros aplicados viram chips removíveis abaixo da busca e sobrevivem à navegação dentro da sessão (`useEstadoSessao`), assim como a posição de rolagem por rota.
+
+## Atualização e seleção múltipla
+
+As consultas usam `staleTime: 0`: ao entrar em uma tela, dados velhos são refeitos automaticamente. Todas as telas com dados exibem o `BotaoAtualizar` (`RefreshCw` girando enquanto busca, com rótulo apenas quando faz sentido), incluindo a leitura, o editor (salvar e atualizar), a página pública e as seções de Configurações e Administração.
+
+Listas com ações em lote (Notas, Links e Lixeira) têm um modo de seleção: o botão Selecionar mostra os checkboxes, o clique no item marca em vez de abrir, o cabeçalho oferece Selecionar todos (todos os itens filtrados, inclusive entre páginas) e uma barra flutuante (`BarraLote`) concentra as ações, a contagem e o cancelar, posicionada acima da navegação inferior no mobile. A barra sobe ao entrar no modo de seleção, desce ao sair com transição suave e fica fixa à viewport durante a rolagem, renderizada em portal no `body`. `Esc` sai do modo. As ações rodam em servidor por lotes de até 100 ids, e itens ausentes ficam selecionados para nova tentativa. Na Lixeira, o botão Limpar lixeira esvazia a lixeira em definitivo, exigindo digitar LIMPAR para confirmar.
+
 ## Carregamento
 
-Cada região tem estado próprio de carregamento com esqueletos e `aria-busy`. Números exibem marcador pulsante enquanto carregam. Botões em processamento mostram ícone de carregamento, e o editor sinaliza `salvando`, `salvo` ou erro em uma região de status.
+Cada região tem estado próprio de carregamento com esqueletos e `aria-busy`. Números exibem marcador pulsante enquanto carregam. Botões em processamento mostram ícone de carregamento e ficam desabilitados, incluindo salvar inline, restaurar da lixeira, revogar código, duplicar nota, importar nota e as atualizações do admin. O editor sinaliza `alterações pendentes`, `salvando`, `salvo` ou erro em uma região de status.
 
 ## Acessibilidade
 
@@ -94,4 +109,4 @@ Cada região tem estado próprio de carregamento com esqueletos e `aria-busy`. N
 
 ## Impressão
 
-A área de impressão usa A4 com margens de 10mm por 11mm e duas colunas. A interface é oculta por `visibility`, o foco fica na área de impressão, o tema claro é forçado e os elementos de bloco respeitam `break-inside: avoid` e `orphans` e `widows`. Títulos usam `break-after: avoid`.
+A área de impressão usa A4 com margens de 10mm por 11mm e duas colunas. O documento é renderizado em um portal no `body` (`AreaImpressao` e `DocumentoImpresso` em `src/components/notas/area-impressao.tsx`), oculto na tela e exibido apenas no papel; a interface sai por `display`, sem ocupar espaço, o que elimina a página em branco ao final. O tema escuro é suspenso durante a impressão (`src/hooks/use-impressao.ts`) para preservar as cores das caixas. O cabeçalho impresso reúne disciplina, período, turmas, título, professor, resumo e habilidades, e o rodapé fecha com a assinatura da nota. Elementos de bloco respeitam `break-inside: avoid` e `orphans` e `widows`; títulos usam `break-after: avoid`. Ver [ADR-007](adr/007-impressao-em-portal.md).

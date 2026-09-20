@@ -17,7 +17,7 @@ O professor cria uma conta, escreve no editor visual de blocos (caixas COPIAR, e
 ### Organização
 
 - Início com saudação, contadores clicáveis (notas, publicadas, disciplinas, links), notas do mês e últimas edições.
-- Notas em grade de cartões com busca local, filtros por disciplina, ano letivo, mês e turma, e contagem de resultados.
+- Notas em grade de cartões com busca local, painel de filtros por disciplina, ano letivo, mês e turma (com chips ativas), contagem de resultados e paginação.
 - Organização por ano letivo, com acordeão por turma (agrupado por mês), cartões por disciplina e grupo de notas sem turma.
 - Busca global (`Ctrl/Cmd+K`) com debounce, mínimo de 2 caracteres e tolerância a acentos, exibindo campo de origem e trecho contextual.
 
@@ -29,16 +29,18 @@ O professor cria uma conta, escreve no editor visual de blocos (caixas COPIAR, e
 - Parágrafo com rótulos fixos (Definição, Fórmulas, Relações, Modelo básico e Resolução) ou rótulo livre; chamada em 3 estilos (Atenção, No dia a dia e Símbolos e unidades).
 - Tabela com linhas e colunas editáveis e primeira linha opcional como cabeçalho; figura por upload com compressão ou URL, com legenda.
 - Barra de formato inline (negrito, itálico, fórmula `$...$`, destaque `\resultado{...}` e química `$\ce{...}$`) e prévia KaTeX ao vivo.
-- Reordenação por arrastar e soltar (mouse e teclado), botões de mover, duplicar e excluir, e paleta de inserção contextual.
+- Reordenação por arrastar e soltar (mouse e teclado), botões de mover, duplicar e excluir, paleta de inserção contextual e desfazer/refazer estrutural com `Ctrl+Z` e `Ctrl+Shift+Z`.
+- Seleção múltipla em Notas, Links e Lixeira, com ações em lote no servidor: publicar, voltar a rascunho, definir disciplina e mover para a lixeira; pausar, reativar e excluir links; restaurar itens da lixeira.
+- Botão de atualizar em todas as telas com dados e atualização automática ao entrar quando os dados estiverem velhos.
 - Salvamento automático com indicador de estado; título editável na barra; ações de ler, exportar, compartilhar, duplicar (a cópia abre como rascunho), alternar rascunho e publicada, e excluir com confirmação.
 - Metadados por nota: disciplina, ano letivo, mês, turmas, resumo "Sobre" e habilidades BNCC/ENEM.
 - Aparência por nota: 5 fontes, 4 tamanhos e 3 entrelinhas, aplicadas ao professor, ao aluno e à impressão.
-- Diálogo Nova nota com título (mínimo de 2 caracteres), disciplina (seleção ou criação inline com cor e ícone), ano, mês, turmas opcionais e interruptor "Começar do modelo".
+- Diálogo Nova nota com título (mínimo de 2 caracteres), disciplina (seleção ou criação inline com cor e ícone), ano, mês, turmas opcionais e interruptor "Começar do modelo", que cria uma aula guiada e neutra, com orientações de preenchimento em cada bloco.
 
 ### Exportação e impressão
 
 - No editor: arquivo para impressão (`.tex`), arquivo de texto (`.md`) e backup da nota (`.json`), todos nomeados pelo slug da nota.
-- Na leitura, para professor e aluno: botão Imprimir/PDF com layout A4 em duas colunas e ocultação de barras e rodapés; alternativas do quiz impressas como texto.
+- Na leitura, para professor e aluno: botão Imprimir/PDF com layout A4 em duas colunas, cabeçalho próprio com disciplina, período, turmas, professor, resumo e habilidades, sem páginas em branco ao final; alternativas do quiz impressas como texto.
 
 ### Links únicos para os alunos
 
@@ -67,7 +69,7 @@ O professor cria uma conta, escreve no editor visual de blocos (caixas COPIAR, e
 
 ### Vista do aluno (sem login)
 
-- Acesso por link único `/l/<token>`; coleções de turma e disciplina abrem lista de aulas com busca local.
+- Acesso por link único `/l/<token>`; coleções de turma e disciplina sempre abrem a lista de aulas com busca local, e a aula só é exibida quando escolhida.
 - Leitura com disciplina, mês e ano, turmas, professor, caixa "Sobre" e chips de habilidades; fórmulas, diagramas, tabelas, figuras e caixas coloridas.
 - Quiz de múltipla escolha com correção instantânea, botão de mostrar e ocultar gabarito, impressão em PDF e alternador de tema.
 - Herança da fonte, do tamanho e da entrelinha definidos pelo professor; faixa de aviso quando o link expira em menos de 3 dias; página de demonstração em `/l/demo-landing`.
@@ -76,10 +78,10 @@ O professor cria uma conta, escreve no editor visual de blocos (caixas COPIAR, e
 
 - Página inicial é a tela de login (aplicação de uma escola, sem landing page).
 - Primeiro acesso e recuperação de senha por código de 8 caracteres gerado pela administração; o professor solicita o código, a administração entrega e o professor define a senha.
-- Console de administração com fila de solicitações, emissão e revogação de códigos, gestão de contas e auditoria dos eventos sensíveis.
+- Console de administração com fila de solicitações, emissão e revogação de códigos, gestão de contas e auditoria dos eventos sensíveis, com filtro por ação, paginação e limpeza da trilha mediante senha e confirmação.
 - Temas claro, escuro e sistema; aplicativo somente em português; navegação por rotas hash (`#/`, `#/notas`, `#/organizacao`, `#/links`, `#/lixeira`, `#/configuracoes` com as seções de perfil, segurança, disciplinas, turmas, dados e exclusão, `#/recuperacao`, `#/admin`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/codigo`, `#/solicitar`) com retorno ao início em rota desconhecida.
 - Layout responsivo com barra lateral recolhível no desktop e navegação inferior no celular; notificações toast em todas as ações, com mensagens de erro em português.
-- Estados de carregamento independentes por elemento (esqueletos por cartão, filtro, número e seção) e animações sutis que respeitam `prefers-reduced-motion`.
+- Estados de carregamento independentes por elemento (esqueletos por cartão, filtro, número e seção) e animações sutis, inclusive nos painéis expansíveis, que respeitam `prefers-reduced-motion`.
 
 ## Começando
 

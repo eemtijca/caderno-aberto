@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TextareaAuto, BarraInline } from "./pecas";
+import { TextareaAuto, BarraInline, CampoInline } from "./pecas";
+import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
 import { Matematica } from "@/components/notas/matematica";
 import { Tikz } from "@/components/notas/tikz";
 import { comprimirImagem, enviarImagem } from "@/lib/notas/api-client";
@@ -35,7 +36,7 @@ import type {
 import { ROTULOS_FIXOS, ESTILOS_CHAMADA, idBloco } from "@/lib/notas/tipos";
 import { toast } from "sonner";
 
-type Patch = (patch: Record<string, unknown>) => void;
+export type Patch = (patch: Record<string, unknown>, opcoes?: { historico?: boolean }) => void;
 
 export function EditorSecao({
   bloco,
@@ -88,6 +89,7 @@ export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onP
         >
           <SelectTrigger
             size="sm"
+            aria-label="Rótulo do parágrafo"
             className="h-7 w-auto gap-1 rounded-md border-dashed text-[0.72rem] font-semibold text-sky-700 dark:text-sky-300"
           >
             <SelectValue placeholder="Rótulo" />
@@ -120,6 +122,7 @@ export function EditorParagrafo({ bloco, onPatch }: { bloco: BlocoParagrafo; onP
         </div>
       </div>
       <TextareaAuto
+        ref={ref}
         valor={bloco.texto}
         onChange={(texto) => onPatch({ texto })}
         placeholder="Texto do parágrafo. Use **negrito**, $fórmulas$ e \resultado{...}"
@@ -166,7 +169,7 @@ export function EditorLista({ bloco, onPatch }: { bloco: BlocoLista; onPatch: Pa
             className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-stone-400 dark:bg-stone-500"
             aria-hidden
           />
-          <TextareaAuto
+          <CampoInline
             valor={item}
             onChange={(v) => mudarItem(i, v)}
             placeholder={`Item ${i + 1}`}
@@ -174,8 +177,10 @@ export function EditorLista({ bloco, onPatch }: { bloco: BlocoLista; onPatch: Pa
           />
           <button
             type="button"
-            onClick={() => onPatch({ itens: bloco.itens.filter((_, j) => j !== i) })}
-            className="text-muted-foreground/60 hover:bg-accent hover:text-destructive mt-1 rounded-md p-1 transition-colors"
+            onClick={() =>
+              onPatch({ itens: bloco.itens.filter((_, j) => j !== i) }, { historico: true })
+            }
+            className="text-muted-foreground/60 hover:bg-accent hover:text-destructive mt-1 rounded-md p-1.5 transition-colors"
             aria-label={`Remover item ${i + 1}`}
           >
             <X className="h-3.5 w-3.5" aria-hidden />
@@ -184,7 +189,7 @@ export function EditorLista({ bloco, onPatch }: { bloco: BlocoLista; onPatch: Pa
       ))}
       <button
         type="button"
-        onClick={() => onPatch({ itens: [...bloco.itens, ""] })}
+        onClick={() => onPatch({ itens: [...bloco.itens, ""] }, { historico: true })}
         className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded-md px-2 py-1 text-[0.78rem] font-semibold transition-colors"
       >
         <Plus className="h-3.5 w-3.5" aria-hidden /> item
@@ -194,6 +199,7 @@ export function EditorLista({ bloco, onPatch }: { bloco: BlocoLista; onPatch: Pa
 }
 
 export function EditorTabela({ bloco, onPatch }: { bloco: BlocoTabela; onPatch: Patch }) {
+  const [confirmarColuna, setConfirmarColuna] = useState(false);
   // Normaliza as linhas para a maior largura, preenchendo células faltantes.
   const nCol = Math.max(1, ...bloco.linhas.map((l) => l.length), 1);
   const linhas = bloco.linhas.map((l) => {
@@ -227,10 +233,12 @@ export function EditorTabela({ bloco, onPatch }: { bloco: BlocoTabela; onPatch: 
                     />
                   </td>
                 ))}
-                <td className="w-8">
+                <td className="bg-card sticky right-0 w-8">
                   <button
                     type="button"
-                    onClick={() => onPatch({ linhas: linhas.filter((_, x) => x !== i) })}
+                    onClick={() =>
+                      onPatch({ linhas: linhas.filter((_, x) => x !== i) }, { historico: true })
+                    }
                     className="text-muted-foreground/60 hover:text-destructive flex h-full w-8 items-center justify-center rounded-md transition-colors"
                     aria-label={`Remover linha ${i + 1}`}
                   >
@@ -245,7 +253,12 @@ export function EditorTabela({ bloco, onPatch }: { bloco: BlocoTabela; onPatch: 
       <div className="flex flex-wrap items-center gap-1.5 text-[0.78rem]">
         <button
           type="button"
-          onClick={() => onPatch({ linhas: [...linhas, Array.from({ length: nCol }, () => "")] })}
+          onClick={() =>
+            onPatch(
+              { linhas: [...linhas, Array.from({ length: nCol }, () => "")] },
+              { historico: true },
+            )
+          }
           className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1 font-semibold transition-colors"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden /> linha
@@ -253,9 +266,12 @@ export function EditorTabela({ bloco, onPatch }: { bloco: BlocoTabela; onPatch: 
         <button
           type="button"
           onClick={() =>
-            onPatch({
-              linhas: linhas.map((l) => [...l, ""]),
-            })
+            onPatch(
+              {
+                linhas: linhas.map((l) => [...l, ""]),
+              },
+              { historico: true },
+            )
           }
           className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1 font-semibold transition-colors"
         >
@@ -264,11 +280,7 @@ export function EditorTabela({ bloco, onPatch }: { bloco: BlocoTabela; onPatch: 
         {nCol > 1 ? (
           <button
             type="button"
-            onClick={() =>
-              onPatch({
-                linhas: linhas.map((l) => l.slice(0, nCol - 1)),
-              })
-            }
+            onClick={() => setConfirmarColuna(true)}
             className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1 font-semibold transition-colors"
           >
             <X className="h-3.5 w-3.5" aria-hidden /> coluna
@@ -284,6 +296,17 @@ export function EditorTabela({ bloco, onPatch }: { bloco: BlocoTabela; onPatch: 
           1ª linha é cabeçalho
         </label>
       </div>
+
+      <ConfirmacaoDestrutiva
+        aberto={confirmarColuna}
+        onOpenChange={setConfirmarColuna}
+        titulo="Remover a última coluna?"
+        descricao="As células dessa coluna serão apagadas em todas as linhas."
+        textoConfirmar="Remover coluna"
+        onConfirmar={async () => {
+          onPatch({ linhas: linhas.map((l) => l.slice(0, nCol - 1)) }, { historico: true });
+        }}
+      />
     </div>
   );
 }
@@ -295,6 +318,7 @@ export function EditorChamada({ bloco, onPatch }: { bloco: BlocoChamada; onPatch
         <Select value={bloco.estilo} onValueChange={(v) => onPatch({ estilo: v as EstiloChamada })}>
           <SelectTrigger
             size="sm"
+            aria-label="Estilo da chamada"
             className="h-7 w-auto rounded-md border-dashed text-[0.72rem] font-semibold"
           >
             <SelectValue />
@@ -308,7 +332,7 @@ export function EditorChamada({ bloco, onPatch }: { bloco: BlocoChamada; onPatch
           </SelectContent>
         </Select>
       </div>
-      <TextareaAuto
+      <CampoInline
         valor={bloco.texto}
         onChange={(texto) => onPatch({ texto })}
         placeholder={
@@ -393,12 +417,12 @@ export function EditorFigura({ bloco, onPatch }: { bloco: BlocoFigura; onPatch: 
           />
         </div>
       )}
-      <Input
-        value={bloco.legenda}
-        onChange={(e) => onPatch({ legenda: e.target.value })}
+      <CampoInline
+        valor={bloco.legenda}
+        onChange={(legenda) => onPatch({ legenda })}
         placeholder="Legenda da figura"
-        className="h-8 rounded-lg text-xs"
-        aria-label="Legenda da figura"
+        className="text-xs"
+        ariaLabel="Legenda da figura"
       />
     </div>
   );
@@ -415,12 +439,12 @@ export function EditorTikz({ bloco, onPatch }: { bloco: BlocoTikz; onPatch: Patc
         rowsMin={5}
         ariaLabel="Instruções do diagrama"
       />
-      <Input
-        value={bloco.legenda}
-        onChange={(e) => onPatch({ legenda: e.target.value })}
+      <CampoInline
+        valor={bloco.legenda}
+        onChange={(legenda) => onPatch({ legenda })}
         placeholder="Legenda (opcional)"
-        className="h-8 rounded-lg text-xs"
-        aria-label="Legenda do diagrama"
+        className="text-xs"
+        ariaLabel="Legenda do diagrama"
       />
       {bloco.codigo.trim() ? (
         <div className="border-border/60 flex justify-center rounded-lg border bg-white p-3 dark:bg-stone-900/60">
@@ -563,7 +587,7 @@ function BotaoMini({
       disabled={disabled}
       aria-label={rotulo}
       title={rotulo}
-      className={`rounded-md p-1.5 transition-colors disabled:opacity-30 ${
+      className={`rounded-md p-1.5 transition-colors disabled:opacity-30 pointer-coarse:p-2.5 ${
         perigo
           ? "text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive"
           : "text-muted-foreground/70 hover:bg-accent hover:text-foreground"
@@ -591,11 +615,20 @@ export function EditorFilho({ filho, onPatch }: { filho: BlocoFilho; onPatch: Pa
 }
 
 export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; onPatch: Patch }) {
-  const setNiveis = (niveis: BlocoExercicios["niveis"]) => onPatch({ niveis });
+  const [confirmarAberta, setConfirmarAberta] = useState<{
+    iNivel: number;
+    idQuestao: string;
+  } | null>(null);
+  const setNiveis = (niveis: BlocoExercicios["niveis"], historico = false) =>
+    onPatch({ niveis }, { historico });
 
-  const mudarNivel = (i: number, patch: Partial<BlocoExercicios["niveis"][number]>) => {
+  const mudarNivel = (
+    i: number,
+    patch: Partial<BlocoExercicios["niveis"][number]>,
+    historico = false,
+  ) => {
     const niveis = bloco.niveis.map((n, j) => (j === i ? { ...n, ...patch } : n));
-    setNiveis(niveis);
+    setNiveis(niveis, historico);
   };
 
   const novaQuestao = (): Questao => ({
@@ -605,13 +638,18 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
     correta: null,
   });
 
-  const mudarQuestao = (iNivel: number, idQuestao: string, patch: Partial<Questao>) => {
+  const mudarQuestao = (
+    iNivel: number,
+    idQuestao: string,
+    patch: Partial<Questao>,
+    historico = false,
+  ) => {
     const niveis = bloco.niveis.map((n, j) =>
       j === iNivel
         ? { ...n, questoes: n.questoes.map((q) => (q.id === idQuestao ? { ...q, ...patch } : q)) }
         : n,
     );
-    setNiveis(niveis);
+    setNiveis(niveis, historico);
   };
 
   const CORES_NIVEL_BORDA = ["border-sky-400", "border-amber-400", "border-rose-400"];
@@ -659,15 +697,15 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                   <button
                     type="button"
                     onClick={() =>
-                      mudarNivel(i, { questoes: nivel.questoes.filter((x) => x.id !== q.id) })
+                      mudarNivel(i, { questoes: nivel.questoes.filter((x) => x.id !== q.id) }, true)
                     }
-                    className="text-muted-foreground/60 hover:bg-accent hover:text-destructive rounded-md p-1 transition-colors"
+                    className="text-muted-foreground/60 hover:bg-accent hover:text-destructive rounded-md p-1.5 transition-colors"
                     aria-label={`Remover questão ${j + 1}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden />
                   </button>
                 </div>
-                <TextareaAuto
+                <CampoInline
                   valor={q.enunciado}
                   onChange={(enunciado) => mudarQuestao(i, q.id, { enunciado })}
                   placeholder="Enunciado da questão..."
@@ -689,7 +727,7 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                           <button
                             type="button"
                             onClick={() => mudarQuestao(i, q.id, { correta: correta ? null : k })}
-                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[0.62rem] font-bold transition-colors ${
+                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[0.62rem] font-bold transition-colors ${
                               correta
                                 ? "border-emerald-500 bg-emerald-500 text-white"
                                 : "border-muted-foreground/40 text-muted-foreground hover:border-foreground"
@@ -699,12 +737,12 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                           >
                             {"abcd"[k] ?? "?"}
                           </button>
-                          <TextareaAuto
+                          <CampoInline
                             valor={alt}
                             onChange={(v) => {
                               const alternativas = [...q.alternativas];
                               alternativas[k] = v;
-                              mudarQuestao(i, q.id, { alternativas });
+                              mudarQuestao(i, q.id, { alternativas }, true);
                             }}
                             placeholder={`Alternativa (${"abcd"[k] ?? "?"})`}
                             ariaLabel={`Alternativa ${"abcd"[k] ?? "?"}`}
@@ -722,9 +760,9 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                                     : q.correta > k
                                       ? q.correta - 1
                                       : q.correta;
-                              mudarQuestao(i, q.id, { alternativas, correta });
+                              mudarQuestao(i, q.id, { alternativas, correta }, true);
                             }}
-                            className="text-muted-foreground/60 hover:bg-accent hover:text-destructive rounded-md p-1 transition-colors"
+                            className="text-muted-foreground/60 hover:bg-accent hover:text-destructive rounded-md p-1.5 transition-colors"
                             aria-label={`Remover alternativa ${"abcd"[k] ?? "?"}`}
                           >
                             <X className="h-3 w-3" aria-hidden />
@@ -739,7 +777,7 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                     <button
                       type="button"
                       onClick={() =>
-                        mudarQuestao(i, q.id, { alternativas: [...q.alternativas, ""] })
+                        mudarQuestao(i, q.id, { alternativas: [...q.alternativas, ""] }, true)
                       }
                       className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-0.5 text-[0.72rem] font-semibold transition-colors"
                     >
@@ -749,7 +787,7 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
                   {q.alternativas.length > 0 ? (
                     <button
                       type="button"
-                      onClick={() => mudarQuestao(i, q.id, { alternativas: [], correta: null })}
+                      onClick={() => setConfirmarAberta({ iNivel: i, idQuestao: q.id })}
                       className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-0.5 text-[0.72rem] font-semibold transition-colors"
                     >
                       <CircleAlert className="h-3 w-3" aria-hidden /> virar questão aberta
@@ -762,7 +800,7 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
 
           <button
             type="button"
-            onClick={() => mudarNivel(i, { questoes: [...nivel.questoes, novaQuestao()] })}
+            onClick={() => mudarNivel(i, { questoes: [...nivel.questoes, novaQuestao()] }, true)}
             className="border-border text-muted-foreground hover:bg-accent hover:text-foreground mt-2 flex items-center gap-1.5 rounded-lg border border-dashed px-2.5 py-1.5 text-[0.78rem] font-semibold transition-colors hover:border-solid"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden /> questão
@@ -774,13 +812,35 @@ export function EditorExercicios({ bloco, onPatch }: { bloco: BlocoExercicios; o
         <p className="text-muted-foreground text-[0.7rem] font-bold tracking-wider uppercase">
           Gabarito (para as questões abertas)
         </p>
-        <TextareaAuto
+        <CampoInline
           valor={bloco.gabarito}
           onChange={(gabarito) => onPatch({ gabarito })}
           placeholder="2) 3,0 m/s · 5) veja resolução. As alternativas marcadas entram automaticamente."
           ariaLabel="Gabarito das questões abertas"
         />
       </div>
+
+      <ConfirmacaoDestrutiva
+        aberto={Boolean(confirmarAberta)}
+        onOpenChange={(o) => !o && setConfirmarAberta(null)}
+        titulo="Virar questão aberta?"
+        descricao="As alternativas e o gabarito marcado serão apagados. A questão passa a ser respondida por escrito."
+        textoConfirmar="Virar questão aberta"
+        onConfirmar={async () => {
+          if (confirmarAberta) {
+            mudarQuestao(
+              confirmarAberta.iNivel,
+              confirmarAberta.idQuestao,
+              {
+                alternativas: [],
+                correta: null,
+              },
+              true,
+            );
+          }
+          setConfirmarAberta(null);
+        }}
+      />
     </div>
   );
 }

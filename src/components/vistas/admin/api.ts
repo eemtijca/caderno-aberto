@@ -6,6 +6,23 @@ import { mapearErro } from "@/lib/api/erro";
 
 export type TipoCodigo = "primeiro_acesso" | "recuperacao";
 
+/** Rótulos compartilhados entre as abas do console. */
+export const ROTULO_TIPO: Record<string, string> = {
+  primeiro_acesso: "Primeiro acesso",
+  recuperacao: "Recuperação de senha",
+};
+
+export const ROTULO_STATUS_CODIGO: Record<string, string> = {
+  ativo: "Ativo",
+  usado: "Usado",
+  expirado: "Expirado",
+};
+
+export const ROTULO_ACAO_APROVACAO: Record<string, string> = {
+  suspender: "Desativar conta",
+  excluir: "Excluir conta",
+};
+
 export interface Solicitacao {
   id: string;
   nome: string;
@@ -63,6 +80,11 @@ export interface Resumo {
   usuariosInativos: number;
 }
 
+/** Parâmetros de página das listas paginadas no servidor. */
+function parametrosLista(pagina: number, porPagina: number): URLSearchParams {
+  return new URLSearchParams({ pagina: String(pagina), porPagina: String(porPagina) });
+}
+
 export interface AprovacaoAcao {
   id: string;
   tipo: string;
@@ -98,16 +120,20 @@ async function pedir<T>(url: string, init?: RequestInit): Promise<T> {
 export const adminApi = {
   resumo: () => pedir<Resumo>("/api/admin/resumo"),
 
-  solicitacoes: (status?: string) =>
-    pedir<{ solicitacoes: Solicitacao[] }>(
-      `/api/admin/solicitacoes${status ? `?status=${status}` : ""}`,
-    ),
+  solicitacoes: (status?: string, pagina = 1, porPagina = 20) => {
+    const sp = parametrosLista(pagina, porPagina);
+    if (status) sp.set("status", status);
+    return pedir<{ solicitacoes: Solicitacao[]; total: number }>(`/api/admin/solicitacoes?${sp}`);
+  },
   atender: (id: string) =>
     pedir<CodigoEmitido>(`/api/admin/solicitacoes/${id}/atender`, { method: "POST" }),
   cancelar: (id: string) =>
     pedir<{ ok: true }>(`/api/admin/solicitacoes/${id}/cancelar`, { method: "POST" }),
 
-  codigos: () => pedir<{ codigos: Codigo[] }>("/api/admin/codigos"),
+  codigos: (pagina = 1, porPagina = 20) =>
+    pedir<{ codigos: Codigo[]; total: number }>(
+      `/api/admin/codigos?${parametrosLista(pagina, porPagina)}`,
+    ),
   emitirCodigo: (email: string, tipo: TipoCodigo, nome?: string) =>
     pedir<CodigoEmitido>("/api/admin/codigos", {
       method: "POST",
@@ -116,7 +142,10 @@ export const adminApi = {
   revogarCodigo: (id: string) =>
     pedir<{ ok: true }>(`/api/admin/codigos/${id}`, { method: "DELETE" }),
 
-  usuarios: () => pedir<{ usuarios: UsuarioAdmin[] }>("/api/admin/usuarios"),
+  usuarios: (pagina = 1, porPagina = 20) =>
+    pedir<{ usuarios: UsuarioAdmin[]; total: number }>(
+      `/api/admin/usuarios?${parametrosLista(pagina, porPagina)}`,
+    ),
   criarUsuario: (dados: { nome: string; email: string; papel: string }) =>
     pedir<{ usuario: UsuarioAdmin; codigo: string; expiraEm: string }>("/api/admin/usuarios", {
       method: "POST",
@@ -153,12 +182,24 @@ export const adminApi = {
       method: "DELETE",
     }),
 
-  aprovacoes: () => pedir<{ aprovacoes: AprovacaoAcao[] }>("/api/admin/aprovacoes"),
+  aprovacoes: (pagina = 1, porPagina = 20) =>
+    pedir<{ aprovacoes: AprovacaoAcao[]; total: number }>(
+      `/api/admin/aprovacoes?${parametrosLista(pagina, porPagina)}`,
+    ),
   decidirAprovacao: (id: string, acao: "aprovar" | "recusar", senha: string) =>
     pedir<{ ok: true }>(`/api/admin/aprovacoes/${id}`, {
       method: "POST",
       body: JSON.stringify({ acao, senha }),
     }),
 
-  auditoria: () => pedir<{ eventos: Evento[] }>("/api/admin/auditoria"),
+  auditoria: (acao?: string, pagina = 1, porPagina = 20) => {
+    const sp = parametrosLista(pagina, porPagina);
+    if (acao) sp.set("acao", acao);
+    return pedir<{ eventos: Evento[]; total: number }>(`/api/admin/auditoria?${sp}`);
+  },
+  limparAuditoria: (senha: string) =>
+    pedir<{ ok: true; removidos: number }>("/api/admin/auditoria", {
+      method: "DELETE",
+      body: JSON.stringify({ confirmacao: "LIMPAR", senha }),
+    }),
 };

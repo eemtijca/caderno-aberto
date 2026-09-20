@@ -4,7 +4,7 @@
 // confirmar, a sessão é encerrada e a recuperação exige novo login.
 
 import { useState } from "react";
-import { Loader2, ShieldAlert, Trash2 } from "lucide-react";
+import { Download, Loader2, ShieldAlert, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,9 +52,15 @@ export function SecaoExclusao({ navegar }: { navegar: (para: string) => void }) 
       </h2>
       <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
         Solicita a remoção permanente da conta, notas, disciplinas, turmas, links e imagens. Existe
-        carência de 24 horas para restauração. Ao confirmar, a sessão é encerrada. Baixe um backup
-        antes.
+        carência de 24 horas para restauração. Ao confirmar, a sessão é encerrada.
       </p>
+      <a
+        href="/api/backup"
+        download
+        className="text-primary mt-2 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+      >
+        <Download className="h-3.5 w-3.5" aria-hidden /> Baixar um backup antes
+      </a>
 
       <AlertDialog open={aberto} onOpenChange={setAberto}>
         <AlertDialogTrigger asChild>
@@ -166,12 +172,11 @@ export function SecaoExclusao({ navegar }: { navegar: (para: string) => void }) 
                       await sair();
                       navegar("/entrar");
                     } catch (err) {
+                      // Mantém a confirmação digitada e pede apenas a senha de novo.
+                      setSenha("");
                       toast.error(err instanceof Error ? err.message : "Erro ao solicitar.");
                     } finally {
                       setExcluindo(false);
-                      setSenha("");
-                      setConfirmacao("");
-                      setEtapa(1);
                     }
                   }}
                 >

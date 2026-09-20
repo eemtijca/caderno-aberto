@@ -3,9 +3,21 @@
 // Peças reutilizáveis do editor: textarea que cresce sozinha e barra de
 // formatação inline que envolve a seleção atual.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Percent, Sigma, Highlighter } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+interface PropsTextareaAuto {
+  valor: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  mono?: boolean;
+  onFocus?: () => void;
+  rowsMin?: number;
+  ariaLabel?: string;
+  ref?: React.Ref<HTMLTextAreaElement>;
+}
 
 export function TextareaAuto({
   valor,
@@ -16,29 +28,45 @@ export function TextareaAuto({
   onFocus,
   rowsMin = 1,
   ariaLabel,
-}: {
-  valor: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  className?: string;
-  mono?: boolean;
-  onFocus?: () => void;
-  rowsMin?: number;
-  ariaLabel?: string;
-}) {
-  const ref = useRef<HTMLTextAreaElement>(null);
+  ref,
+}: PropsTextareaAuto) {
+  const interno = useRef<HTMLTextAreaElement | null>(null);
+
+  // Repassa o nó para o ref interno (altura automática) e para o externo
+  // (barra de formatação), sem depender de encaminhamento implícito.
+  const definirRef = (el: HTMLTextAreaElement | null) => {
+    interno.current = el;
+    if (typeof ref === "function") ref(el);
+    else if (ref) (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+  };
 
   // Recalcula a altura a cada mudança de valor para acompanhar o conteúdo.
   useEffect(() => {
-    const el = ref.current;
+    const el = interno.current;
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [valor]);
 
+  // Recalcula quando a largura muda (rotação de tela, colunas, fontes).
+  useEffect(() => {
+    const el = interno.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    let largura = el.clientWidth;
+    const observador = new ResizeObserver(() => {
+      const alvo = interno.current;
+      if (!alvo || alvo.clientWidth === largura) return;
+      largura = alvo.clientWidth;
+      alvo.style.height = "auto";
+      alvo.style.height = `${alvo.scrollHeight}px`;
+    });
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, []);
+
   return (
     <textarea
-      ref={ref}
+      ref={definirRef}
       value={valor}
       onChange={(e) => onChange(e.target.value)}
       onFocus={onFocus}
@@ -49,6 +77,35 @@ export function TextareaAuto({
         mono ? "font-mono text-[0.88rem]" : ""
       } ${className ?? ""}`}
     />
+  );
+}
+
+/** Campo de texto com a barra de formatação inline flutuante ao focar. */
+export function CampoInline({
+  valor,
+  onChange,
+  className,
+  ariaLabel,
+  ...props
+}: Omit<PropsTextareaAuto, "ref">) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const [focado, setFocado] = useState(false);
+
+  return (
+    <div
+      className={`relative min-w-0 flex-1 ${className ?? ""}`}
+      onFocus={() => setFocado(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocado(false);
+      }}
+    >
+      <TextareaAuto ref={ref} valor={valor} onChange={onChange} ariaLabel={ariaLabel} {...props} />
+      {focado ? (
+        <div className="border-border bg-card absolute -top-9 right-0 z-20 flex rounded-lg border px-0.5 py-0.5 shadow-md">
+          <BarraInline alvo={ref} onAplicar={(v) => onChange(v)} />
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -124,8 +181,10 @@ export function BarraInline({
           <TooltipTrigger asChild>
             <button
               type="button"
+              // Impede que o textarea perca a seleção antes do clique.
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => aplicar(item.antes, item.depois, item.placeholder)}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-7 items-center justify-center rounded-md transition-colors pointer-coarse:h-9 pointer-coarse:w-9"
               aria-label={item.rotulo}
             >
               <item.icone className="h-3.5 w-3.5" aria-hidden />

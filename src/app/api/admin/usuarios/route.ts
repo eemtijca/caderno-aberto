@@ -8,22 +8,28 @@ import { registrarEvento } from "@/lib/api/auditoria";
 import { normalizarEmail, normalizarNome } from "@/lib/auth/validacao";
 import { criarContaInativa } from "@/lib/auth/contas";
 import { emitirCodigo } from "@/lib/auth/codigos";
+import { parametrosPagina } from "@/lib/api/paginacao";
 
 export const dynamic = "force-dynamic";
 
 const PAPEIS = new Set(["admin", "professor"]);
 
-// GET /api/admin/usuarios. Lista contas com perfil.
+// GET /api/admin/usuarios. Lista contas com perfil, paginadas.
 export async function GET(req: NextRequest) {
   const guarda = await exigirAdmin(req);
   if (!guarda.ok) return guarda.resposta;
 
+  const { pagina, porPagina, skip, take } = parametrosPagina(req);
   const db = banco();
-  const linhas = await db.usuarios.findMany({
-    include: { perfil: true },
-    orderBy: { criadoEm: "desc" },
-    take: 300,
-  });
+  const [linhas, total] = await Promise.all([
+    db.usuarios.findMany({
+      include: { perfil: true },
+      orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+      skip,
+      take,
+    }),
+    db.usuarios.count(),
+  ]);
   return json({
     usuarios: linhas.map((u) => ({
       id: u.id,
@@ -36,6 +42,9 @@ export async function GET(req: NextRequest) {
       suspensoEm: u.perfil?.suspensoEm?.toISOString() ?? null,
       criadoEm: u.criadoEm.toISOString(),
     })),
+    total,
+    pagina,
+    porPagina,
   });
 }
 

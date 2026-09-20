@@ -191,14 +191,16 @@
   }
 }
 
+/* O fill-mode backwards não retém o transform final, que criaria containing
+   block para descendentes fixed (como a barra de ações em lote). */
 .na-entra {
-  animation: na-entra 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: na-entra 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
 }
 
-/* cascata de cards: --na-i (índice) atrasa cada item */
+/* cascata de cards: --na-i (índice) atrasa cada item, com teto para listas longas */
 .na-cascata {
-  animation: na-entra 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-  animation-delay: calc(var(--na-i, 0) * 45ms);
+  animation: na-entra 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  animation-delay: min(calc(var(--na-i, 0) * 45ms), 540ms);
 }
 
 /* realce suave de foco em listas */
@@ -216,10 +218,25 @@
   animation: na-pulso 1.4s ease-in-out infinite;
 }
 
+/* realce momentâneo do bloco recém-inserido ou duplicado */
+@keyframes na-realce {
+  0% {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+
+.na-realce {
+  animation: na-realce 1.2s ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .na-entra,
   .na-cascata,
-  .na-pulso {
+  .na-pulso,
+  .na-realce {
     animation: none !important;
   }
   *,
@@ -282,6 +299,29 @@ input[type="reset"]:not(:disabled),
   cursor: pointer;
 }
 
+/* Foco visível em controles sem anel próprio (links, botões crus, resumos) */
+:where(
+  button,
+  a[href],
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="option"],
+  [role="menuitem"]
+):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Toque: evita o zoom automático do iOS em campos com fonte menor que 16px */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 /* Impressão: A4 claro, duas colunas, caixas sem quebrar */
 
 @media print {
@@ -296,37 +336,34 @@ input[type="reset"]:not(:disabled),
     color: #1c1c1c !important;
   }
 
-  /* oculta a interface do app; só a área de impressão aparece */
-  body * {
-    visibility: hidden;
+  /* Só a área de impressão (portal no body) vai para o papel. O app oculto
+     não ocupa espaço, o que evita páginas em branco no fim. */
+  body > *:not(.area-impressao) {
+    display: none !important;
   }
 
   .na-imprime-esconder {
     display: none !important;
   }
 
-  .area-impressao,
-  .area-impressao * {
-    visibility: visible;
-  }
-
   .area-impressao {
-    position: absolute;
-    inset: 0 auto auto 0;
+    display: block !important;
     width: 100%;
     padding: 0 !important;
   }
 
-  /* tema claro forçado na impressão */
-  .area-impressao,
-  .area-impressao * {
+  /* tema claro forçado na impressão, preservando as cores dos elementos */
+  .area-impressao {
     --background: #fff !important;
     --foreground: #1c1c1c !important;
     --card: #fff !important;
     --muted-foreground: #555 !important;
     --border: #ddd !important;
-    background-color: transparent !important;
+    background: #fff !important;
     color: #1c1c1c !important;
+  }
+
+  .area-impressao * {
     box-shadow: none !important;
   }
 
@@ -334,7 +371,14 @@ input[type="reset"]:not(:disabled),
   .imprime-colunas {
     column-count: 2;
     column-gap: 7mm;
-    column-fill: auto;
+    /* balance mantém o rodapé na mesma página em que o conteúdo termina */
+    column-fill: balance;
+  }
+
+  /* o rodapé acompanha o fim do conteúdo, sem página extra */
+  .na-rodape-impressao {
+    break-before: avoid;
+    break-inside: avoid;
   }
 
   /* tipografia da nota (fonte/escala/entrelinha escolhidas pelo professor) */
@@ -374,9 +418,13 @@ input[type="reset"]:not(:disabled),
   }
 
   .na-secao {
-    border-top: 0.4pt solid #bbb !important;
     margin-top: 6pt !important;
     padding-top: 5pt !important;
+  }
+
+  /* O primeiro bloco da nota não leva o separador superior. */
+  .area-impressao .na-secao:not(:first-child) {
+    border-top: 0.4pt solid #bbb !important;
   }
 
   /* alternativas do quiz viram texto simples no papel */

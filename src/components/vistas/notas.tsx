@@ -1,17 +1,50 @@
 "use client";
 
-// Vista Notas. Lista completa com filtros rápidos.
+// Vista Notas. Lista com busca, filtros em painel e paginação.
 
 import { useMemo, useRef, useState } from "react";
-import { FilterX, Plus, Search, Upload } from "lucide-react";
+import {
+  FilterX,
+  GraduationCap,
+  Loader2,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { importarNotaArquivo, useDisciplinas, useNotas, useTurmas } from "@/lib/notas/api-client";
+import { Paginacao } from "@/components/paginacao";
+import { BarraLote } from "@/components/barra-lote";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
+import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
+import { useEstadoSessao } from "@/hooks/use-estado-sessao";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { usePaginacao } from "@/hooks/use-paginacao";
+import { useSelecao } from "@/hooks/use-selecao";
+import {
+  importarNotaArquivo,
+  loteLixeira,
+  loteNotas,
+  useDisciplinas,
+  useNotas,
+  useTurmas,
+} from "@/lib/notas/api-client";
 import { CartaoNota } from "@/components/notas/cartao-nota";
 import { MESES_CAP } from "@/lib/notas/texto";
 import { corDisciplina } from "@/lib/notas/cores";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+const POR_PAGINA = 12;
 
 export function VistaNotas({
   navegar,
@@ -20,19 +53,22 @@ export function VistaNotas({
   navegar: (para: string) => void;
   onNovaNota: () => void;
 }) {
-  const [busca, setBusca] = useState("");
-  const [disciplina, setDisciplina] = useState<string>("");
-  const [ano, setAno] = useState<number | undefined>(undefined);
-  const [mes, setMes] = useState<number | undefined>(undefined);
-  const [turma, setTurma] = useState<string>("");
+  // Os filtros sobrevivem à navegação dentro da sessão.
+  const [busca, setBusca] = useEstadoSessao("caderno.filtros.notas.busca", "");
+  const [disciplina, setDisciplina] = useEstadoSessao("caderno.filtros.notas.disciplina", "");
+  const [ano, setAno] = useEstadoSessao<number | undefined>("caderno.filtros.notas.ano", undefined);
+  const [mes, setMes] = useEstadoSessao<number | undefined>("caderno.filtros.notas.mes", undefined);
+  const [turma, setTurma] = useEstadoSessao("caderno.filtros.notas.turma", "");
+  const [painelAberto, setPainelAberto] = useState(false);
   const inputArquivo = useRef<HTMLInputElement>(null);
   const [importando, setImportando] = useState(false);
+  const ehMobile = useIsMobile();
 
   const notasQ = useNotas();
   const disciplinasQ = useDisciplinas();
   const turmasQ = useTurmas();
   const { data: notas, isLoading: carregandoNotas } = notasQ;
-  const { data: disciplinas, isLoading: carregandoDisciplinas } = disciplinasQ;
+  const { data: disciplinas } = disciplinasQ;
   const { data: turmas } = turmasQ;
 
   const anos = useMemo(
@@ -40,7 +76,7 @@ export function VistaNotas({
     [notas],
   );
 
-  // Busca local por título, resumo e habilidades, somada aos filtros de chips.
+  // Busca local por título, resumo e habilidades, somada aos filtros.
   const filtradas = useMemo(() => {
     let lista = notas ?? [];
     if (busca.trim()) {
@@ -59,7 +95,99 @@ export function VistaNotas({
     return lista;
   }, [notas, busca, disciplina, ano, mes, turma]);
 
-  const temFiltro = disciplina || ano || mes || turma;
+  const assinaturaFiltros = `${busca}|${disciplina}|${ano ?? ""}|${mes ?? ""}|${turma}`;
+  const paginacao = usePaginacao(filtradas, POR_PAGINA, assinaturaFiltros);
+
+  const qc = useQueryClient();
+  const selecao = useSelecao(assinaturaFiltros);
+  const [processandoLote, setProcessandoLote] = useState(false);
+  const [confirmarLixeira, setConfirmarLixeira] = useState(false);
+  const [escolherDisciplina, setEscolherDisciplina] = useState(false);
+  const todosSelecionados =
+    filtradas.length > 0 && filtradas.every((n) => selecao.selecionados.has(n.id));
+  const algunsSelecionados = filtradas.some((n) => selecao.selecionados.has(n.id));
+
+  const invalidarNotas = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["notas"] }),
+      qc.invalidateQueries({ queryKey: ["disciplinas"] }),
+      qc.invalidateQueries({ queryKey: ["turmas"] }),
+      qc.invalidateQueries({ queryKey: ["lixeira"] }),
+    ]);
+
+  // Executa o lote, atualiza as listas e mantém ausentes selecionados.
+  const executarLote = async (
+    acao: "publicar" | "rascunho" | "lixeira" | "disciplina",
+    mensagem: (n: number) => string,
+    disciplinaId?: string,
+  ) => {
+    const ids = [...selecao.selecionados];
+    setProcessandoLote(true);
+    try {
+      const r = await loteNotas({ acao, ids, disciplinaId });
+      await invalidarNotas();
+      if (acao === "lixeira") {
+        toast.success(mensagem(r.atualizados), {
+          action: {
+            label: "Desfazer",
+            onClick: () => {
+              void loteLixeira({ notas: ids, links: [] })
+                .then(() => {
+                  void invalidarNotas();
+                  toast.success("Notas restauradas");
+                })
+                .catch(() => toast.error("Não foi possível restaurar"));
+            },
+          },
+        });
+      } else {
+        toast.success(mensagem(r.atualizados));
+      }
+      if (r.ausentes.length > 0) {
+        toast.warning(
+          `${r.ausentes.length} ${r.ausentes.length === 1 ? "item não encontrado" : "itens não encontrados"}.`,
+        );
+        selecao.definir(r.ausentes);
+      } else {
+        selecao.desativar();
+      }
+    } catch (e) {
+      toast.error("Não foi possível concluir o lote", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setProcessandoLote(false);
+      setConfirmarLixeira(false);
+      setEscolherDisciplina(false);
+    }
+  };
+
+  const ativos = [
+    disciplina
+      ? {
+          chave: "disciplina",
+          rotulo: (disciplinas ?? []).find((d) => d.id === disciplina)?.nome ?? "Disciplina",
+          limpar: () => setDisciplina(""),
+        }
+      : null,
+    ano ? { chave: "ano", rotulo: String(ano), limpar: () => setAno(undefined) } : null,
+    mes ? { chave: "mes", rotulo: MESES_CAP[mes - 1], limpar: () => setMes(undefined) } : null,
+    turma
+      ? {
+          chave: "turma",
+          rotulo: (turmas ?? []).find((t) => t.id === turma)?.nome ?? "Turma",
+          limpar: () => setTurma(""),
+        }
+      : null,
+  ].filter((f): f is NonNullable<typeof f> => Boolean(f));
+
+  const limparFiltros = () => {
+    setBusca("");
+    setDisciplina("");
+    setAno(undefined);
+    setMes(undefined);
+    setTurma("");
+  };
 
   const importarNota = async (arquivo: File) => {
     setImportando(true);
@@ -79,8 +207,33 @@ export function VistaNotas({
     }
   };
 
+  const botaoFiltros = (
+    <Button variant="outline" className="shrink-0 gap-2 rounded-xl">
+      <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filtros
+      {ativos.length > 0 ? (
+        <Badge variant="secondary" className="rounded-md px-1.5 text-[0.68rem]">
+          {ativos.length}
+        </Badge>
+      ) : null}
+    </Button>
+  );
+
+  const painel = (
+    <PainelFiltros
+      disciplinas={disciplinas ?? []}
+      anos={anos}
+      turmas={turmas ?? []}
+      valores={{ disciplina, ano, mes, turma }}
+      onDisciplina={setDisciplina}
+      onAno={setAno}
+      onMes={setMes}
+      onTurma={setTurma}
+      onLimpar={limparFiltros}
+    />
+  );
+
   return (
-    <div className="space-y-5">
+    <div className={cn("space-y-5", selecao.ativo && "pb-28")}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="fonte-display text-2xl font-bold">Notas</h1>
@@ -89,6 +242,22 @@ export function VistaNotas({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <BotaoAtualizar
+            carregando={notasQ.isFetching || disciplinasQ.isFetching || turmasQ.isFetching}
+            aoAtualizar={() =>
+              Promise.all([notasQ.refetch(), disciplinasQ.refetch(), turmasQ.refetch()])
+            }
+          />
+          {filtradas.length > 0 ? (
+            <Button
+              variant="outline"
+              className="gap-2 rounded-xl"
+              aria-pressed={selecao.ativo}
+              onClick={selecao.alternarModo}
+            >
+              {selecao.ativo ? "Sair da seleção" : "Selecionar"}
+            </Button>
+          ) : null}
           <input
             ref={inputArquivo}
             type="file"
@@ -105,7 +274,12 @@ export function VistaNotas({
             disabled={importando}
             onClick={() => inputArquivo.current?.click()}
           >
-            <Upload className="h-4 w-4" aria-hidden /> Importar nota
+            {importando ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Upload className="h-4 w-4" aria-hidden />
+            )}
+            {importando ? "Importando..." : "Importar nota"}
           </Button>
           <Button onClick={onNovaNota} className="gap-2 rounded-xl">
             <Plus className="h-4 w-4" aria-hidden /> Nova nota
@@ -113,138 +287,126 @@ export function VistaNotas({
         </div>
       </div>
 
-      {/* busca local + filtros */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search
-            className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
-            aria-hidden
-          />
-          <Input
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Filtrar por título, resumo ou habilidade..."
-            className="rounded-xl pl-9"
-          />
-        </div>
-
-        <div
-          className="flex flex-wrap items-center gap-1.5"
-          aria-busy={carregandoDisciplinas || undefined}
-        >
-          {carregandoDisciplinas ? (
-            <>
-              <Skeleton className="h-7 w-28 rounded-lg" />
-              <Skeleton className="h-7 w-20 rounded-lg" />
-              <Skeleton className="h-7 w-24 rounded-lg" />
-            </>
-          ) : (
-            <>
-              <ChipFiltro
-                ativo={!disciplina}
-                rotulo="Todas as disciplinas"
-                onClick={() => setDisciplina("")}
-              />
-              {(disciplinas ?? []).map((d) => (
-                <ChipFiltro
-                  key={d.id}
-                  ativo={disciplina === d.id}
-                  rotulo={d.nome}
-                  cor={d.cor}
-                  onClick={() => setDisciplina(disciplina === d.id ? "" : d.id)}
-                />
-              ))}
-            </>
-          )}
-        </div>
-
-        <div
-          className="flex flex-wrap items-center gap-1.5"
-          aria-busy={carregandoNotas || undefined}
-        >
-          {carregandoNotas ? (
-            <>
-              <Skeleton className="h-7 w-20 rounded-lg" />
-              <Skeleton className="h-7 w-14 rounded-lg" />
-            </>
-          ) : (
-            <>
-              <ChipFiltro ativo={!ano} rotulo="Todos os anos" onClick={() => setAno(undefined)} />
-              {anos.map((a) => (
-                <ChipFiltro
-                  key={a}
-                  ativo={ano === a}
-                  rotulo={String(a)}
-                  onClick={() => setAno(ano === a ? undefined : a)}
-                />
-              ))}
-            </>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          <ChipFiltro ativo={!mes} rotulo="Todos os meses" onClick={() => setMes(undefined)} />
-          {MESES_CAP.map((m, i) => (
-            <ChipFiltro
-              key={m}
-              ativo={mes === i + 1}
-              rotulo={m.slice(0, 3)}
-              onClick={() => setMes(mes === i + 1 ? undefined : i + 1)}
+      {/* busca + filtros */}
+      <div className="space-y-2.5">
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search
+              className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+              aria-hidden
             />
-          ))}
+            <Input
+              type="search"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Filtrar por título, resumo ou habilidade..."
+              aria-label="Filtrar notas"
+              className="rounded-xl pl-9"
+            />
+          </div>
+
+          {ehMobile ? (
+            <Drawer open={painelAberto} onOpenChange={setPainelAberto}>
+              <button
+                type="button"
+                onClick={() => setPainelAberto(true)}
+                className="border-input hover:bg-accent inline-flex h-9 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-medium"
+              >
+                <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filtros
+                {ativos.length > 0 ? (
+                  <Badge variant="secondary" className="rounded-md px-1.5 text-[0.68rem]">
+                    {ativos.length}
+                  </Badge>
+                ) : null}
+              </button>
+              <DrawerContent className="pb-[env(safe-area-inset-bottom)]">
+                <DrawerHeader className="group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+                  <DrawerTitle className="fonte-display">Filtros</DrawerTitle>
+                </DrawerHeader>
+                <div className="max-h-[65vh] overflow-y-auto px-4 pb-4">{painel}</div>
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            <Popover open={painelAberto} onOpenChange={setPainelAberto}>
+              <PopoverTrigger asChild>{botaoFiltros}</PopoverTrigger>
+              <PopoverContent align="end" className="w-[22rem]">
+                {painel}
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
 
-        {(turmas ?? []).length > 0 ? (
+        {ativos.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5">
-            <ChipFiltro ativo={!turma} rotulo="Todas as turmas" onClick={() => setTurma("")} />
-            {turmas!.map((t) => (
-              <ChipFiltro
-                key={t.id}
-                ativo={turma === t.id}
-                rotulo={t.nome}
-                onClick={() => setTurma(turma === t.id ? "" : t.id)}
-              />
+            {ativos.map((f) => (
+              <button
+                key={f.chave}
+                type="button"
+                onClick={f.limpar}
+                className="border-border bg-secondary text-secondary-foreground hover:bg-accent inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[0.78rem] font-semibold transition-colors"
+                aria-label={`Remover filtro ${f.rotulo}`}
+              >
+                {f.rotulo}
+                <X className="h-3 w-3" aria-hidden />
+              </button>
             ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground h-7 gap-1.5 px-2"
+              onClick={limparFiltros}
+            >
+              <FilterX className="h-3.5 w-3.5" aria-hidden /> Limpar tudo
+            </Button>
           </div>
-        ) : null}
-
-        {temFiltro || busca ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground gap-1.5"
-            onClick={() => {
-              setDisciplina("");
-              setAno(undefined);
-              setMes(undefined);
-              setTurma("");
-              setBusca("");
-            }}
-          >
-            <FilterX className="h-4 w-4" aria-hidden /> Limpar filtros
-          </Button>
         ) : null}
       </div>
 
       {/* lista */}
       {carregandoNotas ? (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2" aria-busy="true">
           <Skeleton className="h-40 rounded-2xl" />
           <Skeleton className="h-40 rounded-2xl" />
           <Skeleton className="h-40 rounded-2xl" />
           <Skeleton className="h-40 rounded-2xl" />
         </div>
       ) : filtradas.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {filtradas.map((n, i) => (
-            <CartaoNota
-              key={n.id}
-              nota={n}
-              indice={i}
-              onAbrir={() => navegar(`/nota/${n.id}`)}
-              onEditar={() => navegar(`/editor/${n.id}`)}
-            />
-          ))}
+        <div className="space-y-4">
+          {selecao.ativo ? (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={todosSelecionados ? true : algunsSelecionados ? "indeterminate" : false}
+                onCheckedChange={() =>
+                  todosSelecionados
+                    ? selecao.definir([])
+                    : selecao.definir(filtradas.map((n) => n.id))
+                }
+                aria-label="Selecionar todas as notas filtradas"
+              />
+              <span className="text-sm font-medium">Selecionar todas ({filtradas.length})</span>
+            </div>
+          ) : null}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {paginacao.itens.map((n, i) => (
+              <CartaoNota
+                key={n.id}
+                nota={n}
+                indice={i}
+                onAbrir={() => navegar(`/nota/${n.id}`)}
+                onEditar={() => navegar(`/editor/${n.id}`)}
+                selecao={
+                  selecao.ativo
+                    ? {
+                        ativo: true,
+                        selecionado: selecao.selecionados.has(n.id),
+                        onAlternar: () => selecao.alternar(n.id),
+                      }
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+          <Paginacao paginacao={paginacao} rotulo="notas" />
         </div>
       ) : (
         <div className="border-border rounded-2xl border border-dashed p-10 text-center">
@@ -262,9 +424,210 @@ export function VistaNotas({
             <Button onClick={onNovaNota} className="mt-4 gap-2 rounded-xl">
               <Plus className="h-4 w-4" aria-hidden /> Nova nota
             </Button>
-          ) : null}
+          ) : (
+            <Button variant="outline" onClick={limparFiltros} className="mt-4 gap-2 rounded-xl">
+              <FilterX className="h-4 w-4" aria-hidden /> Limpar filtros
+            </Button>
+          )}
         </div>
       )}
+
+      <BarraLote
+        aberto={selecao.ativo}
+        quantidade={selecao.quantidade}
+        ocupada={processandoLote}
+        aoCancelar={selecao.desativar}
+        acoes={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() =>
+                void executarLote(
+                  "publicar",
+                  (n) => `${n} ${n === 1 ? "nota publicada" : "notas publicadas"}`,
+                )
+              }
+            >
+              Publicar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() =>
+                void executarLote(
+                  "rascunho",
+                  (n) => `${n} ${n === 1 ? "nota em rascunho" : "notas em rascunho"}`,
+                )
+              }
+            >
+              Rascunho
+            </Button>
+
+            <Popover open={escolherDisciplina} onOpenChange={setEscolherDisciplina}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+                  disabled={selecao.quantidade === 0 || processandoLote}
+                >
+                  <GraduationCap className="h-3.5 w-3.5" aria-hidden /> Disciplina
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="max-h-72 w-56 overflow-y-auto p-1.5">
+                {(disciplinas ?? []).length === 0 ? (
+                  <p className="text-muted-foreground p-2 text-sm">
+                    Nenhuma disciplina cadastrada.
+                  </p>
+                ) : (
+                  (disciplinas ?? []).map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      className="hover:bg-accent flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm"
+                      onClick={() =>
+                        void executarLote(
+                          "disciplina",
+                          (n) => `${n} ${n === 1 ? "nota movida" : "notas movidas"} de disciplina`,
+                          d.id,
+                        )
+                      }
+                    >
+                      <span className={`h-2.5 w-2.5 rounded-full ${corDisciplina(d.cor).ponto}`} />
+                      {d.nome}
+                    </button>
+                  ))
+                )}
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() => setConfirmarLixeira(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden /> Lixeira
+            </Button>
+          </>
+        }
+      />
+
+      <ConfirmacaoDestrutiva
+        aberto={confirmarLixeira}
+        onOpenChange={setConfirmarLixeira}
+        titulo={`Mover ${selecao.quantidade} ${selecao.quantidade === 1 ? "nota" : "notas"} para a lixeira?`}
+        descricao="As notas e os links delas vão para a lixeira e podem ser restaurados por 30 dias."
+        textoConfirmar="Mover para a lixeira"
+        onConfirmar={() =>
+          executarLote(
+            "lixeira",
+            (n) => `${n} ${n === 1 ? "nota movida" : "notas movidas"} para a lixeira`,
+          )
+        }
+      />
+    </div>
+  );
+}
+
+function PainelFiltros({
+  disciplinas,
+  anos,
+  turmas,
+  valores,
+  onDisciplina,
+  onAno,
+  onMes,
+  onTurma,
+  onLimpar,
+}: {
+  disciplinas: { id: string; nome: string; cor: string }[];
+  anos: number[];
+  turmas: { id: string; nome: string }[];
+  valores: { disciplina: string; ano?: number; mes?: number; turma: string };
+  onDisciplina: (v: string) => void;
+  onAno: (v: number | undefined) => void;
+  onMes: (v: number | undefined) => void;
+  onTurma: (v: string) => void;
+  onLimpar: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <GrupoFiltro titulo="Disciplina">
+        <ChipFiltro ativo={!valores.disciplina} rotulo="Todas" onClick={() => onDisciplina("")} />
+        {disciplinas.map((d) => (
+          <ChipFiltro
+            key={d.id}
+            ativo={valores.disciplina === d.id}
+            rotulo={d.nome}
+            cor={d.cor}
+            onClick={() => onDisciplina(valores.disciplina === d.id ? "" : d.id)}
+          />
+        ))}
+      </GrupoFiltro>
+
+      {anos.length > 0 ? (
+        <GrupoFiltro titulo="Ano letivo">
+          <ChipFiltro ativo={!valores.ano} rotulo="Todos" onClick={() => onAno(undefined)} />
+          {anos.map((a) => (
+            <ChipFiltro
+              key={a}
+              ativo={valores.ano === a}
+              rotulo={String(a)}
+              onClick={() => onAno(valores.ano === a ? undefined : a)}
+            />
+          ))}
+        </GrupoFiltro>
+      ) : null}
+
+      <GrupoFiltro titulo="Mês">
+        <ChipFiltro ativo={!valores.mes} rotulo="Todos" onClick={() => onMes(undefined)} />
+        {MESES_CAP.map((m, i) => (
+          <ChipFiltro
+            key={m}
+            ativo={valores.mes === i + 1}
+            rotulo={m.slice(0, 3)}
+            onClick={() => onMes(valores.mes === i + 1 ? undefined : i + 1)}
+          />
+        ))}
+      </GrupoFiltro>
+
+      {turmas.length > 0 ? (
+        <GrupoFiltro titulo="Turma">
+          <ChipFiltro ativo={!valores.turma} rotulo="Todas" onClick={() => onTurma("")} />
+          {turmas.map((t) => (
+            <ChipFiltro
+              key={t.id}
+              ativo={valores.turma === t.id}
+              rotulo={t.nome}
+              onClick={() => onTurma(valores.turma === t.id ? "" : t.id)}
+            />
+          ))}
+        </GrupoFiltro>
+      ) : null}
+
+      <div className="border-border flex justify-end border-t pt-3">
+        <Button variant="ghost" size="sm" className="gap-1.5" onClick={onLimpar}>
+          <FilterX className="h-3.5 w-3.5" aria-hidden /> Limpar filtros
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function GrupoFiltro({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-muted-foreground text-[0.7rem] font-bold tracking-wider uppercase">
+        {titulo}
+      </p>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
     </div>
   );
 }

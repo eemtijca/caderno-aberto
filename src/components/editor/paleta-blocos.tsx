@@ -3,6 +3,7 @@
 // Paleta de inserção de blocos: busca, ícones e categorias. Bottom sheet no
 // mobile e diálogo no desktop, com o mesmo conteúdo nos dois formatos.
 
+import { useEffect, useState } from "react";
 import {
   BadgeCheck,
   ClipboardCopy,
@@ -138,10 +139,30 @@ export const PALETA: ItemPaleta[] = [
 
 const GRUPOS = ["Estrutura", "Texto", "Conteúdo", "Caixas", "Prática"];
 
-function ConteudoPaleta({ onEscolher }: { onEscolher: (tipo: Bloco["tipo"]) => void }) {
+// Só teclados físicos (ponteiro fino) recebem foco automático: no toque, o
+// teclado virtual não deve abrir ao abrir a paleta.
+function usePonteiroFino(): boolean {
+  const [fino, setFino] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia("(pointer: fine)");
+    const atualizar = () => setFino(mql.matches);
+    atualizar();
+    mql.addEventListener("change", atualizar);
+    return () => mql.removeEventListener("change", atualizar);
+  }, []);
+  return fino;
+}
+
+function ConteudoPaleta({
+  autoFocar,
+  onEscolher,
+}: {
+  autoFocar: boolean;
+  onEscolher: (tipo: Bloco["tipo"]) => void;
+}) {
   return (
     <Command className="bg-transparent">
-      <CommandInput placeholder="Buscar bloco..." autoFocus />
+      <CommandInput placeholder="Buscar bloco..." autoFocus={autoFocar} />
       <CommandList className="max-h-[min(60vh,26rem)]">
         <CommandEmpty>Nenhum bloco encontrado.</CommandEmpty>
         {GRUPOS.map((grupo) => (
@@ -195,17 +216,23 @@ export function PaletaBlocos({
   onFechar: () => void;
 }) {
   const descricao = subtitulo(posicao, total, rotuloAnterior);
+  // No mobile o campo nunca recebe foco; em telas largas, só com ponteiro fino.
+  const autoFocar = usePonteiroFino() && !ehMobile;
 
   if (ehMobile) {
     return (
       <Drawer open={aberta} onOpenChange={(v) => !v && onFechar()}>
-        <DrawerContent className="pb-[env(safe-area-inset-bottom)]">
+        <DrawerContent
+          className="pb-[env(safe-area-inset-bottom)]"
+          // Impede o foco automático no campo de busca (teclado virtual).
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DrawerHeader className="group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <DrawerTitle className="fonte-display">Adicionar bloco</DrawerTitle>
             <DrawerDescription>{descricao}</DrawerDescription>
           </DrawerHeader>
           <div className="min-h-0 px-2 pb-2">
-            <ConteudoPaleta onEscolher={onEscolher} />
+            <ConteudoPaleta autoFocar={autoFocar} onEscolher={onEscolher} />
           </div>
         </DrawerContent>
       </Drawer>
@@ -220,7 +247,7 @@ export function PaletaBlocos({
           <DialogDescription>{descricao}</DialogDescription>
         </DialogHeader>
         <div className="p-2">
-          <ConteudoPaleta onEscolher={onEscolher} />
+          <ConteudoPaleta autoFocar={autoFocar} onEscolher={onEscolher} />
         </div>
       </DialogContent>
     </Dialog>

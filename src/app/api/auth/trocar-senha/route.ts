@@ -44,7 +44,12 @@ export async function POST(req: NextRequest) {
     return true;
   });
   if (!alterado) return naoAutenticado();
-  await iniciarSessao(usuario.id, req, usuario.papel === "admin" ? "admin" : "professor");
+  await iniciarSessao(
+    usuario.id,
+    req,
+    usuario.papel === "admin" ? "admin" : "professor",
+    corpo?.manterConectado !== false,
+  );
 
   return json({ ok: true });
 }

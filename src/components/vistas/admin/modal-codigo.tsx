@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { Check, Copy, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+import { copiarTexto } from "@/lib/clipboard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,12 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { CodigoEmitido } from "./api";
-
-const ROTULO: Record<string, string> = {
-  primeiro_acesso: "Primeiro acesso",
-  recuperacao: "Recuperação de senha",
-};
+import { ROTULO_TIPO, type CodigoEmitido } from "./api";
 
 export function ModalCodigo({
   emitido,
@@ -32,12 +28,11 @@ export function ModalCodigo({
 
   const copiar = async () => {
     if (!emitido) return;
-    try {
-      await navigator.clipboard.writeText(emitido.codigo);
+    if (await copiarTexto(emitido.codigo)) {
       setCopiado(true);
       toast.success("Código copiado");
       setTimeout(() => setCopiado(false), 2000);
-    } catch {
+    } else {
       toast.error("Não foi possível copiar. Anote o código manualmente.");
     }
   };
@@ -52,7 +47,13 @@ export function ModalCodigo({
         }
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        showCloseButton={false}
+        // O código só aparece uma vez: evita perda por clique fora ou Esc.
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="fonte-display flex items-center gap-2">
             <KeyRound className="h-4.5 w-4.5" aria-hidden /> Código gerado
@@ -64,7 +65,7 @@ export function ModalCodigo({
 
         <div className="bg-muted mt-2 rounded-2xl p-4 text-center">
           <p className="text-muted-foreground text-[0.72rem] font-bold tracking-wider uppercase">
-            {emitido ? ROTULO[emitido.tipo] : ""}
+            {emitido ? ROTULO_TIPO[emitido.tipo] : ""}
           </p>
           <p className="fonte-display mt-2 font-mono text-3xl font-bold tracking-[0.3em] break-all">
             {emitido?.codigo}

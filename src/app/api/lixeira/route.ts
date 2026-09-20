@@ -42,3 +42,25 @@ export async function GET(req: NextRequest) {
     expiraEm: prazo.toISOString(),
   });
 }
+
+// Esvazia a lixeira do professor em definitivo.
+export async function DELETE(req: NextRequest) {
+  const sessao = await sessaoProfessor(req);
+  if (!sessao) return naoAutenticado();
+  const { usuario } = sessao;
+
+  const db = await banco();
+  // Apaga apenas o que já está na lixeira. Remover a nota leva os links dela
+  // por cascade; a contagem de links cobre os que estavam soltos na lixeira.
+  const contagem = await db.$transaction(async (tx) => {
+    const links = await tx.links.deleteMany({
+      where: { professorId: usuario.id, excluidoEm: { not: null } },
+    });
+    const notas = await tx.notas.deleteMany({
+      where: { professorId: usuario.id, excluidoEm: { not: null } },
+    });
+    return { notas: notas.count, links: links.count };
+  });
+
+  return json({ ok: true, ...contagem });
+}

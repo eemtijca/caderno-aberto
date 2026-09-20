@@ -64,4 +64,26 @@ test.describe("Administração", () => {
     await expect(page.getByText("Conta desativada")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/Afastamento solicitado/i)).toBeVisible();
   });
+
+  test("lista de usuários pagina no servidor e mostra o total", async ({ page }) => {
+    await entrarAdmin(page);
+    // Cria contas fora da interface para passar de uma página.
+    for (let i = 0; i < 25; i++) {
+      const r = await page.request.post("/api/admin/usuarios", {
+        data: {
+          nome: `Conta Paginada ${i}`,
+          email: `admin_pag_${Date.now()}_${i}@exemplo.br`,
+          papel: "professor",
+        },
+      });
+      expect(r.ok()).toBeTruthy();
+    }
+
+    await page.goto("/#/admin");
+    await page.getByRole("tab", { name: "Usuários" }).click();
+    await expect(page.getByText(/1-20 de \d+ contas/)).toBeVisible({ timeout: 10000 });
+
+    await page.getByRole("button", { name: "Próxima página" }).click();
+    await expect(page.getByText(/21-\d+ de \d+ contas/)).toBeVisible({ timeout: 10000 });
+  });
 });

@@ -142,7 +142,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
   };
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background min-h-dvh">
       {/* ---------------- Sidebar (desktop) ---------------- */}
       <aside
         className={cn(
@@ -183,7 +183,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
           ) : null}
         </button>
 
-        <div className={cn(recolhida ? "px-2" : "px-4")}>
+        <div className={cn(recolhida ? "flex justify-center px-2" : "px-4")}>
           <Button
             onClick={onNovaNota}
             className={cn("rounded-xl", recolhida ? "px-0" : "w-full gap-2")}
@@ -328,16 +328,17 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
             size="icon"
             onClick={() => setBuscaAberta(true)}
             aria-label="Buscar"
+            className="h-11 w-11"
           >
             <Search className="h-5 w-5" aria-hidden />
           </Button>
-          <SeletorTema variant="ghost" />
+          <SeletorTema variant="ghost" className="h-11 w-11" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full"
+                className="h-11 w-11 rounded-full"
                 aria-label={`Perfil de ${perfil?.nome || usuario?.email || "professor"}`}
                 aria-haspopup="menu"
               >
@@ -552,7 +553,7 @@ function BuscaGlobal({
               value={termo}
               onChange={(e) => setTermo(e.target.value)}
               placeholder="Buscar em todas as notas..."
-              className="h-9 flex-1 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0"
+              className="h-9 flex-1 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 dark:bg-transparent"
             />
             {isFetching ? (
               <Loader2

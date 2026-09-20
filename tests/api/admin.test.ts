@@ -152,4 +152,64 @@ describe("administração", () => {
       400,
     );
   });
+
+  it("pagina a lista de contas no servidor", async () => {
+    for (let i = 0; i < 25; i++) {
+      const email = `paginado_${suf}_${i}@exemplo.br`;
+      criados.push(email);
+      const r = await admin.post("/api/admin/usuarios", {
+        nome: `Conta Paginada ${i}`,
+        email,
+        papel: "professor",
+      });
+      expect(r.status, "cria conta da massa de paginação").toBe(201);
+    }
+
+    const p1 = await admin.get("/api/admin/usuarios?pagina=1&porPagina=10");
+    expect(p1.dados.total >= 25, "total reflete a tabela inteira").toBe(true);
+    expect(p1.dados.pagina).toBe(1);
+    expect(p1.dados.porPagina).toBe(10);
+    expect(p1.dados.usuarios.length).toBe(10);
+
+    const p2 = await admin.get("/api/admin/usuarios?pagina=2&porPagina=10");
+    expect(p2.dados.usuarios.length).toBe(10);
+    expect(p2.dados.usuarios[0].id).not.toBe(p1.dados.usuarios[0].id);
+
+    const fim = await admin.get("/api/admin/usuarios?pagina=999&porPagina=10");
+    expect(fim.dados.usuarios.length).toBe(0);
+    expect(fim.dados.total >= 25, "página fora do fim mantém o total").toBe(true);
+  });
+
+  it("limpa a auditoria com confirmação e senha", async () => {
+    // Gera um evento de falha de login para haver o que limpar.
+    const anon = new Cliente();
+    await anon.post(
+      "/api/auth/entrar",
+      { email: `falha_${suf}@exemplo.br`, senha: "errada" },
+      ipTeste(),
+    );
+
+    const semConfirmacao = await admin.del("/api/admin/auditoria", { senha: "adminSenha123" });
+    expect(semConfirmacao.status, "exige a confirmação digitada").toBe(400);
+
+    const senhaErrada = await admin.del("/api/admin/auditoria", {
+      confirmacao: "LIMPAR",
+      senha: "senha-errada",
+    });
+    expect(senhaErrada.status, "senha incorreta").toBe(403);
+
+    const r = await admin.del("/api/admin/auditoria", {
+      confirmacao: "LIMPAR",
+      senha: "adminSenha123",
+    });
+    expect(r.status).toBe(200);
+    expect(r.dados.ok).toBe(true);
+    expect(typeof r.dados.removidos).toBe("number");
+
+    const lista = await admin.get("/api/admin/auditoria");
+    expect(
+      lista.dados.eventos.some((e: { acao: string }) => e.acao === "LIMPAR_AUDITORIA"),
+      "a limpeza fica registrada",
+    ).toBe(true);
+  });
 });

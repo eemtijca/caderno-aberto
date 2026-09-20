@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -40,19 +41,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
 import {
+  loteLinks,
   urlDoLink,
   useCriarLink,
   useDisciplinas,
@@ -65,6 +57,14 @@ import {
   type LinkInfo,
   type TipoLink,
 } from "@/lib/notas/api-client";
+import { useQueryClient } from "@tanstack/react-query";
+import { copiarTexto } from "@/lib/clipboard";
+import { cn } from "@/lib/utils";
+import { Paginacao } from "@/components/paginacao";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
+import { BarraLote } from "@/components/barra-lote";
+import { usePaginacao } from "@/hooks/use-paginacao";
+import { useSelecao } from "@/hooks/use-selecao";
 
 const ROTULO_TIPO: Record<TipoLink, string> = {
   nota: "Uma nota",
@@ -78,15 +78,82 @@ export function VistaLinks() {
   const disciplinasQ = useDisciplinas();
   const turmasQ = useTurmas();
   const { data: links, isLoading } = linksQ;
+  const paginacao = usePaginacao(links ?? [], 10);
+
+  const qc = useQueryClient();
+  const selecao = useSelecao("links");
+  const [processandoLote, setProcessandoLote] = useState(false);
+  const [confirmarLote, setConfirmarLote] = useState(false);
+  const lista = links ?? [];
+  const todosSelecionados = lista.length > 0 && lista.every((l) => selecao.selecionados.has(l.id));
+  const algunsSelecionados = lista.some((l) => selecao.selecionados.has(l.id));
+
+  const executarLote = async (acao: "pausar" | "reativar" | "excluir", ids: string[]) => {
+    setProcessandoLote(true);
+    try {
+      const r = await loteLinks({ acao, ids });
+      await qc.invalidateQueries({ queryKey: ["links"] });
+      const participio =
+        acao === "pausar" ? "pausado" : acao === "reativar" ? "reativado" : "excluído";
+      toast.success(
+        `${r.atualizados} ${r.atualizados === 1 ? `link ${participio}` : `links ${participio}s`}`,
+      );
+      if (r.ausentes.length > 0) {
+        toast.warning(
+          `${r.ausentes.length} ${r.ausentes.length === 1 ? "link não encontrado" : "links não encontrados"}.`,
+        );
+        selecao.definir(r.ausentes);
+      } else {
+        selecao.desativar();
+      }
+    } catch (e) {
+      toast.error("Não foi possível concluir o lote", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setProcessandoLote(false);
+      setConfirmarLote(false);
+    }
+  };
 
   return (
-    <div className="space-y-6 pb-8">
-      <div>
-        <h1 className="fonte-display text-2xl font-bold">Links para os alunos</h1>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-          Cada link é único e gerenciável: compartilhe uma nota, a turma ou a disciplina inteira.
-          Pause, agende a validade ou revogue quando necessário. Rascunhos nunca ficam visíveis.
-        </p>
+    <div className={cn("space-y-6 pb-8", selecao.ativo && "pb-28")}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="fonte-display text-2xl font-bold">Links para os alunos</h1>
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            Cada link é único e gerenciável: compartilhe uma nota, a turma ou a disciplina inteira.
+            Pause, agende a validade ou revogue quando necessário. Rascunhos nunca ficam visíveis.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <BotaoAtualizar
+            carregando={
+              linksQ.isFetching ||
+              notasQ.isFetching ||
+              disciplinasQ.isFetching ||
+              turmasQ.isFetching
+            }
+            aoAtualizar={() =>
+              Promise.all([
+                linksQ.refetch(),
+                notasQ.refetch(),
+                disciplinasQ.refetch(),
+                turmasQ.refetch(),
+              ])
+            }
+          />
+          {lista.length > 0 ? (
+            <Button
+              variant="outline"
+              className="gap-2 rounded-xl"
+              aria-pressed={selecao.ativo}
+              onClick={selecao.alternarModo}
+            >
+              {selecao.ativo ? "Sair da seleção" : "Selecionar"}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <SecaoNovoLink
@@ -111,12 +178,87 @@ export function VistaLinks() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {(links ?? []).map((l, i) => (
-            <CartaoLink key={l.id} link={l} indice={i} />
-          ))}
+        <div className="space-y-4">
+          {selecao.ativo ? (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={todosSelecionados ? true : algunsSelecionados ? "indeterminate" : false}
+                onCheckedChange={() =>
+                  todosSelecionados ? selecao.definir([]) : selecao.definir(lista.map((l) => l.id))
+                }
+                aria-label="Selecionar todos os links"
+              />
+              <span className="text-sm font-medium">Selecionar todos ({lista.length})</span>
+            </div>
+          ) : null}
+          <div className="space-y-3">
+            {paginacao.itens.map((l, i) => (
+              <CartaoLink
+                key={l.id}
+                link={l}
+                indice={i}
+                selecao={
+                  selecao.ativo
+                    ? {
+                        ativo: true,
+                        selecionado: selecao.selecionados.has(l.id),
+                        onAlternar: () => selecao.alternar(l.id),
+                      }
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+          <Paginacao paginacao={paginacao} rotulo="links" />
         </div>
       )}
+
+      <BarraLote
+        aberto={selecao.ativo}
+        quantidade={selecao.quantidade}
+        ocupada={processandoLote}
+        aoCancelar={selecao.desativar}
+        acoes={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() => void executarLote("pausar", [...selecao.selecionados])}
+            >
+              Pausar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() => void executarLote("reativar", [...selecao.selecionados])}
+            >
+              Reativar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 gap-1.5 rounded-lg text-[0.72rem] pointer-coarse:h-10"
+              disabled={selecao.quantidade === 0 || processandoLote}
+              onClick={() => setConfirmarLote(true)}
+            >
+              Excluir
+            </Button>
+          </>
+        }
+      />
+
+      <ConfirmacaoDestrutiva
+        aberto={confirmarLote}
+        onOpenChange={setConfirmarLote}
+        titulo={`Excluir ${selecao.quantidade} ${selecao.quantidade === 1 ? "link" : "links"}?`}
+        descricao="Os alunos perdem o acesso imediatamente. Os links vão para a lixeira e podem ser restaurados por 30 dias. As notas não são afetadas."
+        textoConfirmar="Excluir links"
+        onConfirmar={() => executarLote("excluir", [...selecao.selecionados])}
+      />
     </div>
   );
 }
@@ -227,10 +369,12 @@ function SecaoNovoLink({
             const r = await criar.mutateAsync(dados);
             setAlvo("");
             setNome("");
+            const copiou = await copiarTexto(urlDoLink(r.link.token));
             toast.success("Link criado", {
-              description: "O endereço já foi copiado. Envie para os alunos.",
+              description: copiou
+                ? "O endereço já foi copiado. Envie para os alunos."
+                : "Copie o endereço no cartão abaixo e envie para os alunos.",
             });
-            void navigator.clipboard?.writeText(urlDoLink(r.link.token)).catch(() => undefined);
           } catch (e) {
             toast.error("Não foi possível criar o link", {
               description: e instanceof Error ? e.message : "Tente novamente em instantes.",
@@ -245,12 +389,21 @@ function SecaoNovoLink({
   );
 }
 
-function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
+function CartaoLink({
+  link,
+  indice = 0,
+  selecao,
+}: {
+  link: LinkInfo;
+  indice?: number;
+  selecao?: { ativo: boolean; selecionado: boolean; onAlternar: () => void };
+}) {
   const editar = useEditarLink();
   const excluir = useExcluirLink();
   const restaurar = useRestaurarLink();
   const [copiado, setCopiado] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [nome, setNome] = useState(link.nome);
   const [expira, setExpira] = useState(
     link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "",
@@ -266,12 +419,11 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
       : "";
 
   const copiar = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
+    if (await copiarTexto(url)) {
       setCopiado(true);
       toast.success("Link copiado", { description: "Envie para a turma." });
       setTimeout(() => setCopiado(false), 2000);
-    } catch {
+    } else {
       toast.error("Não foi possível copiar. Selecione o endereço acima e copie manualmente.");
     }
   };
@@ -296,10 +448,21 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
 
   return (
     <article
-      className={`na-cascata bg-card rounded-2xl border p-4 sm:p-5 ${disponivel ? "border-border" : "border-dashed opacity-80"}`}
+      onClick={selecao?.ativo ? selecao.onAlternar : undefined}
+      className={`na-cascata bg-card rounded-2xl border p-4 sm:p-5 ${disponivel ? "border-border" : "border-dashed opacity-80"} ${
+        selecao?.selecionado ? "ring-primary ring-2" : ""
+      } ${selecao?.ativo ? "cursor-pointer" : ""}`}
       style={{ "--na-i": indice } as React.CSSProperties}
     >
       <div className="flex flex-wrap items-start gap-3">
+        {selecao?.ativo ? (
+          <Checkbox
+            checked={selecao.selecionado}
+            onCheckedChange={() => selecao.onAlternar()}
+            aria-label={`Selecionar ${link.nome || ROTULO_TIPO[link.tipo]}`}
+            className="mt-1"
+          />
+        ) : null}
         <span
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
             disponivel
@@ -366,7 +529,15 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
                 className="h-9 rounded-lg"
                 aria-label="Data de expiração"
               />
-              <Button size="sm" className="h-9 rounded-lg" onClick={salvarEdicao}>
+              <Button
+                size="sm"
+                className="h-9 rounded-lg"
+                onClick={() => void salvarEdicao()}
+                disabled={editar.isPending}
+              >
+                {editar.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                ) : null}
                 Salvar
               </Button>
               <Button
@@ -392,143 +563,137 @@ function CartaoLink({ link, indice = 0 }: { link: LinkInfo; indice?: number }) {
         </div>
 
         {/* ações: copiar e abrir sempre visíveis; o resto no menu */}
-        <div className="flex shrink-0 items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 rounded-lg text-xs"
-            onClick={copiar}
-          >
-            {copiado ? (
-              <Check className="text-brand-600 h-3.5 w-3.5" aria-hidden />
-            ) : (
-              <Copy className="h-3.5 w-3.5" aria-hidden />
-            )}
-            Copiar
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg"
-            aria-label="Abrir como aluno"
-            title="Abrir como aluno"
-            onClick={() => window.open(url, "_blank")}
-          >
-            <ExternalLink className="h-4 w-4" aria-hidden />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-lg"
-                aria-label="Mais ações do link"
-                title="Mais ações"
-              >
-                <MoreHorizontal className="h-4 w-4" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                className="gap-2"
-                onClick={() => {
-                  setNome(link.nome);
-                  setExpira(
-                    link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "",
-                  );
-                  setEditando(true);
-                }}
-              >
-                <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar nome e expiração
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="gap-2"
-                disabled={editar.isPending}
-                onClick={async () => {
-                  try {
-                    await editar.mutateAsync({ id: link.id, dados: { ativo: !link.ativo } });
-                    toast.success(link.ativo ? "Link pausado" : "Link reativado");
-                  } catch (e) {
-                    toast.error("Não foi possível atualizar o link", {
-                      description: e instanceof Error ? e.message : undefined,
-                    });
-                  }
-                }}
-              >
-                <Power className="h-3.5 w-3.5" aria-hidden />
-                {link.ativo ? "Pausar link" : "Reativar link"}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="gap-2"
-                disabled={editar.isPending}
-                onClick={async () => {
-                  try {
-                    await editar.mutateAsync({ id: link.id, dados: { regenerar: true } });
-                    toast.success("Novo link gerado", {
-                      description: "O endereço antigo deixará de funcionar.",
-                    });
-                  } catch (e) {
-                    toast.error("Não foi possível gerar novo endereço", {
-                      description: e instanceof Error ? e.message : undefined,
-                    });
-                  }
-                }}
-              >
-                <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Gerar novo endereço
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive gap-2"
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden /> Excluir link
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir este link?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Os alunos que ainda tiverem o endereço perderão o acesso imediatamente. O link
-                      vai para a lixeira e pode ser restaurado por 30 dias. As notas não são
-                      afetadas.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive hover:bg-destructive/90 text-white"
-                      onClick={async () => {
-                        try {
-                          await excluir.mutateAsync(link.id);
-                          toast.success("Link movido para a lixeira", {
-                            action: {
-                              label: "Desfazer",
-                              onClick: () => {
-                                void restaurar
-                                  .mutateAsync(link.id)
-                                  .then(() => toast.success("Link restaurado"))
-                                  .catch(() => toast.error("Não foi possível restaurar"));
-                              },
-                            },
-                          });
-                        } catch (e) {
-                          toast.error("Não foi possível excluir o link", {
-                            description: e instanceof Error ? e.message : undefined,
-                          });
-                        }
-                      }}
-                    >
-                      Excluir
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {selecao?.ativo ? null : (
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 rounded-lg text-xs pointer-coarse:h-11"
+              onClick={copiar}
+            >
+              {copiado ? (
+                <Check className="text-brand-600 h-3.5 w-3.5" aria-hidden />
+              ) : (
+                <Copy className="h-3.5 w-3.5" aria-hidden />
+              )}
+              Copiar
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-lg pointer-coarse:h-11 pointer-coarse:w-11"
+              aria-label="Abrir como aluno"
+              title="Abrir como aluno"
+              onClick={() => window.open(url, "_blank")}
+            >
+              <ExternalLink className="h-4 w-4" aria-hidden />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-lg pointer-coarse:h-11 pointer-coarse:w-11"
+                  aria-label="Mais ações do link"
+                  title="Mais ações"
+                >
+                  <MoreHorizontal className="h-4 w-4" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => {
+                    setNome(link.nome);
+                    setExpira(
+                      link.expiraEm ? new Date(link.expiraEm).toISOString().slice(0, 10) : "",
+                    );
+                    setEditando(true);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar nome e expiração
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2"
+                  disabled={editar.isPending}
+                  onClick={async () => {
+                    try {
+                      await editar.mutateAsync({ id: link.id, dados: { ativo: !link.ativo } });
+                      toast.success(link.ativo ? "Link pausado" : "Link reativado");
+                    } catch (e) {
+                      toast.error("Não foi possível atualizar o link", {
+                        description: e instanceof Error ? e.message : undefined,
+                      });
+                    }
+                  }}
+                >
+                  {editar.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <Power className="h-3.5 w-3.5" aria-hidden />
+                  )}
+                  {link.ativo ? "Pausar link" : "Reativar link"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2"
+                  disabled={editar.isPending}
+                  onClick={async () => {
+                    try {
+                      await editar.mutateAsync({ id: link.id, dados: { regenerar: true } });
+                      toast.success("Novo link gerado", {
+                        description: "O endereço antigo deixará de funcionar.",
+                      });
+                    } catch (e) {
+                      toast.error("Não foi possível gerar novo endereço", {
+                        description: e instanceof Error ? e.message : undefined,
+                      });
+                    }
+                  }}
+                >
+                  {editar.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  ) : (
+                    <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                  )}
+                  Gerar novo endereço
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive gap-2"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setConfirmarExclusao(true);
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Excluir link
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
+
+      <ConfirmacaoDestrutiva
+        aberto={confirmarExclusao}
+        onOpenChange={setConfirmarExclusao}
+        titulo="Excluir este link?"
+        descricao="Os alunos que ainda tiverem o endereço perderão o acesso imediatamente. O link vai para a lixeira e pode ser restaurado por 30 dias. As notas não são afetadas."
+        textoConfirmar="Excluir link"
+        onConfirmar={async () => {
+          await excluir.mutateAsync(link.id);
+          toast.success("Link movido para a lixeira", {
+            action: {
+              label: "Desfazer",
+              onClick: () => {
+                void restaurar
+                  .mutateAsync(link.id)
+                  .then(() => toast.success("Link restaurado"))
+                  .catch(() => toast.error("Não foi possível restaurar"));
+              },
+            },
+          });
+        }}
+      />
     </article>
   );
 }

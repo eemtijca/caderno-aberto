@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useSessao } from "@/hooks/use-sessao";
+import { useGuardaSaida } from "@/hooks/use-guarda-saida";
 
 export function SecaoPerfil() {
   const { usuario, perfil, atualizarPerfil } = useSessao();
@@ -20,11 +21,12 @@ export function SecaoPerfil() {
   const valorNome = nome ?? perfil?.nome ?? "";
   const valorEscola = escola ?? perfil?.escola ?? "";
   const sujo = nome !== null || escola !== null;
+  useGuardaSaida(sujo);
 
   return (
     <section className="na-cascata border-border bg-card rounded-2xl border p-5">
       <h2 className="fonte-display flex items-center gap-2 text-lg font-bold">
-        <UserRound className="h-4.5 w-4.5" aria-hidden /> Perfil
+        <UserRound className="h-4.5 w-4.5" aria-hidden /> Seus dados
       </h2>
       <p className="text-muted-foreground mt-1 text-sm">
         O nome aparece para os alunos nas notas compartilhadas e nos arquivos de impressão gerados.

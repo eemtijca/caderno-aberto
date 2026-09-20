@@ -99,7 +99,7 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overscroll-contain sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="fonte-display">Nova nota de aula</DialogTitle>
           <DialogDescription>
@@ -301,8 +301,9 @@ export function DialogoNovaNota({ aberto, aoFechar, aoCriar }: Props) {
                 Começar do modelo
               </span>
               <span className="text-muted-foreground text-[0.82rem] leading-snug">
-                Cria a estrutura pronta: seção, caixa COPIAR com definição e fórmula, exemplo
-                resolvido, dica e exercícios nos três níveis.
+                Cria a estrutura pronta com orientações de preenchimento: abertura, caixa COPIAR com
+                definição e fórmula, exemplo resolvido, dica e exercícios nos três níveis, com
+                questão objetiva e aberta.
               </span>
             </span>
           </label>
