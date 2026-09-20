@@ -3,18 +3,15 @@
 // Aba de aprovações: ações destrutivas aguardando um segundo administrador.
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Loader2, RefreshCw, X } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
 import { toast } from "sonner";
-import { adminApi, type AprovacaoAcao } from "./api";
-
-const ROTULO_TIPO: Record<string, string> = {
-  suspender: "Desativar conta",
-  excluir: "Excluir conta",
-};
+import { BotaoAtualizar } from "@/components/botao-atualizar";
+import { ROTULO_ACAO_APROVACAO, adminApi, type AprovacaoAcao } from "./api";
+export {};
 
 export function SecaoAprovacoes() {
   const [itens, setItens] = useState<AprovacaoAcao[]>([]);
@@ -44,14 +41,7 @@ export function SecaoAprovacoes() {
         <p className="text-muted-foreground text-sm">
           {itens.length} {itens.length === 1 ? "solicitação pendente" : "solicitações pendentes"}
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 rounded-lg"
-          onClick={() => void carregar()}
-        >
-          <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Atualizar
-        </Button>
+        <BotaoAtualizar carregando={carregando} aoAtualizar={carregar} rotulo="Atualizar" />
       </div>
 
       {carregando ? (
@@ -75,11 +65,17 @@ export function SecaoAprovacoes() {
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="truncate font-semibold">{ROTULO_TIPO[a.tipo] ?? a.tipo}</span>
+                  <span className="truncate font-semibold">
+                    {ROTULO_ACAO_APROVACAO[a.tipo] ?? a.tipo}
+                  </span>
                   <Badge variant="outline">Pendente</Badge>
                 </div>
                 <p className="text-muted-foreground mt-0.5 truncate text-sm">{a.alvoEmail}</p>
                 <p className="text-muted-foreground mt-0.5 text-[0.78rem]">Motivo: {a.motivo}</p>
+                <p className="text-muted-foreground mt-0.5 text-[0.75rem]">
+                  Solicitada em {new Date(a.criadoEm).toLocaleString("pt-BR")} · expira em{" "}
+                  {new Date(a.expiraEm).toLocaleString("pt-BR")}.
+                </p>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -116,7 +112,7 @@ export function SecaoAprovacoes() {
         descricao={
           acao === "aprovar" ? (
             <>
-              A ação <b>{ROTULO_TIPO[decidindo?.tipo ?? ""] ?? decidindo?.tipo}</b> sobre{" "}
+              A ação <b>{ROTULO_ACAO_APROVACAO[decidindo?.tipo ?? ""] ?? decidindo?.tipo}</b> sobre{" "}
               <b>{decidindo?.alvoEmail}</b> será executada imediatamente.
             </>
           ) : (
@@ -126,6 +122,7 @@ export function SecaoAprovacoes() {
           )
         }
         exigeSenha={acao === "aprovar"}
+        varianteConfirmar={acao === "aprovar" ? "default" : "destructive"}
         textoConfirmar={acao === "aprovar" ? "Aprovar e executar" : "Recusar"}
         onConfirmar={async ({ senha }) => {
           if (!decidindo) return;

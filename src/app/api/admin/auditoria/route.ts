@@ -2,8 +2,10 @@
 
 import { NextRequest } from "next/server";
 import { banco } from "@/lib/banco";
-import { json } from "@/lib/api/sessao";
+import { json, erroApi } from "@/lib/api/sessao";
 import { exigirAdmin } from "@/lib/api/admin";
+import { confereSenhaAdmin } from "@/lib/api/admin-guarda";
+import { registrarEvento } from "@/lib/api/auditoria";
 import { mascararEmail } from "@/lib/auth/validacao";
 
 export const dynamic = "force-dynamic";
@@ -30,4 +32,31 @@ export async function GET(req: NextRequest) {
       detalhe: e.detalhe,
     })),
   });
+}
+
+// DELETE /api/admin/auditoria. Limpa a trilha mediante confirmação e senha.
+export async function DELETE(req: NextRequest) {
+  const guarda = await exigirAdmin(req);
+  if (!guarda.ok) return guarda.resposta;
+
+  const corpo = await req.json().catch(() => null);
+  if (!corpo || corpo.confirmacao !== "LIMPAR") {
+    return erroApi("Confirmação inválida.");
+  }
+  const { usuario } = guarda.sessao;
+  if (!(await confereSenhaAdmin(usuario.id, corpo.senha))) {
+    return erroApi("Senha incorreta.", 403);
+  }
+
+  const db = banco();
+  const removidos = await db.eventosSeguranca.deleteMany({});
+  // A própria limpeza fica registrada para manter o rastro da ação.
+  await registrarEvento({
+    atorId: usuario.id,
+    acao: "LIMPAR_AUDITORIA",
+    email: usuario.email,
+    detalhe: { removidos: removidos.count },
+    req,
+  });
+  return json({ ok: true, removidos: removidos.count });
 }

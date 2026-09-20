@@ -3,17 +3,15 @@
 // Aba de solicitações de acesso: fila de pedidos e geração de código.
 
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Loader2, RefreshCw, X } from "lucide-react";
+import { KeyRound, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
+import { Paginacao } from "@/components/paginacao";
+import { usePaginacao } from "@/hooks/use-paginacao";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { adminApi, type CodigoEmitido, type Solicitacao } from "./api";
-
-const ROTULO_TIPO: Record<string, string> = {
-  primeiro_acesso: "Primeiro acesso",
-  recuperacao: "Recuperação",
-};
+import { ROTULO_TIPO, adminApi, type CodigoEmitido, type Solicitacao } from "./api";
 
 export function SecaoSolicitacoes({
   aoEmitir,
@@ -25,6 +23,7 @@ export function SecaoSolicitacoes({
   const [filtro, setFiltro] = useState<"pendente" | "todas">("pendente");
   const [itens, setItens] = useState<Solicitacao[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const paginacao = usePaginacao(itens, 20, `${filtro}:${itens.length}`);
   const [processando, setProcessando] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
@@ -85,14 +84,7 @@ export function SecaoSolicitacoes({
             Todas
           </Chip>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 rounded-lg"
-          onClick={() => void carregar()}
-        >
-          <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Atualizar
-        </Button>
+        <BotaoAtualizar carregando={carregando} aoAtualizar={carregar} rotulo="Atualizar" />
       </div>
 
       {carregando ? (
@@ -108,54 +100,62 @@ export function SecaoSolicitacoes({
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {itens.map((s) => (
-            <li
-              key={s.id}
-              className="border-border bg-card na-cascata flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold">{s.nome || "(sem nome)"}</span>
-                  <Badge variant={s.tipo === "recuperacao" ? "secondary" : "outline"}>
-                    {ROTULO_TIPO[s.tipo] ?? s.tipo}
-                  </Badge>
-                  {s.status !== "pendente" ? <Badge variant="outline">{s.status}</Badge> : null}
+        <div className="space-y-3">
+          <ul className="space-y-3">
+            {paginacao.itens.map((s) => (
+              <li
+                key={s.id}
+                className="border-border bg-card na-cascata flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold">{s.nome || "(sem nome)"}</span>
+                    <Badge variant={s.tipo === "recuperacao" ? "secondary" : "outline"}>
+                      {ROTULO_TIPO[s.tipo] ?? s.tipo}
+                    </Badge>
+                    {s.status !== "pendente" ? <Badge variant="outline">{s.status}</Badge> : null}
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 truncate text-sm">{s.email}</p>
+                  <p className="text-muted-foreground text-[0.72rem]">
+                    {new Date(s.criadoEm).toLocaleString("pt-BR")}
+                  </p>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-sm">{s.email}</p>
-                <p className="text-muted-foreground text-[0.72rem]">
-                  {new Date(s.criadoEm).toLocaleString("pt-BR")}
-                </p>
-              </div>
-              {s.status === "pendente" ? (
-                <div className="flex shrink-0 gap-2">
-                  <Button
-                    size="sm"
-                    className="gap-1.5 rounded-lg"
-                    disabled={processando === s.id}
-                    onClick={() => void atender(s.id)}
-                  >
-                    {processando === s.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-                    ) : (
-                      <KeyRound className="h-3.5 w-3.5" aria-hidden />
-                    )}
-                    Gerar código
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="gap-1.5 rounded-lg"
-                    disabled={processando === s.id}
-                    onClick={() => void cancelar(s.id)}
-                  >
-                    <X className="h-3.5 w-3.5" aria-hidden /> Recusar
-                  </Button>
-                </div>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+                {s.status === "pendente" ? (
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      size="sm"
+                      className="gap-1.5 rounded-lg"
+                      disabled={processando === s.id}
+                      onClick={() => void atender(s.id)}
+                    >
+                      {processando === s.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                      ) : (
+                        <KeyRound className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                      Gerar código
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1.5 rounded-lg"
+                      disabled={processando === s.id}
+                      onClick={() => void cancelar(s.id)}
+                    >
+                      {processando === s.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                      ) : (
+                        <X className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                      Recusar
+                    </Button>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <Paginacao paginacao={paginacao} rotulo="solicitações" />
+        </div>
       )}
     </div>
   );

@@ -6,6 +6,23 @@ import { mapearErro } from "@/lib/api/erro";
 
 export type TipoCodigo = "primeiro_acesso" | "recuperacao";
 
+/** Rótulos compartilhados entre as abas do console. */
+export const ROTULO_TIPO: Record<string, string> = {
+  primeiro_acesso: "Primeiro acesso",
+  recuperacao: "Recuperação de senha",
+};
+
+export const ROTULO_STATUS_CODIGO: Record<string, string> = {
+  ativo: "Ativo",
+  usado: "Usado",
+  expirado: "Expirado",
+};
+
+export const ROTULO_ACAO_APROVACAO: Record<string, string> = {
+  suspender: "Desativar conta",
+  excluir: "Excluir conta",
+};
+
 export interface Solicitacao {
   id: string;
   nome: string;
@@ -160,5 +177,13 @@ export const adminApi = {
       body: JSON.stringify({ acao, senha }),
     }),
 
-  auditoria: () => pedir<{ eventos: Evento[] }>("/api/admin/auditoria"),
+  auditoria: (acao?: string) =>
+    pedir<{ eventos: Evento[] }>(
+      `/api/admin/auditoria${acao ? `?acao=${encodeURIComponent(acao)}` : ""}`,
+    ),
+  limparAuditoria: (senha: string) =>
+    pedir<{ ok: true; removidos: number }>("/api/admin/auditoria", {
+      method: "DELETE",
+      body: JSON.stringify({ confirmacao: "LIMPAR", senha }),
+    }),
 };

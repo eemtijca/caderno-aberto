@@ -3,8 +3,11 @@
 // Aba de códigos: emissão avulsa, listagem e revogação.
 
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, RefreshCw, Trash2 } from "lucide-react";
+import { KeyRound, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
+import { Paginacao } from "@/components/paginacao";
+import { usePaginacao } from "@/hooks/use-paginacao";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,12 +20,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { adminApi, type Codigo, type CodigoEmitido, type TipoCodigo } from "./api";
-
-const ROTULO_TIPO: Record<string, string> = {
-  primeiro_acesso: "Primeiro acesso",
-  recuperacao: "Recuperação",
-};
+import {
+  ROTULO_STATUS_CODIGO,
+  ROTULO_TIPO,
+  adminApi,
+  type Codigo,
+  type CodigoEmitido,
+  type TipoCodigo,
+} from "./api";
 
 const VARIANTE: Record<string, "default" | "secondary" | "outline"> = {
   ativo: "default",
@@ -39,9 +44,11 @@ export function SecaoCodigos({
 }) {
   const [itens, setItens] = useState<Codigo[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const paginacao = usePaginacao(itens, 20, itens.length);
   const [email, setEmail] = useState("");
   const [tipo, setTipo] = useState<TipoCodigo>("primeiro_acesso");
   const [enviando, setEnviando] = useState(false);
+  const [revogando, setRevogando] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -78,6 +85,7 @@ export function SecaoCodigos({
   };
 
   const revogar = async (id: string) => {
+    setRevogando(id);
     try {
       await adminApi.revogarCodigo(id);
       toast.success("Código revogado");
@@ -85,6 +93,8 @@ export function SecaoCodigos({
       aoAtualizar?.();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Falha ao revogar.");
+    } finally {
+      setRevogando(null);
     }
   };
 
@@ -118,21 +128,23 @@ export function SecaoCodigos({
           </Select>
         </div>
         <div className="flex items-end">
-          <Button type="submit" className="w-full gap-1.5 rounded-lg sm:w-auto" disabled={enviando}>
-            <KeyRound className="h-4 w-4" aria-hidden /> Gerar
+          <Button
+            type="submit"
+            className="w-full gap-1.5 rounded-lg sm:w-auto"
+            disabled={enviando || !email.trim()}
+          >
+            {enviando ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <KeyRound className="h-4 w-4" aria-hidden />
+            )}
+            Gerar
           </Button>
         </div>
       </form>
 
       <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 rounded-lg"
-          onClick={() => void carregar()}
-        >
-          <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Atualizar
-        </Button>
+        <BotaoAtualizar carregando={carregando} aoAtualizar={carregar} rotulo="Atualizar" />
       </div>
 
       {carregando ? (
@@ -148,36 +160,47 @@ export function SecaoCodigos({
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {itens.map((c) => (
-            <li
-              key={c.id}
-              className="border-border bg-card na-cascata flex flex-col gap-2 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="truncate font-semibold">{c.email}</span>
-                  <Badge variant="outline">{ROTULO_TIPO[c.tipo] ?? c.tipo}</Badge>
-                  <Badge variant={VARIANTE[c.status] ?? "outline"}>{c.status}</Badge>
+        <div className="space-y-3">
+          <ul className="space-y-3">
+            {paginacao.itens.map((c) => (
+              <li
+                key={c.id}
+                className="border-border bg-card na-cascata flex flex-col gap-2 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="truncate font-semibold">{c.email}</span>
+                    <Badge variant="outline">{ROTULO_TIPO[c.tipo] ?? c.tipo}</Badge>
+                    <Badge variant={VARIANTE[c.status] ?? "outline"}>
+                      {ROTULO_STATUS_CODIGO[c.status] ?? c.status}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 text-[0.72rem]">
+                    Criado em {new Date(c.criadoEm).toLocaleString("pt-BR")}. Expira em{" "}
+                    {new Date(c.expiraEm).toLocaleString("pt-BR")}.
+                  </p>
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-[0.72rem]">
-                  Criado em {new Date(c.criadoEm).toLocaleString("pt-BR")}. Expira em{" "}
-                  {new Date(c.expiraEm).toLocaleString("pt-BR")}.
-                </p>
-              </div>
-              {c.status === "ativo" ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive focus:text-destructive shrink-0 gap-1.5 rounded-lg"
-                  onClick={() => void revogar(c.id)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Revogar
-                </Button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+                {c.status === "ativo" ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive focus:text-destructive shrink-0 gap-1.5 rounded-lg"
+                    disabled={revogando === c.id}
+                    onClick={() => void revogar(c.id)}
+                  >
+                    {revogando === c.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    )}
+                    Revogar
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <Paginacao paginacao={paginacao} rotulo="códigos" />
+        </div>
       )}
     </div>
   );
