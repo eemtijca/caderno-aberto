@@ -3,7 +3,7 @@
 // Diálogo Compartilhar. Links da nota aberta: cria, copia, pausa, regenera ou exclui sem sair da leitura/edição.
 
 import { useState } from "react";
-import { Check, Copy, Link2, Loader2, Power, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, Check, Copy, Link2, Loader2, Power, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ConfirmacaoDestrutiva } from "@/components/confirmacao-destrutiva";
+import { copiarTexto } from "@/lib/clipboard";
 import {
   urlDoLink,
   useCriarLink,
@@ -30,10 +31,12 @@ export function DialogoCompartilhar({
   aberto,
   aoFechar,
   notaId,
+  status,
 }: {
   aberto: boolean;
   aoFechar: () => void;
   notaId: string;
+  status?: "rascunho" | "publicada";
 }) {
   const { data: links, isLoading } = useLinks();
   const criar = useCriarLink();
@@ -77,7 +80,7 @@ export function DialogoCompartilhar({
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overscroll-contain sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="fonte-display flex items-center gap-2">
             <Link2 className="h-4.5 w-4.5" aria-hidden /> Compartilhar com os alunos
@@ -87,6 +90,13 @@ export function DialogoCompartilhar({
             são exibidos.
           </DialogDescription>
         </DialogHeader>
+
+        {status === "rascunho" ? (
+          <p className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-[0.8rem] leading-snug text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />A nota ainda é
+            rascunho. O aluno só verá o conteúdo depois que ela for publicada.
+          </p>
+        ) : null}
 
         {/* criar novo */}
         <div className="grid gap-2">
@@ -104,13 +114,12 @@ export function DialogoCompartilhar({
                 try {
                   const r = await criar.mutateAsync({ tipo: "nota", notaId, nome: nome.trim() });
                   setNome("");
+                  const copiou = await copiarTexto(urlDoLink(r.link.token));
                   toast.success("Link criado", {
-                    description: "O endereço já foi copiado. Envie para os alunos.",
+                    description: copiou
+                      ? "O endereço já foi copiado. Envie para os alunos."
+                      : "Copie o endereço na lista abaixo e envie para os alunos.",
                   });
-                  // Cópia automática é melhor esforço: pode falhar sem quebrar o fluxo.
-                  void navigator.clipboard
-                    ?.writeText(urlDoLink(r.link.token))
-                    .catch(() => undefined);
                 } catch (e) {
                   toast.error("Não foi possível criar o link", {
                     description: e instanceof Error ? e.message : undefined,
@@ -162,13 +171,12 @@ export function DialogoCompartilhar({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-7 gap-1.5 rounded-md text-[0.72rem]"
+                      className="h-8 gap-1.5 rounded-md text-[0.72rem] pointer-coarse:h-10"
                       onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(url);
+                        if (await copiarTexto(url)) {
                           setCopiado(l.id);
                           setTimeout(() => setCopiado(null), 2000);
-                        } catch {
+                        } else {
                           toast.error(
                             "Não foi possível copiar. Selecione o endereço e copie manualmente.",
                           );
@@ -185,7 +193,7 @@ export function DialogoCompartilhar({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 gap-1.5 rounded-md text-[0.72rem]"
+                      className="h-8 gap-1.5 rounded-md text-[0.72rem] pointer-coarse:h-10"
                       disabled={editar.isPending}
                       onClick={async () => {
                         try {
@@ -198,22 +206,26 @@ export function DialogoCompartilhar({
                         }
                       }}
                     >
-                      <Power className="h-3 w-3" aria-hidden />
-                      {l.ativo ? "Pausar" : "Reativar"}
+                      {editar.isPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                      ) : (
+                        <Power className="h-3 w-3" aria-hidden />
+                      )}
+                      {l.ativo ? "Pausar link" : "Reativar link"}
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 gap-1.5 rounded-md text-[0.72rem]"
+                      className="h-8 gap-1.5 rounded-md text-[0.72rem] pointer-coarse:h-10"
                       disabled={editar.isPending}
                       onClick={() => setConfirmar({ tipo: "regenerar", link: l })}
                     >
-                      <RefreshCw className="h-3 w-3" aria-hidden /> Regenerar
+                      <RefreshCw className="h-3 w-3" aria-hidden /> Gerar novo endereço
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-destructive hover:text-destructive h-7 gap-1.5 rounded-md text-[0.72rem]"
+                      className="text-destructive hover:text-destructive h-8 gap-1.5 rounded-md text-[0.72rem] pointer-coarse:h-10"
                       disabled={excluir.isPending}
                       onClick={() => setConfirmar({ tipo: "excluir", link: l })}
                     >

@@ -62,26 +62,21 @@ export default function Home() {
   const { rota, navegar } = useRota();
   const [novaNotaAberta, setNovaNotaAberta] = useState(false);
   const { usuario, perfil, carregando, ehAdmin } = useSessao();
+  // O hash só existe no cliente: renderiza o mesmo esqueleto no servidor e no
+  // primeiro render do cliente para não haver divergência de hidratação.
+  const [montado, setMontado] = useState(false);
 
+  useEffect(() => setMontado(true), []);
   useTituloAba(tituloDaRota(rota));
 
+  if (!montado) return <EsqueletoInicial />;
+
   if (rota.vista === "publica") {
-    return <VistaPublica token={rota.token} navegar={navegar} />;
+    return <VistaPublica token={rota.token} aulaId={rota.aulaId} navegar={navegar} />;
   }
 
   if (carregando) {
-    return (
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6">
-        <Skeleton className="h-16 w-2/3 rounded-2xl" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-        </div>
-        <Skeleton className="h-64 w-full rounded-2xl" />
-      </div>
-    );
+    return <EsqueletoInicial />;
   }
 
   if (!usuario) {
@@ -147,6 +142,21 @@ export default function Home() {
         />
       ) : null}
     </AppShell>
+  );
+}
+
+function EsqueletoInicial() {
+  return (
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6" aria-busy="true">
+      <Skeleton className="h-16 w-2/3 rounded-2xl" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="h-24 rounded-2xl" />
+      </div>
+      <Skeleton className="h-64 w-full rounded-2xl" />
+    </div>
   );
 }
 

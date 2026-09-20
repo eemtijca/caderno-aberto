@@ -36,6 +36,8 @@ interface Props {
   precisaMotivo?: boolean | { minimo?: number; rotulo?: string };
   exigeSenha?: boolean;
   textoConfirmar?: string;
+  /** Ações restaurativas usam o botão padrão, sem o vermelho de perigo. */
+  varianteConfirmar?: "default" | "destructive";
   onConfirmar: (dados: { senha: string; motivo: string }) => Promise<void>;
 }
 
@@ -49,6 +51,7 @@ export function ConfirmacaoDestrutiva({
   precisaMotivo,
   exigeSenha,
   textoConfirmar = "Confirmar",
+  varianteConfirmar = "destructive",
   onConfirmar,
 }: Props) {
   const [digitado, setDigitado] = useState("");
@@ -116,6 +119,7 @@ export function ConfirmacaoDestrutiva({
                     onChange={(e) => setDigitado(e.target.value)}
                     placeholder={alvo.placeholder ?? alvo.valor}
                     autoComplete="off"
+                    autoFocus
                     className="rounded-lg"
                   />
                 </div>
@@ -129,6 +133,7 @@ export function ConfirmacaoDestrutiva({
                     value={motivo}
                     onChange={(e) => setMotivo(e.target.value)}
                     placeholder="Informe o motivo (mínimo de 5 caracteres)"
+                    autoFocus={!alvo}
                     className="min-h-20 rounded-lg"
                   />
                 </div>
@@ -143,6 +148,7 @@ export function ConfirmacaoDestrutiva({
                     value={senha}
                     onChange={(e) => setSenha(e.target.value)}
                     autoComplete="current-password"
+                    autoFocus={!alvo && !precisaMotivo}
                     className="rounded-lg"
                   />
                 </div>
@@ -155,7 +161,7 @@ export function ConfirmacaoDestrutiva({
             Cancelar
           </AlertDialogCancel>
           <Button
-            variant="destructive"
+            variant={varianteConfirmar}
             className="rounded-xl"
             disabled={!podeConfirmar}
             onClick={() => void confirmar()}

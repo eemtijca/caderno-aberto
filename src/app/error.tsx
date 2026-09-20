@@ -5,6 +5,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { TelaEstado } from "@/components/tela-estado";
+import { useTituloAba } from "@/hooks/use-titulo-aba";
 
 export default function Erro({
   error,
@@ -14,6 +15,7 @@ export default function Erro({
   reset: () => void;
 }) {
   const router = useRouter();
+  useTituloAba("Erro");
   useEffect(() => {
     console.error(error);
   }, [error]);

@@ -17,10 +17,22 @@ export default function ErroGlobal({
 
   return (
     <html lang="pt-BR">
+      <head>
+        <title>Algo deu errado · Caderno Aberto</title>
+        <style>{`
+          body { background: #fafaf8; color: #1c1c1a; }
+          .erro-texto { color: #6b6b66; }
+          .erro-botao:focus-visible { outline: 2px solid #008241; outline-offset: 2px; }
+          @media (prefers-color-scheme: dark) {
+            body { background: #1c1c1a; color: #f2f2ef; }
+            .erro-texto { color: #a5a5a0; }
+          }
+        `}</style>
+      </head>
       <body
         style={{
           margin: 0,
-          minHeight: "100vh",
+          minHeight: "100dvh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -29,8 +41,6 @@ export default function ErroGlobal({
           padding: 24,
           fontFamily: "system-ui, sans-serif",
           textAlign: "center",
-          background: "#fafaf8",
-          color: "#1c1c1a",
         }}
       >
         <svg
@@ -49,11 +59,12 @@ export default function ErroGlobal({
           <path d="M12 17h.01" />
         </svg>
         <h1 style={{ margin: 0, fontSize: 22 }}>Algo deu errado</h1>
-        <p style={{ margin: 0, maxWidth: 420, color: "#6b6b66", fontSize: 14 }}>
+        <p className="erro-texto" style={{ margin: 0, maxWidth: 420, fontSize: 14 }}>
           Ocorreu um erro inesperado ao carregar a aplicação. Tente novamente.
         </p>
         <button
           type="button"
+          className="erro-botao"
           onClick={reset}
           style={{
             marginTop: 8,

@@ -98,7 +98,7 @@ export default async function PaginaLink({ params }: Props) {
   const titulo = dados?.nota?.titulo ?? "Nota de aula";
 
   return (
-    <main className="bg-background flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
+    <main className="bg-background flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
       {/* splash mínimo enquanto o redirecionamento acontece */}
       <div className="flex flex-col items-center gap-3">
         <span className="bg-primary text-primary-foreground flex h-14 w-14 items-center justify-center rounded-2xl">

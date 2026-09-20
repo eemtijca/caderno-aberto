@@ -17,7 +17,7 @@ export function VistaRecuperacao({ navegar }: { navegar: (para: string) => void 
   const expiraEm = perfil?.expiraEm;
 
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center px-4 py-10">
+    <div className="bg-background flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="w-full max-w-lg">
         <div className="mb-6 flex flex-col items-center text-center">
           <span className="bg-primary text-primary-foreground flex h-12 w-12 items-center justify-center rounded-2xl">

@@ -117,6 +117,8 @@ export async function proxy(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  // O Next extrai o nonce do CSP da requisição para os próprios scripts.
+  requestHeaders.set("Content-Security-Policy", csp);
 
   // Propaga o usuário do JWT válido; sem acesso ao banco.
   if (usuarioId) requestHeaders.set("x-usuario-id", usuarioId);
