@@ -14,15 +14,20 @@ import { corDisciplina } from "@/lib/notas/cores";
 import { MESES_CAP, separarHabilidades } from "@/lib/notas/texto";
 import { variaveisAparencia } from "@/lib/notas/tipos";
 import { BlocosView } from "@/components/notas/blocos-view";
+import { AreaImpressao, DocumentoImpresso } from "@/components/notas/area-impressao";
+import { BotaoAtualizar } from "@/components/botao-atualizar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DialogoCompartilhar } from "@/components/dialogo-compartilhar";
+import { imprimir, useTemaClaroNaImpressao } from "@/hooks/use-impressao";
 
 export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: string) => void }) {
-  const { data: nota, isLoading, isError } = useNota(id);
+  const notaQ = useNota(id);
+  const { data: nota, isLoading, isError } = notaQ;
   const { perfil } = useSessao();
   const { setTheme } = useTheme();
   const [mostrarGabarito, setMostrarGabarito] = useState(false);
   const [compartilharAberto, setCompartilharAberto] = useState(false);
+  useTemaClaroNaImpressao();
 
   if (isLoading) {
     return (
@@ -56,7 +61,7 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
   const habilidades = separarHabilidades(nota.habilidades);
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background min-h-dvh">
       {/* toolbar fixa; na impressão some e só a área da nota permanece */}
       <div className="na-imprime-esconder border-border bg-background/90 sticky top-0 z-40 border-b backdrop-blur">
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-1.5 px-3 sm:px-4">
@@ -70,26 +75,30 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
             <ArrowLeft className="h-5 w-5" aria-hidden />
           </Button>
           <p className="min-w-0 flex-1 truncate px-1 text-sm font-semibold">{nota.titulo}</p>
+          <BotaoAtualizar carregando={notaQ.isFetching} aoAtualizar={notaQ.refetch} />
           <Button
             variant="outline"
             size="sm"
             onClick={() => setMostrarGabarito(!mostrarGabarito)}
             className="gap-1.5 rounded-lg text-xs"
+            aria-label={mostrarGabarito ? "Ocultar gabarito" : "Mostrar gabarito"}
           >
             {mostrarGabarito ? (
               <>
-                <EyeOff className="h-3.5 w-3.5" aria-hidden /> Ocultar gabarito
+                <EyeOff className="h-3.5 w-3.5" aria-hidden />
+                <span className="hidden sm:inline">Ocultar gabarito</span>
               </>
             ) : (
               <>
-                <Eye className="h-3.5 w-3.5" aria-hidden /> Gabarito
+                <Eye className="h-3.5 w-3.5" aria-hidden />
+                <span className="hidden sm:inline">Gabarito</span>
               </>
             )}
           </Button>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => window.print()}
+            onClick={() => imprimir()}
             aria-label="Imprimir ou salvar em PDF"
             className="rounded-lg"
           >
@@ -122,15 +131,17 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
             size="sm"
             onClick={() => navegar(`/editor/${nota.id}`)}
             className="gap-1.5 rounded-lg text-xs"
+            aria-label="Editar nota"
           >
-            <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar
+            <Pencil className="h-3.5 w-3.5" aria-hidden />
+            <span className="hidden sm:inline">Editar</span>
           </Button>
         </div>
       </div>
 
       {/* conteúdo (a aparência da nota vem do editor: fonte/escala/entrelinha) */}
       <div
-        className="na-entra area-impressao na-nota mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6"
+        className="na-entra na-nota mx-auto max-w-3xl px-4 pt-8 pb-24 sm:px-6"
         style={variaveisAparencia(nota.aparencia) as React.CSSProperties}
       >
         {/* cabeçalho da nota */}
@@ -214,8 +225,29 @@ export function VistaLeitura({ id, navegar }: { id: string; navegar: (para: stri
           aberto
           aoFechar={() => setCompartilharAberto(false)}
           notaId={nota.id}
+          status={nota.status}
         />
       ) : null}
+
+      {/* versão de impressão: portal no body, visível apenas no papel */}
+      <AreaImpressao>
+        <DocumentoImpresso
+          dados={{
+            titulo: nota.titulo,
+            disciplinaNome: nota.disciplina?.nome ?? "",
+            disciplinaCor: nota.disciplina?.cor,
+            mes: nota.mes,
+            anoLetivo: nota.anoLetivo,
+            turmas: nota.turmas.map((t) => t.nome),
+            sobre: nota.sobre,
+            habilidades: nota.habilidades,
+            professor: [perfil?.nome, perfil?.escola].filter(Boolean).join(" · "),
+            blocos: nota.blocos,
+            aparencia: nota.aparencia,
+            mostrarGabarito,
+          }}
+        />
+      </AreaImpressao>
     </div>
   );
 }
