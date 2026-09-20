@@ -29,10 +29,10 @@ test.describe("Conta", () => {
   test("trocar senha exige atual e mínimo 8", async ({ page }) => {
     await loginNovo(page);
     await page.goto("/#/configuracoes/seguranca");
-    await expect(page.getByLabel("Senha atual para trocar a senha")).toBeVisible({ timeout: 5000 });
-    await page.getByLabel("Senha atual para trocar a senha").fill("senha123");
+    await expect(page.getByLabel("Senha atual")).toBeVisible({ timeout: 5000 });
+    await page.getByLabel("Senha atual").fill("senha123");
     await page.getByLabel("Nova senha", { exact: true }).fill("senhaNova123");
-    await page.getByLabel("Repetir nova senha").fill("senhaNova123");
+    await page.getByLabel("Repetir a nova senha").fill("senhaNova123");
     await page.getByRole("button", { name: "Alterar senha" }).click();
     await expect(page.getByText("Senha alterada")).toBeVisible({ timeout: 5000 });
   });
@@ -64,10 +64,8 @@ test.describe("Conta", () => {
     await expect(confirmar).toBeEnabled();
     await confirmar.click();
     await expect(page.getByText(/Senha incorreta/i)).toBeVisible({ timeout: 5000 });
-    // Erro retorna o diálogo à primeira etapa.
-    await page.getByRole("button", { name: "Continuar" }).click();
+    // O erro mantém a etapa final e a confirmação digitada: falta só a senha.
     await expect(page.getByText("Confirmação final")).toBeVisible();
-    await page.getByPlaceholder("EXCLUIR").fill("EXCLUIR");
     await page.locator("#senha-excluir").fill("senha123");
     await page.getByRole("button", { name: "Confirmar exclusão" }).click();
     await expect(page.getByText(/Exclusão solicitada/i)).toBeVisible({ timeout: 8000 });

@@ -190,3 +190,149 @@ describe("contratos.test", () => {
     expect(depois.dados.usuario === null, "sem sessão após sair").toBe(true);
   });
 });
+
+describe("ações em lote", () => {
+  const sufLote = sufixo();
+  const emailC = `lote_c_${sufLote}@exemplo.br`;
+  const emailD = `lote_d_${sufLote}@exemplo.br`;
+  let c: Cliente;
+  let d: Cliente;
+  let discId: string;
+  let discOutraId: string;
+  const notasIds: string[] = [];
+
+  beforeAll(async () => {
+    const admin = await entrarAdmin();
+    c = (await criarProfessor(admin, { nome: "Prof C", email: emailC, senha })).cliente;
+    d = (await criarProfessor(admin, { nome: "Prof D", email: emailD, senha })).cliente;
+    discId = (await c.post("/api/disciplinas", { nome: "Lote A", cor: "verde", icone: "BookOpen" }))
+      .dados.disciplina.id;
+    discOutraId = (
+      await c.post("/api/disciplinas", { nome: "Lote B", cor: "azul", icone: "BookOpen" })
+    ).dados.disciplina.id;
+    for (let i = 1; i <= 3; i++) {
+      const r = await c.post("/api/notas", {
+        titulo: `Nota lote ${i}`,
+        disciplinaId: discId,
+        anoLetivo: 2026,
+        mes: 9,
+        comModelo: false,
+      });
+      notasIds.push(r.dados.nota.id);
+    }
+  });
+
+  afterAll(async () => {
+    await removerUsuarios([emailC, emailD]);
+  });
+
+  it("publica, volta a rascunho e define disciplina", async () => {
+    const pub = await c.post("/api/notas/lote", { acao: "publicar", ids: notasIds.slice(0, 2) });
+    expect(pub.status === 200 && pub.dados.atualizados === 2, "publica duas notas").toBe(true);
+    const publicadas = await c.get("/api/notas?status=publicada");
+    expect(publicadas.dados.notas.length === 2, "listagem reflete a publicação").toBe(true);
+
+    const rasc = await c.post("/api/notas/lote", { acao: "rascunho", ids: notasIds.slice(0, 2) });
+    expect(rasc.dados.atualizados === 2, "volta as duas a rascunho").toBe(true);
+
+    const troca = await c.post("/api/notas/lote", {
+      acao: "disciplina",
+      ids: [notasIds[0]],
+      disciplinaId: discOutraId,
+    });
+    expect(troca.dados.atualizados === 1, "troca a disciplina").toBe(true);
+    const nota = await c.get(`/api/notas/${notasIds[0]}`);
+    expect(nota.dados.nota.disciplina?.nome === "Lote B", "nota com a nova disciplina").toBe(true);
+    const busca = await c.get("/api/busca?q=Lote B");
+    expect(busca.dados.resultados.length >= 1, "busca acompanha a nova disciplina").toBe(true);
+  });
+
+  it("lixeira em lote leva os links e restaura junto", async () => {
+    // Publicada para o link público resolver a nota.
+    await c.put(`/api/notas/${notasIds[0]}`, { status: "publicada" });
+    const link = await c.post("/api/links", { tipo: "nota", notaId: notasIds[0], nome: "Do lote" });
+    const token = link.dados.link.token;
+
+    const lixeira = await c.post("/api/notas/lote", { acao: "lixeira", ids: [notasIds[0]] });
+    expect(lixeira.dados.atualizados === 1, "nota vai para a lixeira").toBe(true);
+    const naLixeira = await c.get("/api/lixeira");
+    expect(
+      naLixeira.dados.notas.some((n: { id: string }) => n.id === notasIds[0]),
+      "nota aparece na lixeira",
+    ).toBe(true);
+    expect(
+      naLixeira.dados.links.some((l: { id: string }) => l.id === link.dados.link.id),
+      "link da nota foi junto",
+    ).toBe(true);
+    expect((await fetch(`${BASE}/api/publico/${token}`)).status, "link some do público").toBe(404);
+
+    const restaurar = await c.post("/api/lixeira/lote", {
+      acao: "restaurar",
+      notas: [notasIds[0]],
+      links: [],
+    });
+    expect(restaurar.dados.restaurados.notas === 1, "restaura a nota").toBe(true);
+    expect((await fetch(`${BASE}/api/publico/${token}`)).status, "link volta ao público").toBe(200);
+  });
+
+  it("pausa, reativa e exclui links em lote", async () => {
+    for (const id of [notasIds[1], notasIds[2]]) {
+      await c.put(`/api/notas/${id}`, { status: "publicada" });
+    }
+    const l1 = await c.post("/api/links", { tipo: "nota", notaId: notasIds[1], nome: "Lote 1" });
+    const l2 = await c.post("/api/links", { tipo: "nota", notaId: notasIds[2], nome: "Lote 2" });
+    const ids = [l1.dados.link.id, l2.dados.link.id];
+
+    const pausar = await c.post("/api/links/lote", { acao: "pausar", ids });
+    expect(pausar.dados.atualizados === 2, "pausa os dois").toBe(true);
+    expect(
+      (await fetch(`${BASE}/api/publico/${l1.dados.link.token}`)).status,
+      "link pausado some",
+    ).toBe(404);
+
+    const reativar = await c.post("/api/links/lote", { acao: "reativar", ids });
+    expect(reativar.dados.atualizados === 2, "reativa os dois").toBe(true);
+    expect(
+      (await fetch(`${BASE}/api/publico/${l1.dados.link.token}`)).status,
+      "link reativado volta",
+    ).toBe(200);
+
+    const excluir = await c.post("/api/links/lote", { acao: "excluir", ids: [ids[0]] });
+    expect(excluir.dados.atualizados === 1, "exclui um link").toBe(true);
+    const lixeira = await c.get("/api/lixeira");
+    expect(
+      lixeira.dados.links.some((l: { id: string }) => l.id === ids[0]),
+      "link excluído na lixeira",
+    ).toBe(true);
+    const restaurar = await c.post("/api/lixeira/lote", {
+      acao: "restaurar",
+      notas: [],
+      links: [ids[0]],
+    });
+    expect(restaurar.dados.restaurados.links === 1, "restaura o link").toBe(true);
+  });
+
+  it("valida entrada e isola entre professores", async () => {
+    const vazia = await c.post("/api/notas/lote", { acao: "publicar", ids: [] });
+    expect(vazia.status, "sem ids responde 400").toBe(400);
+    const invalida = await c.post("/api/notas/lote", { acao: "apagar", ids: notasIds });
+    expect(invalida.status, "ação desconhecida responde 400").toBe(400);
+
+    const alheio = await d.post("/api/notas/lote", { acao: "publicar", ids: notasIds });
+    expect(alheio.dados.atualizados, "nada do outro professor é afetado").toBe(0);
+    expect(alheio.dados.ausentes.length === notasIds.length, "ids alheios viram ausentes").toBe(
+      true,
+    );
+
+    const falso = "00000000-0000-4000-8000-000000000000";
+    const misto = await c.post("/api/notas/lote", { acao: "rascunho", ids: [notasIds[0], falso] });
+    expect(misto.dados.atualizados === 1, "atualiza só o existente").toBe(true);
+    expect(misto.dados.ausentes.includes(falso), "id inexistente vira ausente").toBe(true);
+
+    const ultrapassa = await c.post("/api/notas/lote", {
+      acao: "rascunho",
+      ids: Array.from({ length: 101 }, () => crypto.randomUUID()),
+    });
+    expect(ultrapassa.status, "acima do teto responde 400").toBe(400);
+  });
+});

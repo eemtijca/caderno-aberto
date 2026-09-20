@@ -152,4 +152,37 @@ describe("administração", () => {
       400,
     );
   });
+
+  it("limpa a auditoria com confirmação e senha", async () => {
+    // Gera um evento de falha de login para haver o que limpar.
+    const anon = new Cliente();
+    await anon.post(
+      "/api/auth/entrar",
+      { email: `falha_${suf}@exemplo.br`, senha: "errada" },
+      ipTeste(),
+    );
+
+    const semConfirmacao = await admin.del("/api/admin/auditoria", { senha: "adminSenha123" });
+    expect(semConfirmacao.status, "exige a confirmação digitada").toBe(400);
+
+    const senhaErrada = await admin.del("/api/admin/auditoria", {
+      confirmacao: "LIMPAR",
+      senha: "senha-errada",
+    });
+    expect(senhaErrada.status, "senha incorreta").toBe(403);
+
+    const r = await admin.del("/api/admin/auditoria", {
+      confirmacao: "LIMPAR",
+      senha: "adminSenha123",
+    });
+    expect(r.status).toBe(200);
+    expect(r.dados.ok).toBe(true);
+    expect(typeof r.dados.removidos).toBe("number");
+
+    const lista = await admin.get("/api/admin/auditoria");
+    expect(
+      lista.dados.eventos.some((e: { acao: string }) => e.acao === "LIMPAR_AUDITORIA"),
+      "a limpeza fica registrada",
+    ).toBe(true);
+  });
 });
