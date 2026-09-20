@@ -131,7 +131,9 @@ describe("bibliotecas de notas", () => {
   console.log("\n== gerarTex: nota do modelo compila também ==");
   const texModelo = gerarTex({ ...DEMO_NOTA, blocos: notaModelo("Aula de teste") }, "Prof");
   t("modelo gera conteúdo", texModelo.includes("\\begin{document}"));
-  t("modelo contém caixa COPIAR", texModelo.includes("\\begin{copiar}{Nome curto do bloco}"));
+  t("modelo contém caixa COPIAR", texModelo.includes("\\begin{copiar}{Conceito principal}"));
+  t("modelo contém exercícios", texModelo.includes("\\begin{exercicios}"));
+  t("modelo contém a questão aberta", texModelo.includes("situação nova"));
 
   console.log("\n== inlineParaLatex / prepararMatematicaTex ==");
   t("escapa & % # _", inlineParaLatex("a & b % c # d _ e").includes("a \\& b \\% c \\# d \\_ e"));
