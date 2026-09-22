@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
+  ChevronDown,
   Eye,
   EyeOff,
   FileText,
@@ -16,10 +17,17 @@ import {
   NotebookPen,
   PenLine,
   ShieldCheck,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { SeletorTema } from "@/components/seletor-tema";
@@ -452,35 +460,34 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
 
             <div className="border-border mt-5 space-y-1.5 border-t pt-4 text-center text-sm">
               {modo === "entrar" ? (
-                <>
-                  <p>
-                    <button
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
                       type="button"
-                      onClick={() => navegar("/codigo")}
-                      className="text-primary inline-flex items-center gap-1 font-semibold hover:underline"
+                      variant="outline"
+                      className="w-full justify-between gap-2 rounded-xl"
                     >
-                      <KeyRound className="h-3 w-3" aria-hidden /> Tenho um código
-                    </button>
-                  </p>
-                  <p>
-                    <button
-                      type="button"
-                      onClick={() => navegar("/solicitar?recuperacao=1")}
-                      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 hover:underline"
-                    >
-                      <Lock className="h-3 w-3" aria-hidden /> Esqueci minha senha
-                    </button>
-                  </p>
-                  <p>
-                    <button
-                      type="button"
-                      onClick={() => navegar("/solicitar")}
-                      className="text-muted-foreground hover:text-foreground hover:underline"
-                    >
-                      Solicitar acesso
-                    </button>
-                  </p>
-                </>
+                      <span className="inline-flex items-center gap-1.5">
+                        <KeyRound className="h-3.5 w-3.5" aria-hidden /> Outras formas de acesso
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-60" aria-hidden />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="center"
+                    className="w-(--radix-dropdown-menu-trigger-width)"
+                  >
+                    <DropdownMenuItem onSelect={() => navegar("/codigo")}>
+                      <KeyRound className="h-4 w-4" aria-hidden /> Tenho um código
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => navegar("/solicitar?recuperacao=1")}>
+                      <Lock className="h-4 w-4" aria-hidden /> Esqueci minha senha
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => navegar("/solicitar")}>
+                      <UserPlus className="h-4 w-4" aria-hidden /> Solicitar acesso
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <p>
                   <button

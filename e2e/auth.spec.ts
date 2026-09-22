@@ -15,6 +15,19 @@ test.describe("Autenticação", () => {
     await expect(page.getByText(/abertas para os alunos/i)).toHaveCount(0);
   });
 
+  test("menu de ajuda reúne os acessos alternativos", async ({ page }) => {
+    await page.goto("/#/entrar");
+    const ajuda = page.getByRole("button", { name: "Outras formas de acesso" });
+    await expect(ajuda).toBeVisible({ timeout: 8000 });
+    await ajuda.click();
+    await expect(page.getByRole("menuitem", { name: "Tenho um código" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Esqueci minha senha" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Solicitar acesso" })).toBeVisible();
+
+    await page.getByRole("menuitem", { name: "Tenho um código" }).click();
+    await expect(page).toHaveURL(/#\/codigo/, { timeout: 8000 });
+  });
+
   test("login válido entra no app", async ({ page }) => {
     const { email, nome } = criarProfessorUnico();
     await criarContaEentrar(page, { nome, email, senha: "senha123" });

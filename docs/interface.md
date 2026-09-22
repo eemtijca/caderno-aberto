@@ -60,6 +60,7 @@ Os elementos clicáveis usam `cursor: pointer` por uma regra global em `globals.
 - Rotas reais: `/` (shell), `/l/[token]` (página pública com metadados e OpenGraph) e `/api/**`.
 - Busca global com `Ctrl` ou `Cmd` mais `K`, com debounce, mínimo de 2 caracteres e tolerância a acentos.
 - No mobile, a barra superior concentra a busca, o seletor de tema e o menu de perfil (Configurações e Sair). A barra inferior mantém cinco itens; o botão Mais abre um painel inferior (`Drawer`) com as opções que não cabem, como Turmas e Administração para contas admin.
+- A tela de login reúne "Tenho um código", "Esqueci minha senha" e "Solicitar acesso" em um único menu "Outras formas de acesso", que leva às rotas `#/codigo` e `#/solicitar`.
 - A tela de login oferece "Manter conectado neste dispositivo", marcado por padrão e lembrado no navegador para os próximos acessos, inclusive no uso de código e na troca de senha. Desmarcado, a sessão usa cookie de sessão e expira em 24 horas no servidor.
 
 ## Responsividade
