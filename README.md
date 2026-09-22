@@ -127,6 +127,7 @@ Paleta: verde institucional `#008241`.
 | [docs/seguranca.md](docs/seguranca.md)             | Controles de segurança e modelo de ameaça             |
 | [docs/deploy.md](docs/deploy.md)                   | Vercel, Compose, migrações e agendador                |
 | [CONTRIBUTING.md](CONTRIBUTING.md)                 | Rotina de desenvolvimento e convenções                |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)           | Normas de convivência da comunidade                   |
 | [SECURITY.md](SECURITY.md)                         | Política de reporte de vulnerabilidades               |
 
 Decisões de arquitetura ficam em [docs/adr/](docs/adr/).
