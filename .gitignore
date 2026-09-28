@@ -19,7 +19,6 @@ coverage/
 
 # dados locais de teste
 tools/
-tests/shim/dados/
 .tmp/
 
 # artefactos locais de base de dados
@@ -41,8 +40,7 @@ public/vendor/
 /playwright/.cache/
 /playwright/.auth/
 
-# artefatos dos testes unitários (gerados por tests/unit/rodar.mjs)
-tests/unit/build/
+# artefatos dos testes unitários
 tests/tex/*.tex
 tests/tex/*.pdf
 dist/

@@ -2,6 +2,5 @@
 node_modules/
 generated/
 public/vendor/
-tests/unit/build/
 coverage/
 .devcontainer/devcontainer-lock.json

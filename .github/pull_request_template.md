@@ -8,13 +8,27 @@ Closes #
 
 ## Como validar
 
-Informe os comandos executados e, quando aplicável, os passos de interface.
+Informe os comandos executados e, quando aplicável, os passos de interface. Inclua capturas de antes e depois em mudanças visuais.
+
+## Tipo de mudança
+
+- [ ] Correção de bug
+- [ ] Funcionalidade nova
+- [ ] Refatoração ou manutenção
+- [ ] Documentação
+- [ ] Testes ou CI
+
+## Riscos e migrações
+
+Descreva riscos, migrações de banco e variáveis de ambiente novas. Use "Não se aplica" quando não houver.
 
 ## Checklist
 
 - [ ] Segui o padrão de branches e commits do [CONTRIBUTING.md](../CONTRIBUTING.md).
-- [ ] Rodei `npm run format:check`, `npm run lint` e `npm run tsc` sem erros.
-- [ ] Rodei `npm test` (unidade, isolamento, contratos, códigos, admin e segurança).
-- [ ] Rodei `npm run test:e2e` quando a mudança afeta a interface.
-- [ ] Atualizei a documentação e os testes correspondentes.
+- [ ] Revisei o próprio diff antes de pedir revisão.
+- [ ] Rodei `npm run format:check`, `npm run lint` e `npm run tsc`.
+- [ ] Rodei `npm run test:unit` e `npm test` com o aplicativo no ar.
+- [ ] Rodei `npm run test:e2e:docker` quando a mudança afeta a interface.
+- [ ] Atualizei a documentação correspondente e o CHANGELOG.md.
+- [ ] Revisei a segurança quando a mudança toca dependências, autenticação, permissões, workflows ou dados sensíveis.
 - [ ] Não incluí segredos nem dados reais de professores ou alunos.

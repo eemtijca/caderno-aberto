@@ -1,6 +1,15 @@
 # Contribuindo
 
-Guia de desenvolvimento do Caderno Aberto: como preparar o ambiente, propor mudanças, escrever código, testar e documentar. Dúvidas e propostas podem ser abertas como issue; o detalhamento técnico está em [docs/](docs/README.md). Para vulnerabilidades, siga [SECURITY.md](SECURITY.md) e nunca abra issue pública com dados sensíveis.
+Guia de desenvolvimento do Caderno Aberto: como preparar o ambiente, abrir issues, propor mudanças, escrever código, testar e documentar. Dúvidas e propostas podem ser abertas como issue; o detalhamento técnico está em [docs/](docs/README.md). Para vulnerabilidades, siga [SECURITY.md](SECURITY.md), e para a convivência, o [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## Antes de começar
+
+- Abra uma issue antes de trabalhar em funcionalidades, mudanças estruturais e correções grandes. Ajustes pequenos e evidentes podem seguir direto para um pull request.
+- Procure issues abertas e fechadas antes de criar uma nova. Havendo uma equivalente, comente para assumir a tarefa e evitar trabalho duplicado.
+- Descreva o contexto com clareza: passos de reprodução, comportamento observado, comportamento esperado e versão ou commit afetado.
+- Mantenha a conversa pública nas issues e nos pull requests. Canais privados ficam reservados para vulnerabilidades e assuntos de conduta.
+- Nunca inclua segredos, credenciais, dados reais de professores ou alunos em issues, comandos, commits, capturas ou logs.
+- Vulnerabilidades seguem [SECURITY.md](SECURITY.md), nunca uma issue pública.
 
 ## Ambiente de desenvolvimento
 
@@ -21,40 +30,113 @@ cp .env.example .env
 docker compose up --build
 ```
 
-O Compose sobe o PostgreSQL 17 e o aplicativo em `http://localhost:3000`, aplica as migrações na partida e serve o build de produção. Comandos úteis na raiz:
+O Compose sobe o PostgreSQL 17 e o aplicativo em `http://localhost:3000`, aplica as migrações na partida e serve o build de produção.
 
-| Comando                     | Efeito                                                      |
-| --------------------------- | ----------------------------------------------------------- |
-| `npm run dev`               | Servidor de desenvolvimento em `http://localhost:3000`.     |
-| `docker compose up --build` | Sobe o banco e o aplicativo via Docker Compose.             |
-| `docker compose down`       | Derruba o ambiente.                                         |
-| `npm run criar-admin`       | Cria o administrador inicial de forma idempotente.          |
-| `npx prisma generate`       | Regenera o cliente Prisma (o `postinstall` também executa). |
-| `npx prisma migrate deploy` | Aplica as migrações pendentes.                              |
-| `npm run format`            | Roda o Prettier.                                            |
+Comandos úteis na raiz:
+
+| Comando                     | Efeito                                                                        |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| `npm run dev`               | Servidor de desenvolvimento em `http://localhost:3000`.                       |
+| `docker compose up --build` | Sobe o banco e o aplicativo via Docker Compose.                               |
+| `docker compose down`       | Derruba o ambiente.                                                           |
+| `npm run criar-admin`       | Cria o administrador inicial de forma idempotente.                            |
+| `npm run test:destrutivas`  | Roda a suíte de ações destrutivas e lixeira.                                  |
+| `npm run format`            | Corrige a formatação com o Prettier.                                          |
+| `npm run format:check`      | Confere a formatação sem alterar arquivos.                                    |
+| `npm run vercel-build`      | Build da Vercel, com `prisma generate` e `next build`.                        |
+| `npx prisma generate`       | Regenera o cliente Prisma (o `postinstall` também executa e copia o TikZJax). |
+| `npx prisma migrate deploy` | Aplica as migrações pendentes.                                                |
 
 ## Fluxo de contribuição e pull requests
 
-### Issues e discussão
+### GitHub CLI
 
-Descreva o problema ou a proposta antes de codificar quando a mudança for estrutural. Para bugs, inclua passos de reprodução, comportamento observado, comportamento esperado e o commit afetado. Nunca anexe dados reais de professores ou alunos.
+Opere issues, pull requests, execuções de workflow e releases pelo GitHub CLI (`gh`), não pela interface web. Antes de operar, confirme a sessão com `gh auth status` (ou `gh status`) e, se não houver conexão, autentique com `gh auth login`.
+
+Comandos do dia a dia:
+
+- `gh issue create`, `gh issue list` e `gh issue view` para issues.
+- `gh pr create --fill`, `gh pr view` e `gh pr checks --watch` para pull requests.
+- `gh run list`, `gh run watch` e `gh run view --log-failed` para workflows.
+- `gh release create` e `gh release view` para releases.
+
+Nunca inclua segredos, credenciais ou dados de alunos e professores em comandos, títulos, corpos ou comentários.
+
+### Issues
+
+Abra uma issue quando:
+
+- encontrar um comportamento incorreto que não consegue corrigir;
+- propor uma funcionalidade ou melhoria de escopo;
+- discutir uma decisão estrutural ou de arquitetura;
+- apontar falha ou lacuna de documentação.
+
+Antes de abrir, procure issues abertas e fechadas com termos relacionados. Os modelos disponíveis são Bug, Melhoria e o contato para segurança; escolha o mais adequado e preencha os campos obrigatórios.
+
+Uma boa issue contém:
+
+- o problema e o resultado esperado;
+- passos de reprodução numerados, com o menor exemplo possível;
+- ambiente envolvido (navegador, dispositivo, versão ou commit);
+- contexto adicional, sem dados reais nem segredos.
+
+Labels usadas: `bug`, `enhancement`, `documentation`, `question`, `good first issue`, `help wanted` e `dependencies`.
+
+A triagem acontece em até 7 dias. Uma issue pode ser fechada sem correção quando estiver fora do escopo, duplicada ou sem informação; nesse caso o motivo é explicado e a porta fica aberta para uma proposta mais precisa. Se a issue aberta for resolvida por conta própria, comente o desfecho e feche.
+
+Relacione a issue ao pull request com `Closes #123` quando a mudança encerrar o assunto, ou `Refs #123` quando apenas caminhar na direção dele. A ligação com `Closes` só funciona no pull request que aponta para a branch padrão.
 
 ### Branches
 
-Parta da `main` atualizada e use o padrão `tipo/descricao-curta`, com o tipo alinhado ao commit principal:
+Parta da `main` atualizada e use `tipo/descricao-curta`, em minúsculas, com hífens e sem acento, com o tipo alinhado ao commit principal:
 
 - `feat/` para funcionalidades novas.
 - `fix/` para correções.
+- `hotfix/` para correções urgentes em produção.
 - `docs/`, `test/`, `refactor/`, `perf/`, `chore/` e `ci/` para os demais casos.
 
 Exemplos presentes no histórico: `feat/experiencia-de-notas-e-acessibilidade` e `feat/seguranca-robustez`.
 
+Branches criadas por agentes de IA usam o prefixo do agente (`ai/`, `claude/`, `codex/`, `copilot/` ou `cursor/`), conforme a [Conventional Branch](https://conventional-branch.github.io/).
+
 ### Commits
 
-Siga o padrão Conventional Commits, em português, no imperativo e descrevendo o efeito da mudança. Use escopo entre parênteses quando ajudar a localizar a área:
+Siga o [Conventional Commits](https://www.conventionalcommits.org/pt-br/v1.0.0/), em português, no imperativo e descrevendo o efeito da mudança, com escopo entre parênteses quando ajudar a localizar a área.
 
-- Tipos: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`, `ci`, `build`.
-- Escopos comuns: `admin`, `auth`, `notas`, `editor`, `links`, `api`, `docs`, `test`, `e2e`, `ci`, `infra`.
+```text
+<tipo>(<escopo opcional>): <descrição>
+
+[corpo opcional]
+
+[rodapé opcional]
+```
+
+Tipos usados:
+
+| Tipo       | Uso                                        |
+| ---------- | ------------------------------------------ |
+| `feat`     | Funcionalidade nova.                       |
+| `fix`      | Correção de comportamento.                 |
+| `docs`     | Documentação.                              |
+| `test`     | Testes.                                    |
+| `refactor` | Mudança interna sem alterar comportamento. |
+| `perf`     | Desempenho.                                |
+| `chore`    | Manutenção e dependências.                 |
+| `ci`       | Workflows e automação.                     |
+| `build`    | Build e empacotamento.                     |
+| `revert`   | Reversão de commit anterior.               |
+
+Escopos comuns: `admin`, `auth`, `notas`, `editor`, `links`, `api`, `docs`, `test`, `e2e`, `ci`, `infra`.
+
+Regras:
+
+- Uma mudança por commit; se o commit cabe em mais de um tipo, divida.
+- Use o corpo para explicar o porquê quando a descrição não bastar.
+- Use rodapé para referências: `Closes #123`, `Refs #123`.
+- Mudança incompatível usa `!` depois do tipo ou escopo, ou o rodapé `BREAKING CHANGE:`.
+- Evite commits de trabalho em andamento na `main`; o histórico da `main` vem de pull requests.
+
+Exemplos:
 
 ```text
 feat(admin): pagina as listas no servidor
@@ -63,19 +145,21 @@ docs: sincroniza a documentação com o estado atual do código
 test(e2e): cobre o menu de ajuda na tela de login
 ```
 
-Mantenha cada commit coerente e reversível de forma isolada. Evite commits de trabalho em andamento na `main`; o histórico da `main` vem de pull requests.
-
 ### Pull requests
 
-Um pull request resolve um assunto. Se a mudança misturar refatoração e comportamento, separe em pull requests menores.
+Um pull request resolve um assunto. Se a mudança misturar refatoração e comportamento, separe em pull requests menores. Refatorações grandes andam em pull request próprio, sem misturar com correção ou funcionalidade.
+
+Abra o pull request cedo, como rascunho, quando quiser feedback durante o trabalho. Antes de pedir revisão, revise o próprio diff, confira se não entrou arquivo acidental e rode as verificações locais.
 
 A descrição deve conter:
 
-- O problema e o resultado esperado.
-- O que mudou e por quê.
-- Como validar: comandos executados e, quando aplicável, capturas ou passos de interface.
-- Riscos, migrações ou variáveis de ambiente novas.
-- A issue relacionada, quando houver.
+- o problema e o resultado esperado;
+- o que mudou e por quê;
+- como validar: comandos executados e, quando aplicável, capturas ou passos de interface;
+- riscos, migrações ou variáveis de ambiente novas;
+- a issue relacionada, com `Closes #123` quando aplicável.
+
+Quando a mudança tocar dependências, autenticação, permissões, workflows ou dados sensíveis, descreva o risco e como ele foi tratado.
 
 Antes de abrir, rode as verificações locais:
 
@@ -83,24 +167,27 @@ Antes de abrir, rode as verificações locais:
 npm run format:check
 npm run lint
 npm run tsc
-npm test              # unidade, isolamento, contratos, códigos, admin e segurança
-npm run test:e2e      # com o aplicativo no ar
+npm run test:unit     # unidade, guarda editorial e bibliotecas puras
+npm test              # com o aplicativo no ar e o banco migrado
+npm run test:e2e:docker   # Playwright na imagem oficial, com o aplicativo no ar
 ```
 
 Preencha o checklist do template de pull request. Ao alterar comportamento, atualize a documentação correspondente e os testes.
 
 ### Revisão e integração contínua
 
-Toda mudança passa por revisão e pelos workflows do GitHub Actions. O CI roda apenas em pull requests; o CD roda no push, pelo deploy da Vercel e pela Action `db-migrate`.
+Toda mudança passa por revisão e pelos workflows do GitHub Actions. O CI roda apenas em pull requests; o CD roda no push, pelo deploy da Vercel e pela Action de migrações.
 
-| Workflow         | Etapas                                                                                                           |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `quality.yml`    | `format:check`, `lint`, `tsc` e `test:unit` em pull requests.                                                    |
-| `build.yml`      | `next build` com `DATABASE_URL` e `AUTH_SECRET` fictícios em pull requests.                                      |
-| `test-db.yml`    | Sobe o Compose, aplica o RLS de teste e roda isolamento, contratos, códigos, admin, segurança e e2e no Chromium. |
-| `db-migrate.yml` | Aplica `prisma migrate deploy` em produção no push para `main` com alteração em `prisma/migrations/**`.          |
+| Workflow        | Etapas                                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `qualidade.yml` | `format:check`, `lint`, `tsc` e `test:unit` em pull requests.                                                    |
+| `build.yml`     | `next build` com `DATABASE_URL` e `AUTH_SECRET` fictícios em pull requests.                                      |
+| `testes.yml`    | Sobe o Compose, aplica o RLS de teste e roda isolamento, contratos, códigos, admin, segurança e e2e no Chromium. |
+| `migracoes.yml` | Aplica `prisma migrate deploy` em produção no push para `main` com alteração em `prisma/migrations/**`.          |
 
-Corrija as falhas antes de pedir nova revisão. Pull requests sem CI verde não são mesclados.
+A `main` é protegida por rulesets: pull request obrigatório, checks verdes, conversas resolvidas e merge commit como único método. A autoaprovação não existe no GitHub; donos da organização podem mesclar os próprios pull requests com o bypass da regra de revisão, mas continuam sujeitos aos checks de qualidade.
+
+Corrija as falhas antes de pedir nova revisão. Pull requests sem CI verde não são mesclados. Evite force-push depois que a revisão começar; se precisar reescrever a história, explique o motivo na conversa.
 
 ### Estratégia de merge
 
@@ -109,7 +196,7 @@ Mescle por merge commit, preservando os commits da branch e o contexto da revis�
 ## Padrões de código
 
 - Código e comentários em português, curtos e diretos.
-- Domínio em português (`notas`, `turmas`); infraestrutura em inglês (`backup`, `token`, nomes de pacotes).
+- Domínio em português (`notas`, `turmas`, `links`); infraestrutura em inglês (`backup`, `token`, nomes de pacotes).
 - Rotas: sessão via `sessaoProfessor`, filtro pelo dono no banco e respostas via `json` ou `erroApi`, sem detalhes internos.
 - Datas do banco trafegam como `Date` no servidor e ISO no JSON.
 - Segredos apenas via ambiente. Ver [docs/ambiente.md](docs/ambiente.md).
@@ -117,7 +204,7 @@ Mescle por merge commit, preservando os commits da branch e o contexto da revis�
 
 ### Banco e migrações
 
-Crie migrações com `npx prisma migrate dev --name ajuste`. Nunca edite uma migração aplicada; qualquer ajuste entra como migração nova. O schema é a fonte da verdade em `prisma/schema.prisma`, e os comandos do dia a dia estão em [docs/banco.md](docs/banco.md).
+Crie migrações com `npx prisma migrate dev --name ajuste`. Nunca edite uma migração aplicada; qualquer ajuste entra como migração nova. O schema é a fonte da verdade em `prisma/schema.prisma`, e os comandos do dia a dia estão em [docs/banco.md](docs/banco.md). As regras que não cabem no schema (CHECKs, funções, gatilhos, RLS e índices funcionais) vivem no SQL das migrações e são preservadas.
 
 ### Formatação e análise estática
 
@@ -129,27 +216,47 @@ O Prettier cuida do estilo, com `prettier-plugin-tailwindcss` para ordenar as cl
 - Comente apenas trechos não óbvios, como decisões de segurança, contornos, cálculos e formatos de interoperabilidade.
 - Não comente o óbvio nem repita o nome da função no comentário.
 
+### Contribuições assistidas por IA
+
+Ferramentas de IA são bem-vindas como apoio, mas a responsabilidade pela mudança é de quem envia. Revise o resultado linha a linha, garanta que ele segue as convenções do repositório, rode as verificações locais e nunca cole segredos, credenciais ou dados reais em ferramentas externas, issues ou commits. O [AGENTS.md](AGENTS.md) orienta agentes que trabalham no repositório.
+
 ## Testes e qualidade
 
-As suítes combinam unidade, integração da API, isolamento no banco e testes de ponta a ponta. Os comandos e pré-requisitos estão em [tests/README.md](tests/README.md); a convenção e a cobertura, em [docs/testes.md](docs/testes.md).
+As suítes combinam unidade, integração da API, isolamento no banco, ações destrutivas e testes de ponta a ponta. Os comandos e pré-requisitos estão em [tests/README.md](tests/README.md); a convenção e a cobertura, em [docs/testes.md](docs/testes.md).
 
-| Suíte              | Requisito                         | Comando                  |
-| ------------------ | --------------------------------- | ------------------------ |
-| Unidade            | Nenhum                            | `npm run test:unit`      |
-| Isolamento (RLS)   | Banco migrado e papel `app_teste` | `npm run test:api`       |
-| Contratos          | Aplicativo no ar                  | `npm run test:contratos` |
-| Códigos e admin    | Aplicativo no ar e banco          | `npm run test:codigos`   |
-| Segurança e sessão | Aplicativo no ar e banco          | `npm run test:seguranca` |
-| E2E (Playwright)   | Aplicativo no ar                  | `npm run test:e2e`       |
+| Suíte              | Requisito                         | Comando                                         |
+| ------------------ | --------------------------------- | ----------------------------------------------- |
+| Unidade            | Nenhum                            | `npm run test:unit`                             |
+| Guarda editorial   | Nenhum (roda com a unidade)       | `npm run test:unit`                             |
+| Isolamento (RLS)   | Banco migrado e papel `app_teste` | `npm run test:api`                              |
+| Contratos          | Aplicativo no ar                  | `npm run test:contratos`                        |
+| Códigos e admin    | Aplicativo no ar e banco          | `npm run test:codigos`                          |
+| Segurança e sessão | Aplicativo no ar e banco          | `npm run test:seguranca`                        |
+| Destrutivas        | Aplicativo no ar e banco          | `npm run test:destrutivas`                      |
+| E2E (Playwright)   | Aplicativo no ar                  | `npm run test:e2e:docker` ou `npm run test:e2e` |
 
 Regras:
 
 - Cada arquivo cria e limpa a própria massa com `beforeAll` e `afterAll`, usando e-mails datados no domínio `@exemplo.br`. Nunca dependa de dados reais.
 - Nenhum teste depende de ordem de execução.
 - Ao corrigir um bug, adicione um teste que falharia antes da correção.
-- O teste `tests/unit/texto-ui.test.ts` barra travessão, aspas curvas, segunda pessoa explícita e pluralização com parênteses nos textos de interface.
+- O teste `tests/unit/texto-ui.test.ts` barra travessão, meia-risca, reticências tipográficas, aspas curvas, setas, aspas angulares, entidades de aspas, segunda pessoa e pluralização com parênteses nos arquivos de `src`.
 
-Os testes de ponta a ponta completos (Firefox e WebKit) são de execução local; o CI cobre o Chromium dentro do `test-db`.
+O Playwright roda primariamente na imagem oficial da Microsoft, sem instalar navegadores no host, com o aplicativo no ar:
+
+```bash
+npm run test:e2e:docker            # todos os projetos
+npm run test:e2e:docker:chromium   # apenas o Chromium
+```
+
+A variável `TEST_BASE_URL` aponta para o aplicativo (padrão `http://localhost:3000`), e `tests/playwright-container.sh` aceita `PLAYWRIGHT_IMAGE`, `PLAYWRIGHT_DOCKER_NETWORK` e `PLAYWRIGHT_DOCKER_USER`. Mantenha a versão da imagem igual à do `@playwright/test` em `package.json`. Use `localhost`, e não `127.0.0.1`, porque o Playwright só trata esse host como local para enviar o cookie de sessão `Secure`.
+
+A instalação local de navegadores fica como alternativa para Firefox e WebKit:
+
+```bash
+npm run test:e2e:install
+npm run test:e2e
+```
 
 ## Documentação e ADRs
 
@@ -163,7 +270,7 @@ Restrições de formatação:
 
 - Não use travessão, meia-risca, reticências tipográficas, aspas curvas, setas ou símbolos decorativos. Use dois-pontos, vírgula, parênteses, `...` e aspas retas.
 - Exceção: o ponto médio `·` é o separador aceito entre metadados na interface (por exemplo, `Março/2026 · 3A · Prof. Ana`). O resto do texto segue as regras acima.
-- Evite segunda pessoa explícita (`você`) e pluralização com parênteses (`nota(s)`).
+- Evite segunda pessoa explícita e pluralização com parênteses.
 - Siga a sintaxe Markdown do GitHub: um único título de nível 1 por arquivo, hierarquia de títulos sem saltos, listas com `-`, cercas de código com linguagem e texto alternativo em imagens.
 - Use links relativos para arquivos do repositório e mantenha o texto do link em uma única linha.
 - Use alertas (`> [!NOTE]`, `> [!WARNING]`) com parcimônia, no máximo um ou dois por documento.
@@ -172,3 +279,19 @@ Restrições de formatação:
 ### Padrão da interface
 
 Os tokens visuais ficam em `src/app/globals.css`, sobre Tailwind CSS v4, e os componentes base em `src/components/ui/` (shadcn/ui). A tipografia usa Sora nos títulos, Plus Jakarta Sans no corpo e JetBrains Mono em código e fórmulas. A paleta parte do verde institucional `#008241`. Detalhes do design system em [docs/interface.md](docs/interface.md).
+
+## Releases e changelog
+
+As mudanças relevantes são registradas em [CHANGELOG.md](CHANGELOG.md), no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), com versionamento semântico. Mova as entradas da seção Não publicado para a versão correspondente ao publicar.
+
+Crie releases pelo GitHub CLI:
+
+```bash
+gh release create v1.1.0 --generate-notes
+```
+
+O build de produção da Vercel é disparado pelo push na `main`, e o workflow `migracoes.yml` aplica as migrações de banco.
+
+## Suporte e dúvidas
+
+Use as issues para dúvidas, sugestões e problemas. A triagem acontece em até 7 dias. Para vulnerabilidades, siga [SECURITY.md](SECURITY.md); para conduta, o [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
