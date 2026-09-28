@@ -13,20 +13,22 @@ npx prisma migrate deploy
 ## Suítes
 
 ```bash
-npm test               # tudo (unit, api, contratos, códigos e segurança)
-npm run test:unit      # bibliotecas puras (LaTeX, Markdown, código)
-npm run test:api       # isolamento RLS com o papel app_teste
-npm run test:contratos # API de ponta a ponta (exige o app no ar)
-npm run test:codigos   # códigos de acesso e console admin
-npm run test:seguranca # CSRF, cabeçalhos, cron, sessão e não enumeração
-npm run test:e2e       # interface (exige o app no ar)
+npm test                    # tudo (unit, api, contratos, códigos, segurança e destrutivas)
+npm run test:unit           # bibliotecas puras e guarda editorial
+npm run test:api            # isolamento RLS com o papel app_teste
+npm run test:contratos      # API de ponta a ponta (exige o app no ar)
+npm run test:codigos        # códigos de acesso e console admin
+npm run test:seguranca      # CSRF, cabeçalhos, cron, sessão e não enumeração
+npm run test:destrutivas    # lixeira, step-up e dry-run do backup
+npm run test:e2e:docker     # interface na imagem oficial, com o app no ar
+npm run test:e2e            # alternativa local, sobe o app sozinho
 ```
 
-- `test:unit` (`tests/unit/`): sem banco e sem rede. Também grava `.tex` de exemplo em `tests/tex/` para compilação manual com `tectonic`.
+- `test:unit` (`tests/unit/`): sem banco e sem rede. Inclui a guarda editorial `texto-ui.test.ts` e grava `.tex` de exemplo em `tests/tex/` para compilação manual com `tectonic`.
 - `test:api` (`tests/api/isolamento.test.ts`): prova as políticas RLS com massa fixa e limpeza ao final. O próprio comando aplica antes `prisma/scripts/rls-teste.sql`, que cria o papel `app_teste`, presente apenas em local e CI e ausente no Supabase. Exige `DATABASE_URL` com a migration aplicada.
 - `test:contratos` (`tests/api/contratos.test.ts`): verificações HTTP contra `TEST_BASE_URL` (padrão `http://127.0.0.1:3000`). A massa cria um admin no banco via `DATABASE_URL`, portanto ambas as variáveis são necessárias.
-- `test:codigos`, `test:seguranca` e `test:destrutivas` (`tests/api/destrutivas.test.ts`): fluxo de código, console admin, CSRF, cabeçalhos, cron, sessão, suspensão com step-up, lixeira e dry-run do backup, contra o app no ar.
-- `test:e2e` (`e2e/`): Playwright em 3 navegadores. Sobe `npm run dev` sozinho e prepara o admin fixo no `globalSetup`. Usa `http://localhost:3000` como base, host que o Playwright trata como local para enviar o cookie de sessão `Secure` em `page.request`. Fora do CI, execute localmente.
+- `test:codigos` e `test:seguranca` cobrem o fluxo de código, o console admin, CSRF, cabeçalhos, cron e sessão contra o app no ar. `test:destrutivas` cobre suspensão com step-up, lixeira e dry-run do backup e não roda no CI.
+- `test:e2e:docker` roda o Playwright na imagem oficial da Microsoft com o aplicativo no ar; `test:e2e` é a alternativa local, sobe `npm run dev` sozinho e prepara o admin fixo no `globalSetup`. Usa `http://localhost:3000` como base, host que o Playwright trata como local para enviar o cookie de sessão `Secure` em `page.request`.
 
 ## Limites de tentativas
 
