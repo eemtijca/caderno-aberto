@@ -1,6 +1,6 @@
 # Verificações de qualidade: formatação, lint, tipos e testes unitários.
 # CI: roda apenas em pull requests. O CD acontece no push (db-migrate e Vercel).
-name: Quality
+name: Qualidade
 
 on:
   pull_request:

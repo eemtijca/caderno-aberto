@@ -5,6 +5,8 @@
     "ghcr.io/devcontainers/features/docker-in-docker:4": {
       "version": "latest",
       "moby": false
-    }
-  }
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "npm install"
 }

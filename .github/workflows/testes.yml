@@ -1,6 +1,6 @@
 # Sobe app e banco via Docker Compose e roda testes de isolamento e contratos.
 # CI: roda apenas em pull requests.
-name: Testes de Banco
+name: Testes
 
 on:
   pull_request:

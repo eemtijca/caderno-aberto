@@ -1,4 +1,4 @@
-# Caderno Aberto. Sobreposição do Compose somente para o CI (test-db.yml).
+# Caderno Aberto. Sobreposição do Compose somente para o CI (testes.yml).
 # Reaproveita compose.yml e adiciona apenas o necessário aos testes:
 # segredos fictícios. As imagens usam o volume uploads:/data/imagens do
 # compose base, sem ajustes manuais.
