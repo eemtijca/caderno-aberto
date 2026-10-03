@@ -1,0 +1,38 @@
+# Aplica etiquetas de área aos pull requests conforme os caminhos alterados.
+"area: notas":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/lib/notas/**"
+          - "src/components/notas/**"
+          - "src/app/api/notas/**"
+
+"area: editor":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/components/editor/**"
+
+"area: links":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/app/l/**"
+          - "src/app/api/links/**"
+          - "src/app/api/publico/**"
+
+"area: admin":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/app/api/admin/**"
+          - "src/components/vistas/admin/**"
+
+"area: infra":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+          - ".devcontainer/**"
+          - "docker/**"
+          - "prisma/**"
+          - "scripts/**"
+          - "compose.yml"
+          - "Dockerfile"
+          - "next.config.ts"
+          - "vercel.json"

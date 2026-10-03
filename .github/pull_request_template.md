@@ -1,14 +1,10 @@
 ## Descrição
 
-Descreva o problema e o resultado esperado, o que mudou e por quê.
+Descreva o problema, a solução e o motivo da mudança.
 
 ## Issue relacionada
 
 Closes #
-
-## Como validar
-
-Informe os comandos executados e, quando aplicável, os passos de interface. Inclua capturas de antes e depois em mudanças visuais.
 
 ## Tipo de mudança
 
@@ -18,16 +14,45 @@ Informe os comandos executados e, quando aplicável, os passos de interface. Inc
 - [ ] Documentação
 - [ ] Testes ou CI
 
+## Etiquetas
+
+Aplique ao menos uma etiqueta de tipo e uma de área com `gh pr edit --add-label`. Pull requests do Dependabot recebem `dependencies` e dispensam as demais.
+
+- Tipo: `bug`, `enhancement`, `documentation`, `refactor`, `testes`, `ci`, `desempenho` ou `manutencao`
+- Área: `area: notas`, `area: editor`, `area: links`, `area: admin` ou `area: infra`
+
+## Commits
+
+- [ ] Cada commit é uma mudança lógica completa e revisável, sem trabalho em andamento.
+- [ ] O histórico exposto passou por `git rebase -i --autosquash` e está limpo.
+- [ ] Todos os commits do assunto estão neste único pull request.
+- [ ] O título segue Conventional Commits, no formato `tipo(escopo): descrição`.
+
+## Como validar
+
+Informe os comandos executados e, quando aplicável, os passos de interface. Inclua capturas de antes e depois em mudanças visuais.
+
 ## Riscos e migrações
 
-Descreva riscos, migrações de banco e variáveis de ambiente novas. Use "Não se aplica" quando não houver.
+Descreva riscos, migrações de banco, variáveis de ambiente novas e mudanças incompatíveis. Use "Não se aplica" quando não houver.
+
+## Notas para o CHANGELOG
+
+Escreva a entrada da seção Não publicado ou informe "Não se aplica".
+
+## Uso de IA
+
+Informe se houve apoio de ferramentas de IA e como o resultado foi revisado. A responsabilidade pela mudança é de quem envia. Commits com geração relevante levam o rodapé `Assisted-by: ferramenta:modelo`.
 
 ## Checklist
 
+- [ ] Abri o pull request somente com o trabalho finalizado.
+- [ ] Se precisei mexer depois da abertura, converti para rascunho com `gh pr ready --undo` e só marquei como pronto com tudo verde.
 - [ ] Segui o padrão de branches e commits do [CONTRIBUTING.md](../CONTRIBUTING.md).
 - [ ] Revisei o próprio diff antes de pedir revisão.
 - [ ] Rodei `npm run format:check`, `npm run lint` e `npm run tsc`.
-- [ ] Rodei `npm run test:unit` e `npm test` com o aplicativo no ar.
+- [ ] Rodei `npm run test:unit`.
+- [ ] Rodei `npm test` com o aplicativo no ar e o banco migrado.
 - [ ] Rodei `npm run test:e2e:docker` quando a mudança afeta a interface.
 - [ ] Atualizei a documentação correspondente e o CHANGELOG.md.
 - [ ] Revisei a segurança quando a mudança toca dependências, autenticação, permissões, workflows ou dados sensíveis.
