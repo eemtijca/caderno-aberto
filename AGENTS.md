@@ -31,6 +31,7 @@ Pré-requisitos: Node 24 e Docker com Compose, ou um PostgreSQL 15 ou superior, 
 - Ponta a ponta: `npm run test:e2e:docker` (imagem oficial, aplicativo no ar) ou `npm run test:e2e` como alternativa local; Firefox e WebKit são de execução local.
 - Banco: `npm run criar-admin` para o administrador inicial e `npx prisma migrate deploy` para aplicar migrações. O build da Vercel não migra.
 - Guarda editorial: `npx vitest run tests/unit/texto-ui.test.ts`.
+- Capturas do README: `npm run capturas:readme` ou `npm run capturas:readme:docker`, com o aplicativo no ar e o banco migrado. Os PNGs ficam em `docs/imagens/` e não são editados à mão.
 - Etiquetas: `npm run etiquetas:sync` cria ou atualiza as etiquetas do GitHub conforme `.github/labels.json`.
 
 ## Ferramentas externas

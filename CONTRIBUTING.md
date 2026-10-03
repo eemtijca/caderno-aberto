@@ -270,6 +270,7 @@ As suítes combinam unidade, integração da API, isolamento no banco, ações d
 | Segurança e sessão | Aplicativo no ar e banco          | `npm run test:seguranca`                        |
 | Destrutivas        | Aplicativo no ar e banco          | `npm run test:destrutivas`                      |
 | E2E (Playwright)   | Aplicativo no ar                  | `npm run test:e2e:docker` ou `npm run test:e2e` |
+| Capturas do README | Aplicativo no ar e banco migrado  | `npm run capturas:readme`                       |
 
 Regras:
 
@@ -286,6 +287,8 @@ npm run test:e2e:docker:chromium   # apenas o Chromium
 ```
 
 A variável `TEST_BASE_URL` aponta para o aplicativo (padrão `http://localhost:3000`), e `tests/playwright-container.sh` aceita `PLAYWRIGHT_IMAGE`, `PLAYWRIGHT_DOCKER_NETWORK` e `PLAYWRIGHT_DOCKER_USER`. Mantenha a versão da imagem igual à do `@playwright/test` em `package.json`. Use `localhost`, e não `127.0.0.1`, porque o Playwright só trata esse host como local para enviar o cookie de sessão `Secure`.
+
+As capturas do README são geradas por `e2e/imagens.spec.ts` e gravadas em `docs/imagens/`, com o aplicativo no ar e o banco migrado. Regenera pelo comando `npm run capturas:readme` (ou `npm run capturas:readme:docker`, na imagem oficial). Os PNGs são versionados e não devem ser editados à mão; mudanças de interface pedem uma nova geração e revisão do diff.
 
 A instalação local de navegadores fica como alternativa para Firefox e WebKit:
 
