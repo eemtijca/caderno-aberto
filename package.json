@@ -26,6 +26,7 @@
     "test:e2e:docker:chromium": "bash tests/playwright-container.sh --project=chromium",
     "test:e2e:install": "playwright install --with-deps chromium firefox webkit",
     "test:e2e:ui": "playwright test --ui",
+    "etiquetas:sync": "node scripts/sincronizar-etiquetas.mjs",
     "contract:emit": "prisma generate",
     "vercel-build": "prisma generate && next build"
   },
