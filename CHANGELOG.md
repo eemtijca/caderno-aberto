@@ -8,6 +8,10 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Adicionado
 
+- Implantação em AWS, Azure e GCP com Terraform em `infra/terraform/<nuvem>`, com modo local nos emuladores do Floci e modo de produção com serviços gerenciados, testada por `npm run infra:floci` e pelo workflow `infra.yml`.
+- Driver `azure-blob` para armazenamento de imagens no Azure Blob Storage, com chave compartilhada ou identidade gerenciada.
+- Guia [docs/implantacao-nuvem.md](docs/implantacao-nuvem.md) e decisão registrada no [ADR-011](docs/adr/011-implantacao-multinuvem.md).
+- Workflow `expurgo.yml` que dispara a limpeza de contas e da lixeira diária com `CRON_SECRET`.
 - AGENTS.md com orientações para agentes de IA.
 - Guia de contribuição ampliado com fluxo de issues, convenções de commit e pull request, política de revisão, releases e contribuições assistidas por IA.
 - README reestruturado no padrão de repositórios de referência, com selos, sumário, demonstração, arquitetura, deploy, FAQ, suporte e créditos.

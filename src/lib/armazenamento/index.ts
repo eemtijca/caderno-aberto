@@ -1,5 +1,6 @@
 // Fábrica do armazenamento a partir de STORAGE_DRIVER.
 import { STORAGE_DRIVER } from "@/lib/ambiente";
+import { provedorAzureBlob } from "./provedor-azure-blob";
 import { provedorDisco } from "./provedor-disco";
 import { provedorS3 } from "./provedor-s3";
 import type { ProvedorArmazenamento } from "./tipos";
@@ -9,7 +10,9 @@ let provedor: ProvedorArmazenamento | null = null;
 
 export function obterArmazenamento(): ProvedorArmazenamento {
   if (!provedor) {
-    provedor = STORAGE_DRIVER === "s3" ? provedorS3() : provedorDisco();
+    if (STORAGE_DRIVER === "s3") provedor = provedorS3();
+    else if (STORAGE_DRIVER === "azure-blob") provedor = provedorAzureBlob();
+    else provedor = provedorDisco();
   }
   return provedor;
 }

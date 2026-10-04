@@ -44,3 +44,14 @@ public/vendor/
 tests/tex/*.tex
 tests/tex/*.pdf
 dist/
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.local
+!*.tfvars.example
+crash.log
+crash.*.log
