@@ -6,7 +6,7 @@ Caderno Aberto: plataforma web gratuita, multiusuário e mobile-first para profe
 
 - Leia o `CONTRIBUTING.md` antes de qualquer mudança: ele reúne o fluxo de issues, etiquetas, branches, commits, pull requests, padrões de código, banco, formatação e testes.
 - `tests/unit/texto-ui.test.ts` varre todos os `.ts` e `.tsx` de `src` e reprova travessão, meia-risca, reticências tipográficas, aspas curvas, setas, aspas angulares, entidades HTML de aspas, segunda pessoa e plural escrito com parênteses. Rode `npx vitest run tests/unit/texto-ui.test.ts` depois de escrever texto de interface.
-- Commits seguem Conventional Commits em português, no imperativo, com escopo opcional: `fix(admin): corrige ...`. Branches usam `tipo/descricao-curta`; branches de agentes usam o prefixo do agente (`ai/`, `claude/`, `codex/`, `copilot/` ou `cursor/`).
+- Commits seguem Conventional Commits em português, no imperativo, com escopo opcional: `fix(admin): corrige ...`. Branches usam `tipo/descricao-curta`, inclusive as criadas por agentes de IA; a autoria assistida fica no rodapé `Assisted-by` do commit.
 - TypeScript é estrito. O ESLint segue as regras do Next com alguns ajustes do projeto; não desative regras novas sem justificativa. O gerenciador é npm, com `package-lock.json`; não use bun, yarn nem pnpm.
 - Cada arquivo próprio começa com um cabeçalho curto, de uma a duas linhas, descrevendo seu papel.
 - Nomes de domínio em português (`notas`, `turmas`, `links`), termos de infraestrutura em inglês quando consagrados (`backup`, `token`). As regras de banco (CHECKs, funções, gatilhos e RLS) vivem nas migrações SQL e não no schema Prisma; nunca edite uma migração aplicada.
