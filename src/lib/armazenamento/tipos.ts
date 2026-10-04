@@ -5,7 +5,7 @@ export interface ArquivoGuardado {
 }
 
 export interface ProvedorArmazenamento {
-  readonly nome: "disk" | "s3";
+  readonly nome: "disk" | "s3" | "azure-blob";
   salvar(caminho: string, bytes: Buffer, mime: string): Promise<void>;
   ler(caminho: string): Promise<ArquivoGuardado | null>;
   remover(caminho: string): Promise<void>;

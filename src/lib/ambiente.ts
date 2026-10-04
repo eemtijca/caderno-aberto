@@ -6,13 +6,18 @@ const esquema = z.object({
   // Conexão do CLI Prisma. Opcional em local/CI, cai em DATABASE_URL.
   DIRECT_URL: z.string().min(1).optional(),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET precisa de ao menos 32 caracteres."),
-  STORAGE_DRIVER: z.enum(["disk", "s3"]).default("disk"),
+  STORAGE_DRIVER: z.enum(["disk", "s3", "azure-blob"]).default("disk"),
   UPLOAD_DIR: z.string().default("/data/imagens"),
   STORAGE_S3_ENDPOINT: z.string().optional(),
   STORAGE_S3_REGION: z.string().optional(),
   STORAGE_S3_BUCKET: z.string().optional(),
+  // Sem as chaves, o SDK do S3 usa a cadeia padrão de credenciais do ambiente
+  // (por exemplo, o papel da tarefa na AWS).
   STORAGE_S3_ACCESS_KEY: z.string().optional(),
   STORAGE_S3_SECRET_KEY: z.string().optional(),
+  AZURE_STORAGE_CONTAINER: z.string().optional(),
+  AZURE_STORAGE_CONNECTION_STRING: z.string().optional(),
+  AZURE_STORAGE_ACCOUNT_URL: z.string().optional(),
   CRON_SECRET: z.string().optional(),
   // Vazia conta como ausente (Compose e shells entregam "" sem valor).
   APP_URL: z.preprocess(
@@ -56,6 +61,9 @@ const env = parsed.success
       STORAGE_S3_BUCKET: undefined,
       STORAGE_S3_ACCESS_KEY: undefined,
       STORAGE_S3_SECRET_KEY: undefined,
+      AZURE_STORAGE_CONTAINER: undefined,
+      AZURE_STORAGE_CONNECTION_STRING: undefined,
+      AZURE_STORAGE_ACCOUNT_URL: undefined,
       CRON_SECRET: undefined,
       APP_URL: undefined,
       AUTH_LIMITE_TENTATIVAS: 30,
@@ -69,15 +77,29 @@ const env = parsed.success
     };
 
 if (env.STORAGE_DRIVER === "s3") {
-  const faltando = [
-    "STORAGE_S3_ENDPOINT",
-    "STORAGE_S3_REGION",
-    "STORAGE_S3_BUCKET",
-    "STORAGE_S3_ACCESS_KEY",
-    "STORAGE_S3_SECRET_KEY",
-  ].filter((chave) => !env[chave as keyof typeof env]);
+  const faltando = ["STORAGE_S3_ENDPOINT", "STORAGE_S3_REGION", "STORAGE_S3_BUCKET"].filter(
+    (chave) => !env[chave as keyof typeof env],
+  );
   if (faltando.length > 0) {
     throw new Error(`STORAGE_DRIVER=s3 exige ${faltando.join(", ")}.`);
+  }
+  // As chaves são opcionais, mas sempre em par: sem elas vale a cadeia padrão
+  // de credenciais do ambiente.
+  if (Boolean(env.STORAGE_S3_ACCESS_KEY) !== Boolean(env.STORAGE_S3_SECRET_KEY)) {
+    throw new Error(
+      "STORAGE_S3_ACCESS_KEY e STORAGE_S3_SECRET_KEY devem ser informadas em conjunto.",
+    );
+  }
+}
+
+if (env.STORAGE_DRIVER === "azure-blob") {
+  if (!env.AZURE_STORAGE_CONTAINER) {
+    throw new Error("STORAGE_DRIVER=azure-blob exige AZURE_STORAGE_CONTAINER.");
+  }
+  if (!env.AZURE_STORAGE_CONNECTION_STRING && !env.AZURE_STORAGE_ACCOUNT_URL) {
+    throw new Error(
+      "STORAGE_DRIVER=azure-blob exige AZURE_STORAGE_CONNECTION_STRING ou AZURE_STORAGE_ACCOUNT_URL.",
+    );
   }
 }
 
@@ -98,6 +120,9 @@ export const STORAGE_S3_REGION = env.STORAGE_S3_REGION ?? "";
 export const STORAGE_S3_BUCKET = env.STORAGE_S3_BUCKET ?? "";
 export const STORAGE_S3_ACCESS_KEY = env.STORAGE_S3_ACCESS_KEY ?? "";
 export const STORAGE_S3_SECRET_KEY = env.STORAGE_S3_SECRET_KEY ?? "";
+export const AZURE_STORAGE_CONTAINER = env.AZURE_STORAGE_CONTAINER ?? "";
+export const AZURE_STORAGE_CONNECTION_STRING = env.AZURE_STORAGE_CONNECTION_STRING ?? "";
+export const AZURE_STORAGE_ACCOUNT_URL = env.AZURE_STORAGE_ACCOUNT_URL ?? "";
 export const CRON_SECRET = env.CRON_SECRET ?? "";
 export const APP_URL = env.APP_URL ?? "";
 export const LIMITE_TENTATIVAS_LOGIN = env.AUTH_LIMITE_TENTATIVAS;

@@ -4,31 +4,34 @@ Todas as variáveis passam por `src/lib/ambiente.ts`, validado com zod na partid
 
 ## Referência
 
-| Variável                 | Obrigatória                | Padrão                                                | Descrição                                                                                   |
-| ------------------------ | -------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | Sim                        | `postgresql://caderno:caderno@localhost:5432/caderno` | Conexão de runtime com o PostgreSQL.                                                        |
-| `DIRECT_URL`             | Onde o runtime usa `:6543` | `DATABASE_URL`                                        | Conexão do CLI Prisma para migrações.                                                       |
-| `AUTH_SECRET`            | Sim                        | Nenhum                                                | Segredo do JWT de sessão, com no mínimo 32 caracteres. Gere com `openssl rand -base64 32`.  |
-| `CRON_SECRET`            | Sim em produção            | Vazio                                                 | Segredo da purga. A Vercel envia automaticamente como `Authorization` no Cron.              |
-| `APP_URL`                | Sim em produção            | Host do pedido                                        | Origem canônica dos links e comparação de host no CSRF. Precisa ser uma URL válida.         |
-| `ADMIN_EMAIL`            | No bootstrap               | Vazio                                                 | E-mail do administrador inicial, usado pelo script `criar-admin` e na partida do container. |
-| `ADMIN_SENHA`            | No bootstrap               | Vazio                                                 | Senha do administrador inicial (8 a 256 caracteres). Nunca versionar.                       |
-| `ADMIN_NOME`             | Não                        | Parte local do e-mail                                 | Nome exibido do administrador inicial.                                                      |
-| `STORAGE_DRIVER`         | Não                        | `disk`                                                | Armazenamento de imagens: `disk` ou `s3`.                                                   |
-| `UPLOAD_DIR`             | Com `STORAGE_DRIVER=disk`  | `/data/imagens`                                       | Diretório local das imagens.                                                                |
-| `STORAGE_S3_ENDPOINT`    | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Endpoint compatível com S3.                                                                 |
-| `STORAGE_S3_REGION`      | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Região do bucket.                                                                           |
-| `STORAGE_S3_BUCKET`      | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Nome do bucket (precisa existir).                                                           |
-| `STORAGE_S3_ACCESS_KEY`  | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Chave de acesso.                                                                            |
-| `STORAGE_S3_SECRET_KEY`  | Com `STORAGE_DRIVER=s3`    | Vazio                                                 | Chave secreta.                                                                              |
-| `AUTH_LIMITE_TENTATIVAS` | Não                        | `30`                                                  | Tentativas por IP a cada 5 minutos nas rotas de autenticação.                               |
-| `AUTH_LIMITE_CODIGO`     | Não                        | `5`                                                   | Tentativas de verificação de código por e-mail a cada 5 minutos.                            |
-| `APROVACAO_DUPLA`        | Não                        | `0`                                                   | Com `1`, ações destrutivas de admin exigem aprovação de um segundo administrador.           |
-| `MANUTENCAO`             | Não                        | `0`                                                   | Com `1`, somente administradores e rotas essenciais acessam a aplicação.                    |
-| `LIXEIRA_DIAS`           | Não                        | `30`                                                  | Retenção de notas e links na lixeira antes da purga.                                        |
-| `BACKUP_BEFORE_MIGRATE`  | Não                        | `0`                                                   | Com `1`, o entrypoint grava um dump lógico antes de aplicar migrações.                      |
-| `BACKUP_DIR`             | Não                        | `/data/backups`                                       | Diretório dos dumps anteriores à migração.                                                  |
-| `CODIGO_EXPIRA_MINUTOS`  | Não                        | `60`                                                  | Validade do código de acesso, em minutos.                                                   |
+| Variável                          | Obrigatória                  | Padrão                                                | Descrição                                                                                   |
+| --------------------------------- | ---------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                    | Sim                          | `postgresql://caderno:caderno@localhost:5432/caderno` | Conexão de runtime com o PostgreSQL.                                                        |
+| `DIRECT_URL`                      | Onde o runtime usa `:6543`   | `DATABASE_URL`                                        | Conexão do CLI Prisma para migrações.                                                       |
+| `AUTH_SECRET`                     | Sim                          | Nenhum                                                | Segredo do JWT de sessão, com no mínimo 32 caracteres. Gere com `openssl rand -base64 32`.  |
+| `CRON_SECRET`                     | Sim em produção              | Vazio                                                 | Segredo da purga. A Vercel envia automaticamente como `Authorization` no Cron.              |
+| `APP_URL`                         | Sim em produção              | Host do pedido                                        | Origem canônica dos links e comparação de host no CSRF. Precisa ser uma URL válida.         |
+| `ADMIN_EMAIL`                     | No bootstrap                 | Vazio                                                 | E-mail do administrador inicial, usado pelo script `criar-admin` e na partida do container. |
+| `ADMIN_SENHA`                     | No bootstrap                 | Vazio                                                 | Senha do administrador inicial (8 a 256 caracteres). Nunca versionar.                       |
+| `ADMIN_NOME`                      | Não                          | Parte local do e-mail                                 | Nome exibido do administrador inicial.                                                      |
+| `STORAGE_DRIVER`                  | Não                          | `disk`                                                | Armazenamento de imagens: `disk`, `s3` ou `azure-blob`.                                     |
+| `UPLOAD_DIR`                      | Com `STORAGE_DRIVER=disk`    | `/data/imagens`                                       | Diretório local das imagens.                                                                |
+| `STORAGE_S3_ENDPOINT`             | Com `STORAGE_DRIVER=s3`      | Vazio                                                 | Endpoint compatível com S3.                                                                 |
+| `STORAGE_S3_REGION`               | Com `STORAGE_DRIVER=s3`      | Vazio                                                 | Região do bucket.                                                                           |
+| `STORAGE_S3_BUCKET`               | Com `STORAGE_DRIVER=s3`      | Vazio                                                 | Nome do bucket (precisa existir).                                                           |
+| `STORAGE_S3_ACCESS_KEY`           | Não                          | Vazio                                                 | Chave de acesso; as duas chaves são informadas em conjunto.                                 |
+| `STORAGE_S3_SECRET_KEY`           | Não                          | Vazio                                                 | Chave secreta; sem o par vale a cadeia padrão de credenciais.                               |
+| `AZURE_STORAGE_CONTAINER`         | Com `azure-blob`             | Vazio                                                 | Contêiner do Blob Storage (precisa existir).                                                |
+| `AZURE_STORAGE_CONNECTION_STRING` | Alternativa com `azure-blob` | Vazio                                                 | Conexão completa, usada no emulador e nos testes.                                           |
+| `AZURE_STORAGE_ACCOUNT_URL`       | Alternativa com `azure-blob` | Vazio                                                 | URL da conta com identidade gerenciada.                                                     |
+| `AUTH_LIMITE_TENTATIVAS`          | Não                          | `30`                                                  | Tentativas por IP a cada 5 minutos nas rotas de autenticação.                               |
+| `AUTH_LIMITE_CODIGO`              | Não                          | `5`                                                   | Tentativas de verificação de código por e-mail a cada 5 minutos.                            |
+| `APROVACAO_DUPLA`                 | Não                          | `0`                                                   | Com `1`, ações destrutivas de admin exigem aprovação de um segundo administrador.           |
+| `MANUTENCAO`                      | Não                          | `0`                                                   | Com `1`, somente administradores e rotas essenciais acessam a aplicação.                    |
+| `LIXEIRA_DIAS`                    | Não                          | `30`                                                  | Retenção de notas e links na lixeira antes da purga.                                        |
+| `BACKUP_BEFORE_MIGRATE`           | Não                          | `0`                                                   | Com `1`, o entrypoint grava um dump lógico antes de aplicar migrações.                      |
+| `BACKUP_DIR`                      | Não                          | `/data/backups`                                       | Diretório dos dumps anteriores à migração.                                                  |
+| `CODIGO_EXPIRA_MINUTOS`           | Não                          | `60`                                                  | Validade do código de acesso, em minutos.                                                   |
 
 ## Conexão com o banco
 
@@ -51,7 +54,7 @@ No Compose, defina `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME` no `.env`; o entr
 
 ## Armazenamento de imagens
 
-`disk` grava em `UPLOAD_DIR` (volume Docker no Compose). `s3` usa as cinco variáveis `STORAGE_S3_*` e serve qualquer provedor compatível, como MinIO ou Cloudflare R2. O bucket precisa existir e aceitar os tipos de imagem permitidos. Na Vercel o disco é efêmero, portanto imagens exigem `s3`. Detalhes em [operacao.md](operacao.md).
+`disk` grava em `UPLOAD_DIR` (volume Docker no Compose). `s3` usa as variáveis `STORAGE_S3_*` e serve qualquer provedor compatível, como MinIO, Cloudflare R2, AWS ou GCS com chaves HMAC. O bucket precisa existir e aceitar os tipos de imagem permitidos. `azure-blob` usa o contêiner `AZURE_STORAGE_CONTAINER`, com `AZURE_STORAGE_CONNECTION_STRING` (emulador e testes) ou `AZURE_STORAGE_ACCOUNT_URL` com identidade gerenciada. Na Vercel o disco é efêmero, portanto imagens exigem outro driver. Detalhes em [operacao.md](operacao.md).
 
 ## Regras
 

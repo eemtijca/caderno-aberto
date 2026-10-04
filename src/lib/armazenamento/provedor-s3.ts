@@ -20,15 +20,21 @@ let cliente: S3Client | null = null;
 
 function obterCliente(): S3Client {
   if (!cliente) {
+    // Sem as chaves explícitas, o SDK usa a cadeia padrão do ambiente; na AWS
+    // isso permite o papel da tarefa sem credenciais de longa duração.
+    const credenciais =
+      STORAGE_S3_ACCESS_KEY && STORAGE_S3_SECRET_KEY
+        ? {
+            accessKeyId: STORAGE_S3_ACCESS_KEY,
+            secretAccessKey: STORAGE_S3_SECRET_KEY,
+          }
+        : undefined;
     cliente = new S3Client({
       // Path-style amplia a compatibilidade com serviços S3 alternativos.
       forcePathStyle: true,
       region: STORAGE_S3_REGION,
       endpoint: STORAGE_S3_ENDPOINT,
-      credentials: {
-        accessKeyId: STORAGE_S3_ACCESS_KEY,
-        secretAccessKey: STORAGE_S3_SECRET_KEY,
-      },
+      credentials: credenciais,
     });
   }
   return cliente;
