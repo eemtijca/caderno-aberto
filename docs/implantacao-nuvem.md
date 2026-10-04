@@ -43,7 +43,7 @@ infra/
     gcp/
 ```
 
-Cada módulo tem `versions.tf`, `providers.tf`, `variables.tf`, `locals.tf`, os recursos separados por assunto, `outputs.tf` e os exemplos `terraform.tfvars.example`, `terraform.tfvars.local.example` e, na AWS, `backend.hcl.example`. Os arquivos `.tfvars` reais não são versionados.
+Cada módulo tem `versions.tf`, `providers.tf`, `variables.tf`, `locals.tf`, os recursos separados por assunto, `outputs.tf` e os exemplos `terraform.tfvars.example`, `terraform.tfvars.local.example` e `backend.hcl.example` em cada nuvem. Os arquivos `.tfvars` reais não são versionados.
 
 ## Comandos
 
@@ -62,7 +62,7 @@ O script `infra/floci/testar.sh` constrói a imagem `caderno-aberto:local` quand
 
 1. Publique a imagem no registro da nuvem e informe `imagem_aplicacao`.
 2. Copie `terraform.tfvars.example` para `terraform.tfvars` e ajuste os valores. Na AWS, informe também `certificado_arn`; o balanceador só encaminha HTTP na ausência do certificado no modo local.
-3. Configure o backend remoto. Na AWS há um exemplo em `backend.hcl.example` com bucket versionado, criptografia e lockfile; no Azure e no GCP use o backend nativo correspondente.
+3. Configure o backend remoto. Cada nuvem tem um exemplo em `backend.hcl.example`: na AWS com bucket versionado, criptografia e lockfile; no Azure com conta de armazenamento e autenticação do Entra ID; no GCP com bucket versionado.
 4. Rode `terraform init` e `terraform plan` e revise o plano antes de aplicar. O repositório não aplica em produção por conta própria.
 
 As senhas do banco, o `AUTH_SECRET` e o `CRON_SECRET` nascem de valores efêmeros e chegam aos cofres por argumentos write-only, sem registro no state. O caminho de produção de cada nuvem foi validado por `terraform validate`; os testes automatizados cobrem o modo local.
@@ -70,6 +70,14 @@ As senhas do banco, o `AUTH_SECRET` e o `CRON_SECRET` nascem de valores efêmero
 ## Migrações
 
 O entrypoint do contêiner aguarda o banco, aplica as migrações com `node ./docker/app/migrar.mjs` e só então sobe o servidor. O migrador usa `DIRECT_URL` e cai para `DATABASE_URL` quando ela não existe; nos módulos de nuvem as duas apontam para o mesmo banco e o mesmo papel dono do schema, porque o caderno não tem papel de runtime separado. Em mais de uma réplica as migrações podem competir; o primeiro deploy deve acontecer com uma réplica antes de escalar.
+
+## Limpeza agendada
+
+A rota `GET /api/conta/restaurar?confirmar=1` remove contas com carência vencida e itens da lixeira fora do prazo e exige `Authorization: Bearer CRON_SECRET`. Sem `confirmar=1` a rota apenas pré-visualiza; sem o segredo configurado no servidor responde 503 e com segredo inválido, 403.
+
+O workflow `expurgo.yml` dispara a rota todos os dias às 4h (UTC) e também aceita execução manual. Configure o segredo `CRON_SECRET` no repositório e, se quiser apontar para outro endereço, a variável `EXPURGO_APP_URL` (o padrão é o endereço publicado na Vercel). Com a Vercel ativa, o cron do `vercel.json` já dispara a mesma rota; mantenha apenas uma das agendas.
+
+Em implantações na nuvem valem as mesmas alternativas de agendador nativo: EventBridge Scheduler na AWS, job agendado do Container Apps ou Logic Apps no Azure e Cloud Scheduler no GCP.
 
 ## Limites do modo local
 
@@ -89,4 +97,4 @@ O entrypoint do contêiner aguarda o banco, aplica as migrações com `node ./do
 - O bucket de imagens não aceita acesso público; a leitura continua passando pela aplicação.
 - Na AWS o acesso ao S3 usa o papel da tarefa, sem chaves de longa duração; no Azure vale a identidade gerenciada e, no GCP, as chaves HMAC ficam no Secret Manager.
 - As tarefas e o banco ficam em sub-redes privadas, com grupos de segurança encadeados e sem portas de banco expostas.
-- O domínio próprio é opcional. Sem ele, o TLS usa os endpoints gerenciados de cada plataforma.
+- O domínio próprio é opcional. Sem ele, o TLS usa os endpoints gerenciados de cada plataforma. Na AWS o alias é criado no Route 53 quando `dominio` e `zona_hospedada_id` são informados, junto do `certificado_arn` validado. No Azure e no GCP o binding do hostname com certificado gerenciado acontece fora do Terraform; nesses dois provedores a variável `dominio` apenas compõe o `APP_URL` e deve ser preenchida depois do binding.
