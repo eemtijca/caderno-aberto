@@ -18,6 +18,7 @@
 | Rodar e escrever testes               | [testes.md](testes.md) e [../tests/README.md](../tests/README.md) |
 | Revisar segurança                     | [seguranca.md](seguranca.md) e [../SECURITY.md](../SECURITY.md)   |
 | Publicar                              | [deploy.md](deploy.md)                                            |
+| Implantar em AWS, Azure ou GCP        | [implantacao-nuvem.md](implantacao-nuvem.md)                      |
 | Contribuir                            | [../CONTRIBUTING.md](../CONTRIBUTING.md)                          |
 
 ## Decisões de arquitetura
@@ -34,6 +35,7 @@ As decisões estruturais ficam registradas como ADRs (Architecture Decision Reco
 - [ADR-008: histórico de edição estrutural dos blocos](adr/008-historico-de-edicao.md)
 - [ADR-009: ações em lote por recurso](adr/009-acoes-em-lote.md)
 - [ADR-010: esvaziar a lixeira](adr/010-esvaziar-lixeira.md)
+- [ADR-011: implantação em AWS, Azure e GCP com Terraform](adr/011-implantacao-multinuvem.md)
 
 Novas decisões seguem o formato descrito em [../CONTRIBUTING.md](../CONTRIBUTING.md).
 
