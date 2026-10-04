@@ -4,30 +4,5 @@
   "buildCommand": "npm run vercel-build",
   "installCommand": "npm ci",
   "outputDirectory": ".next",
-  "cleanUrls": true,
-  "crons": [
-    {
-      "path": "/api/conta/restaurar?confirmar=1",
-      "schedule": "0 4 * * *"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
-      ]
-    }
-  ]
+  "cleanUrls": true
 }
