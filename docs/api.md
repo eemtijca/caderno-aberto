@@ -70,7 +70,7 @@ Rotas HTTP do Caderno Aberto. Todas ficam sob `/api` e respondem JSON, exceto do
 
 ### `GET /api`
 
-Resposta `200` com `{ "app": "Caderno Aberto", "versao": "0.1.0" }`.
+Resposta `200` com `{ "app": "Caderno Aberto", "versao": "0.1.0", "commit": "<revisão>" }`.
 
 ## Acesso por código
 
