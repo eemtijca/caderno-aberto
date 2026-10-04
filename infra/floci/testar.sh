@@ -60,6 +60,32 @@ iniciar_terraform() {
   terraform -chdir="$1" init -no-color -input=false
 }
 
+# Os emuladores oscilam em operações longas; uma segunda tentativa deixa o
+# teste estável sem esconder erros de configuração.
+aplicar_terraform() {
+  local diretorio="$1"
+  shift
+  if timeout 1800 terraform -chdir="$diretorio" apply -no-color -input=false -auto-approve \
+    -parallelism=4 "$@"; then
+    return 0
+  fi
+  log "A primeira tentativa de apply em ${diretorio} falhou; repetindo."
+  timeout 1800 terraform -chdir="$diretorio" apply -no-color -input=false -auto-approve \
+    -parallelism=4 "$@"
+}
+
+destruir_terraform() {
+  local diretorio="$1"
+  shift
+  if timeout 1800 terraform -chdir="$diretorio" destroy -no-color -input=false -auto-approve \
+    -parallelism=4 "$@"; then
+    return 0
+  fi
+  log "A primeira tentativa de destroy em ${diretorio} falhou; repetindo."
+  timeout 1800 terraform -chdir="$diretorio" destroy -no-color -input=false -auto-approve \
+    -parallelism=4 "$@"
+}
+
 # O alvo recém-registrado no balanceador e a revisão nova do Container Apps
 # levam alguns segundos até responder; a sonda tenta novamente antes de falhar.
 aguardar_saude() {
@@ -108,8 +134,7 @@ habilitar_alarmes  = false
 EOF
 
   iniciar_terraform infra/terraform/aws
-  timeout 1800 terraform -chdir=infra/terraform/aws apply -no-color -input=false -auto-approve \
-    -var-file=terraform.tfvars.local
+  aplicar_terraform infra/terraform/aws -var-file=terraform.tfvars.local
 
   local alb
   alb="$(terraform -chdir=infra/terraform/aws output -raw alb_dns)"
@@ -117,8 +142,7 @@ EOF
   aguardar_saude "http://${ip_floci}/api" "${alb}"
 
   if [ "$MANTER" != 'true' ]; then
-    timeout 1800 terraform -chdir=infra/terraform/aws destroy -no-color -input=false \
-      -auto-approve -var-file=terraform.tfvars.local
+    destruir_terraform infra/terraform/aws -var-file=terraform.tfvars.local
   fi
 }
 
@@ -150,8 +174,7 @@ EOF
     -target=azurerm_postgresql_flexible_server_firewall_rule.local[0]
     -target=azurerm_container_app_environment.local[0]
   )
-  timeout 1800 terraform -chdir=infra/terraform/azure apply -no-color -input=false -auto-approve \
-    -var-file=terraform.tfvars.local -var="sufixo_revisao=${sufixo}" "${alvos[@]}"
+  aplicar_terraform infra/terraform/azure -var-file=terraform.tfvars.local -var="sufixo_revisao=${sufixo}" "${alvos[@]}"
 
   local nome_pg='caderno-aberto-local-pg'
   local conteiner_pg
@@ -176,8 +199,7 @@ EOF
     -d '{}' \
     "https://localhost:${porta_az}/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/caderno-aberto-local-rg/providers/Microsoft.Storage/storageAccounts/$(terraform -chdir=infra/terraform/azure output -raw conta_storage)/blobServices/default/containers/anexos?api-version=2023-05-01" || true
 
-  timeout 1800 terraform -chdir=infra/terraform/azure apply -no-color -input=false -auto-approve \
-    -var-file=terraform.tfvars.local -var="endereco_banco_local=${ip_pg}:5432" -var="sufixo_revisao=${sufixo}"
+  aplicar_terraform infra/terraform/azure -var-file=terraform.tfvars.local -var="endereco_banco_local=${ip_pg}:5432" -var="sufixo_revisao=${sufixo}"
 
   local fqdn
   fqdn="$(curl -sk --max-time 10 -H 'Authorization: Bearer fake' \
@@ -187,8 +209,7 @@ EOF
   aguardar_saude "https://localhost:${porta_az}/api" "${fqdn}"
 
   if [ "$MANTER" != 'true' ]; then
-    timeout 1800 terraform -chdir=infra/terraform/azure destroy -no-color -input=false \
-      -auto-approve -var-file=terraform.tfvars.local -var="endereco_banco_local=${ip_pg}:5432" -var="sufixo_revisao=${sufixo}"
+    destruir_terraform infra/terraform/azure -var-file=terraform.tfvars.local -var="endereco_banco_local=${ip_pg}:5432" -var="sufixo_revisao=${sufixo}"
   fi
 }
 
@@ -207,8 +228,7 @@ url_banco_local         = null
 EOF
 
   iniciar_terraform infra/terraform/gcp
-  timeout 1800 terraform -chdir=infra/terraform/gcp apply -no-color -input=false -auto-approve \
-    -var-file=terraform.tfvars.local
+  aplicar_terraform infra/terraform/gcp -var-file=terraform.tfvars.local
 
   # O ingress do floci-gcp tenta o upgrade h2c e o servidor Node do Next fecha
   # a conexão; o emulador não suporta sidecars, então a sonda usa a porta do
@@ -223,8 +243,7 @@ EOF
   aguardar_saude "http://localhost:${porta_cloudrun}/api"
 
   if [ "$MANTER" != 'true' ]; then
-    timeout 1800 terraform -chdir=infra/terraform/gcp destroy -no-color -input=false \
-      -auto-approve -var-file=terraform.tfvars.local
+    destruir_terraform infra/terraform/gcp -var-file=terraform.tfvars.local
   fi
 }
 
