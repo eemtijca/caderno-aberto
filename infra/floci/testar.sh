@@ -118,8 +118,6 @@ testar_aws() {
   if [ -z "$conteiner_floci" ]; then
     if docker inspect caderno-aberto-floci-aws >/dev/null 2>&1; then
       conteiner_floci=caderno-aberto-floci-aws
-    elif docker inspect buscapp-floci-aws >/dev/null 2>&1; then
-      conteiner_floci=buscapp-floci-aws
     else
       conteiner_floci=floci
     fi
