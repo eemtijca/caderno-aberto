@@ -221,6 +221,9 @@ A convenção das suítes está em [docs/testes.md](docs/testes.md) e [tests/REA
 
 ## Deploy
 
+> [!NOTE]
+> A implantação na Vercel está pausada; a publicação de imagem no GHCR segue ativa, por dispatch manual. O passo a passo de reativação está em [docs/portabilidade.md](docs/portabilidade.md).
+
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Feemtijca%2Fcaderno-aberto&project-name=caderno-aberto&repository-name=caderno-aberto&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,CRON_SECRET,ADMIN_EMAIL,ADMIN_SENHA,ADMIN_NOME,STORAGE_DRIVER&envDescription=Vari%C3%A1veis%20do%20Caderno%20Aberto%3A%20banco%2C%20segredos%2C%20administrador%20inicial%20e%20armazenamento&envLink=https%3A%2F%2Fgithub.com%2Feemtijca%2Fcaderno-aberto%2Fblob%2Fmain%2Fdocs%2Fambiente.md)
 
 Na Vercel, o disco é efêmero: use `STORAGE_DRIVER=s3` com um bucket compatível. O build não aplica migrações; depois do primeiro deploy, rode `npm run db:deploy` apontando para o banco de produção. As demais formas de publicação e o agendador estão em [docs/deploy.md](docs/deploy.md).

@@ -1,5 +1,8 @@
 # Deploy
 
+> [!NOTE]
+> A implantação na Vercel está pausada. Este documento permanece como referência para reativação.
+
 A aplicação é um único processo Node. O banco é um PostgreSQL 15 ou superior, local no Compose ou gerenciado, como o Supabase.
 
 ## Vercel (recomendado para o aplicativo)
