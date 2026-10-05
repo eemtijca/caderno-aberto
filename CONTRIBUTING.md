@@ -334,7 +334,7 @@ Crie releases pelo GitHub CLI:
 gh release create vX.Y.Z --generate-notes
 ```
 
-O build de produção da Vercel é disparado pelo push na `main`, e o workflow `migracoes.yml` aplica as migrações de banco.
+A implantação na Vercel está pausada e a agenda de migrações está desativada; a publicação de imagem no GHCR continua ativa. O passo a passo de reativação está em [docs/portabilidade.md](docs/portabilidade.md).
 
 ## Suporte e dúvidas
 
