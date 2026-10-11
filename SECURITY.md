@@ -21,7 +21,7 @@ O retorno é feito pelo próprio canal do GitHub. Vulnerabilidades confirmadas s
 - Isolamento por professor no banco, com RLS como segunda barreira.
 - Tokens de links públicos com 128 bits de entropia, expiração, pausa e revogação.
 - Upload de imagens validado por bytes mágicos e SVG servido com sandbox.
-- Dependências atualizadas via Dependabot para npm, GitHub Actions e Docker.
+- Dependências atualizadas via Dependabot para npm (com `pnpm-lock.yaml`), GitHub Actions e Docker.
 
 ## Fora de escopo
 

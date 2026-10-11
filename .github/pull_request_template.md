@@ -50,10 +50,10 @@ Informe se houve apoio de ferramentas de IA e como o resultado foi revisado. A r
 - [ ] Se precisei mexer depois da abertura, converti para rascunho com `gh pr ready --undo` e só marquei como pronto com tudo verde.
 - [ ] Segui o padrão de branches e commits do [CONTRIBUTING.md](../CONTRIBUTING.md).
 - [ ] Revisei o próprio diff antes de pedir revisão.
-- [ ] Rodei `npm run format:check`, `npm run lint` e `npm run tsc`.
-- [ ] Rodei `npm run test:unit`.
-- [ ] Rodei `npm test` com o aplicativo no ar e o banco migrado.
-- [ ] Rodei `npm run test:e2e:docker` quando a mudança afeta a interface.
+- [ ] Rodei `pnpm run format:check`, `pnpm run lint` e `pnpm run tsc`.
+- [ ] Rodei `pnpm run test:unit`.
+- [ ] Rodei `pnpm test` com o aplicativo no ar e o banco migrado.
+- [ ] Rodei `pnpm run test:e2e:docker` quando a mudança afeta a interface.
 - [ ] Atualizei a documentação correspondente e o CHANGELOG.md.
 - [ ] Revisei a segurança quando a mudança toca dependências, autenticação, permissões, workflows ou dados sensíveis.
 - [ ] Não incluí segredos nem dados reais de professores ou alunos.

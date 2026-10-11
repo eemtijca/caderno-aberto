@@ -12,7 +12,7 @@ A aplicação atende uma única escola e não dispõe de domínio de e-mail veri
 1. Remover o envio de e-mail e a verificação por link.
 2. Usar um código de 8 caracteres de um alfabeto sem ambíguos, gerado com aleatoriedade criptográfica e guardado apenas como HMAC-SHA256 com o `AUTH_SECRET`.
 3. Introduzir o papel `admin` em `usuarios.papel` e um console em `#/admin` com fila de solicitações, emissão e revogação de códigos, gestão de contas e auditoria.
-4. Criar o primeiro administrador por script idempotente (`npm run criar-admin`) a partir de `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME`.
+4. Criar o primeiro administrador por script idempotente (`pnpm run criar-admin`) a partir de `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME`.
 5. Primeiro acesso e recuperação compartilham um único endpoint de uso de código; o professor solicita e a administração entrega o código.
 6. Registrar ações sensíveis em `eventos_seguranca`.
 

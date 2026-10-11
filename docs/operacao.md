@@ -7,7 +7,7 @@ Runbooks e resolução de problemas. Para configuração, ver [ambiente.md](ambi
 ### Aplicar migrações
 
 ```bash
-npx prisma migrate deploy
+pnpm exec prisma migrate deploy
 ```
 
 O Compose aplica as migrações na partida pelo entrypoint. Em produção, a Action `db-migrate` cuida da migração.
@@ -25,14 +25,14 @@ O script apaga as tabelas do aplicativo, o registro de migrações e as funçõe
 ### Verificar o histórico
 
 ```bash
-npx prisma migrate status
+pnpm exec prisma migrate status
 ```
 
 Com `DIRECT_URL` definida, o comando usa essa conexão.
 
 ## Acesso por código
 
-- O acesso não depende de e-mail. O primeiro administrador é criado com `npm run criar-admin` (variáveis `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME`), também executado na partida do Compose quando definidas.
+- O acesso não depende de e-mail. O primeiro administrador é criado com `pnpm run criar-admin` (variáveis `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME`), também executado na partida do Compose quando definidas.
 - A administração vê a fila de solicitações no console (`#/admin`), gera o código de 8 caracteres e o entrega ao professor. O código expira em `CODIGO_EXPIRA_MINUTOS` (padrão 60) e é exibido uma única vez.
 - Esqueceu a senha é equivalente: o professor solicita na tela de login e a administração gera um novo código.
 - Auditoria: as ações sensíveis ficam em `eventos_seguranca` e na aba Auditoria, que permite filtrar por ação e limpar a trilha com senha e a confirmação `LIMPAR`; a limpeza em si fica registrada.
@@ -101,7 +101,7 @@ Toda restauração de backup guarda um snapshot JSON do estado anterior em `{pro
 
 ## RLS local
 
-`npm run test:api` aplica `prisma/scripts/rls-teste.sql` antes de rodar a suíte. O papel `app_teste` existe apenas em local e CI. No Supabase ele não é criado, pois o usuário do schema já tem `BYPASSRLS`.
+`pnpm run test:api` aplica `prisma/scripts/rls-teste.sql` antes de rodar a suíte. O papel `app_teste` existe apenas em local e CI. No Supabase ele não é criado, pois o usuário do schema já tem `BYPASSRLS`.
 
 ## Resolução de problemas
 
@@ -116,7 +116,7 @@ Toda restauração de backup guarda um snapshot JSON do estado anterior em `{pro
 | App abre na tela de recuperação    | Conta com exclusão solicitada e dentro da carência. Restaure pela tela ou conclua a exclusão saindo.           |
 | Muitas tentativas (429)            | Limite por IP atingido. Aguarde a janela de 5 minutos ou ajuste `AUTH_LIMITE_*`.                               |
 | Link público indisponível          | Link pausado, expirado, revogado ou professor em exclusão. Verifique a vista Links.                            |
-| Testes de isolamento falham        | Banco não migrado ou papel `app_teste` ausente. Rode `npm run test:api`, que aplica o script.                  |
+| Testes de isolamento falham        | Banco não migrado ou papel `app_teste` ausente. Rode `pnpm run test:api`, que aplica o script.                 |
 
 ## Saúde e logs
 

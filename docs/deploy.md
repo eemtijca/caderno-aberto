@@ -8,8 +8,8 @@ A aplicação é um único processo Node. O banco é um PostgreSQL 15 ou superio
 ## Vercel (recomendado para o aplicativo)
 
 1. Banco: qualquer PostgreSQL 15 ou superior. No Supabase, o runtime usa o pooler de transação `:6543` com `?pgbouncer=true` e `?sslmode=require`; o CLI de migrações usa `DIRECT_URL` no pooler de sessão `:5432`.
-2. Variáveis conforme [.env.example](../.env.example): `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`, `STORAGE_DRIVER=s3` com as cinco `STORAGE_S3_*` e `CRON_SECRET`. Crie o administrador com `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME` (via `npm run criar-admin`). Nunca usar `STORAGE_DRIVER=disk`, pois o disco é efêmero. A Vercel não usa `DIRECT_URL`.
-3. Build: `vercel.json` executa `npm run vercel-build`, que roda `prisma generate && next build`. O deploy de produção acompanha a `main`.
+2. Variáveis conforme [.env.example](../.env.example): `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`, `STORAGE_DRIVER=s3` com as cinco `STORAGE_S3_*` e `CRON_SECRET`. Crie o administrador com `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME` (via `pnpm run criar-admin`). Nunca usar `STORAGE_DRIVER=disk`, pois o disco é efêmero. A Vercel não usa `DIRECT_URL`.
+3. Build: `vercel.json` executa `pnpm run vercel-build`, que roda `prisma generate && next build`. O deploy de produção acompanha a `main`.
 4. Migrações: a Action `db-migrate` roda no push em `main` quando há alteração em `prisma/migrations/**`, usando `DIRECT_URL_PROD` (pooler de sessão `:5432`) no environment `production`, com revisor obrigatório. Deploy e migração disparam juntos, portanto o aplicativo novo pode entrar no ar antes de a migração terminar.
 5. Agendador: o `vercel.json` registra o Cron diário em `GET /api/conta/restaurar`. A Vercel envia `CRON_SECRET` automaticamente no cabeçalho `Authorization`.
 6. Produção: use um papel dono do schema na `DATABASE_URL`. As políticas RLS funcionam como segunda barreira, e o isolamento real é aplicado pela API.
@@ -27,10 +27,10 @@ Sobe o PostgreSQL 17 e o aplicativo em http://localhost:3000. O entrypoint migra
 ## Sem Docker
 
 ```bash
-npm install
+pnpm install
 cp .env.example .env  # preencha DATABASE_URL e os segredos
-npx prisma migrate deploy
-npm run dev
+pnpm exec prisma migrate deploy
+pnpm run dev
 ```
 
 ## CI (GitHub Actions)
@@ -57,4 +57,4 @@ O deploy da Vercel e a migração disparam no mesmo push. Como o aplicativo pode
 
 - `GET /api` responde com `{ app, versao }`.
 - Login, criação de nota e abertura do link público funcionam.
-- `npx prisma migrate status` com `DIRECT_URL` de produção não indica pendências.
+- `pnpm exec prisma migrate status` com `DIRECT_URL` de produção não indica pendências.

@@ -1,0 +1,10 @@
+# Configuração do pnpm. O projeto não tem workspaces; o arquivo existe porque,
+# a partir do pnpm 11, as configurações ficam em pnpm-workspace.yaml.
+# allowBuilds autoriza apenas os scripts de instalação necessários ao build.
+allowBuilds:
+  "@embedded-postgres/linux-x64": true
+  "@parcel/watcher": true
+  "@prisma/engines": true
+  "@swc/core": true
+  prisma: true
+  unrs-resolver: true

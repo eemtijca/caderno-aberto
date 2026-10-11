@@ -47,7 +47,7 @@ Todas as variáveis passam por `src/lib/ambiente.ts`, validado com zod na partid
 O acesso é por código de 8 caracteres gerido pela administração, sem envio de e-mail. Crie o primeiro administrador de forma idempotente com:
 
 ```bash
-ADMIN_EMAIL=admin@escola.br ADMIN_SENHA=uma-senha-forte ADMIN_NOME=Administração npm run criar-admin
+ADMIN_EMAIL=admin@escola.br ADMIN_SENHA=uma-senha-forte ADMIN_NOME=Administração pnpm run criar-admin
 ```
 
 No Compose, defina `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME` no `.env`; o entrypoint executa o script na partida. O script usa `DIRECT_URL` (ou `DATABASE_URL`) e regrava a senha a cada execução.
