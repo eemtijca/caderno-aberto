@@ -5,9 +5,9 @@ Caderno Aberto: plataforma web gratuita, multiusuário e mobile-first para profe
 ## Diretrizes do repositório
 
 - Leia o `CONTRIBUTING.md` antes de qualquer mudança: ele reúne o fluxo de issues, etiquetas, branches, commits, pull requests, padrões de código, banco, formatação e testes.
-- `tests/unit/texto-ui.test.ts` varre todos os `.ts` e `.tsx` de `src` e reprova travessão, meia-risca, reticências tipográficas, aspas curvas, setas, aspas angulares, entidades HTML de aspas, segunda pessoa e plural escrito com parênteses. Rode `npx vitest run tests/unit/texto-ui.test.ts` depois de escrever texto de interface.
+- `tests/unit/texto-ui.test.ts` varre todos os `.ts` e `.tsx` de `src` e reprova travessão, meia-risca, reticências tipográficas, aspas curvas, setas, aspas angulares, entidades HTML de aspas, segunda pessoa e plural escrito com parênteses. Rode `pnpm exec vitest run tests/unit/texto-ui.test.ts` depois de escrever texto de interface.
 - Commits seguem Conventional Commits em português, no imperativo, com escopo opcional: `fix(admin): corrige ...`. Branches usam `tipo/descricao-curta`, inclusive as criadas por agentes de IA; a autoria assistida fica no rodapé `Assisted-by` do commit.
-- TypeScript é estrito. O ESLint segue as regras do Next com alguns ajustes do projeto; não desative regras novas sem justificativa. O gerenciador é npm, com `package-lock.json`; não use bun, yarn nem pnpm.
+- TypeScript é estrito. O ESLint segue as regras do Next com alguns ajustes do projeto; não desative regras novas sem justificativa. O gerenciador é pnpm, com `pnpm-lock.yaml`; não use bun, yarn nem npm nos comandos.
 - Cada arquivo próprio começa com um cabeçalho curto, de uma a duas linhas, descrevendo seu papel.
 - Nomes de domínio em português (`notas`, `turmas`, `links`), termos de infraestrutura em inglês quando consagrados (`backup`, `token`). As regras de banco (CHECKs, funções, gatilhos e RLS) vivem nas migrações SQL e não no schema Prisma; nunca edite uma migração aplicada.
 
@@ -24,24 +24,24 @@ Caderno Aberto: plataforma web gratuita, multiusuário e mobile-first para profe
 
 Pré-requisitos: Node 24 e Docker com Compose, ou um PostgreSQL 15 ou superior, conforme [docs/ambiente.md](docs/ambiente.md).
 
-- Ambiente local: `npm install`; `cp .env.example .env` com `AUTH_SECRET` e `CRON_SECRET`; `npx prisma migrate deploy`; `npm run criar-admin`; `npm run dev`.
+- Ambiente local: `pnpm install`; `cp .env.example .env` com `AUTH_SECRET` e `CRON_SECRET`; `pnpm exec prisma migrate deploy`; `pnpm run criar-admin`; `pnpm run dev`.
 - Docker (recomendado): `docker compose up --build` sobe o PostgreSQL 17 e o aplicativo em `http://localhost:3000`, aplicando as migrações na partida.
-- Ordem de verificação antes do pull request: `npm run format:check`, `npm run lint`, `npm run tsc` e `npm run test:unit`.
-- `npm test` roda todas as suítes Vitest e exige o aplicativo no ar e o banco migrado para contratos, códigos, admin, segurança e sessão; o isolamento de RLS exige o papel `app_teste`, criado por `npm run test:api`.
-- Ponta a ponta: `npm run test:e2e:docker` (imagem oficial, aplicativo no ar) ou `npm run test:e2e` como alternativa local; Firefox e WebKit são de execução local.
-- Banco: `npm run criar-admin` para o administrador inicial e `npx prisma migrate deploy` para aplicar migrações. O build da Vercel não migra.
-- Guarda editorial: `npx vitest run tests/unit/texto-ui.test.ts`.
-- Capturas do README: `npm run capturas:readme` ou `npm run capturas:readme:docker`, com o aplicativo no ar e o banco migrado. Os PNGs ficam em `docs/imagens/` e não são editados à mão.
-- Etiquetas: `npm run etiquetas:sync` cria ou atualiza as etiquetas do GitHub conforme `.github/labels.json`.
+- Ordem de verificação antes do pull request: `pnpm run format:check`, `pnpm run lint`, `pnpm run tsc` e `pnpm run test:unit`.
+- `pnpm test` roda todas as suítes Vitest e exige o aplicativo no ar e o banco migrado para contratos, códigos, admin, segurança e sessão; o isolamento de RLS exige o papel `app_teste`, criado por `pnpm run test:api`.
+- Ponta a ponta: `pnpm run test:e2e:docker` (imagem oficial, aplicativo no ar) ou `pnpm run test:e2e` como alternativa local; Firefox e WebKit são de execução local.
+- Banco: `pnpm run criar-admin` para o administrador inicial e `pnpm exec prisma migrate deploy` para aplicar migrações. O build da Vercel não migra.
+- Guarda editorial: `pnpm exec vitest run tests/unit/texto-ui.test.ts`.
+- Capturas do README: `pnpm run capturas:readme` ou `pnpm run capturas:readme:docker`, com o aplicativo no ar e o banco migrado. Os PNGs ficam em `docs/imagens/` e não são editados à mão.
+- Etiquetas: `pnpm run etiquetas:sync` cria ou atualiza as etiquetas do GitHub conforme `.github/labels.json`.
 
 ## Ferramentas externas
 
 - GitHub: opere issues, pull requests, execuções de workflow e releases pelo GitHub CLI (`gh`), não pela interface web. Confirme a sessão com `gh auth status` e, se necessário, autentique com `gh auth login`. Exemplos: `gh issue create`, `gh pr create`, `gh pr checks --watch`, `gh run watch` e `gh release create`. Nunca inclua segredos ou dados de alunos e professores.
-- Playwright: rode a suíte na imagem oficial da Microsoft, com o aplicativo no ar, usando `npm run test:e2e:docker` ou `npm run test:e2e:docker:chromium`. O script `tests/playwright-container.sh` aceita `PLAYWRIGHT_IMAGE`, `PLAYWRIGHT_DOCKER_NETWORK` e `PLAYWRIGHT_DOCKER_USER`. Mantenha a versão da imagem igual à do `@playwright/test`. Use `localhost`, e não `127.0.0.1`, porque o Playwright só trata esse host como local para enviar o cookie `Secure`. A instalação local (`npm run test:e2e:install`) é alternativa.
+- Playwright: rode a suíte na imagem oficial da Microsoft, com o aplicativo no ar, usando `pnpm run test:e2e:docker` ou `pnpm run test:e2e:docker:chromium`. O script `tests/playwright-container.sh` aceita `PLAYWRIGHT_IMAGE`, `PLAYWRIGHT_DOCKER_NETWORK` e `PLAYWRIGHT_DOCKER_USER`. Mantenha a versão da imagem igual à do `@playwright/test`. Use `localhost`, e não `127.0.0.1`, porque o Playwright só trata esse host como local para enviar o cookie `Secure`. A instalação local (`pnpm run test:e2e:install`) é alternativa.
 
 ## Fluxo de issues e pull requests
 
-- Aplique etiquetas em toda issue e todo pull request: uma de tipo e, fora do tipo `docs`, uma de área. Use `gh issue create --label "bug" --label "area: notas"` e `gh pr edit <número> --add-label "area: editor"`. O catálogo fica em `.github/labels.json` e é sincronizado com `npm run etiquetas:sync`. Pull requests do Dependabot recebem `dependencies` e dispensam as demais.
+- Aplique etiquetas em toda issue e todo pull request: uma de tipo e, fora do tipo `docs`, uma de área. Use `gh issue create --label "bug" --label "area: notas"` e `gh pr edit <número> --add-label "area: editor"`. O catálogo fica em `.github/labels.json` e é sincronizado com `pnpm run etiquetas:sync`. Pull requests do Dependabot recebem `dependencies` e dispensam as demais.
 - Faça apenas commits atômicos: uma mudança lógica completa por commit, sem trabalho em andamento nem correção de revisão. Use `git commit --fixup` durante o desenvolvimento e `git rebase -i --autosquash` antes de publicar.
 - Organize todos os commits do assunto em uma única branch e um único pull request. Abra o pull request somente quando estiver finalizado, com título em Conventional Commits, verificações locais, documentação e CHANGELOG prontos. Não use `gh pr create --fill`.
 - Todo pull request precisa da aprovação de um mantenedor do `.github/CODEOWNERS` antes do merge; quem abriu pode mesclar depois da aprovação. Agentes não mesclam sem essa aprovação.

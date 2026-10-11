@@ -17,10 +17,10 @@ Guia de desenvolvimento do Caderno Aberto: como preparar o ambiente, abrir issue
 Pré-requisitos: Node 24 e Docker com Compose no modo recomendado, ou um PostgreSQL 15 ou superior próprio, conforme [docs/ambiente.md](docs/ambiente.md).
 
 ```bash
-npm install
+pnpm install
 cp .env.example .env  # preencha AUTH_SECRET e CRON_SECRET
-npx prisma migrate deploy
-npm run dev
+pnpm exec prisma migrate deploy
+pnpm run dev
 ```
 
 Com Docker Compose, o banco e o aplicativo sobem juntos:
@@ -35,19 +35,19 @@ O Compose sobe o PostgreSQL 17 e o aplicativo em `http://localhost:3000`, aplica
 
 Comandos úteis na raiz:
 
-| Comando                     | Efeito                                                                        |
-| --------------------------- | ----------------------------------------------------------------------------- |
-| `npm run dev`               | Servidor de desenvolvimento em `http://localhost:3000`.                       |
-| `docker compose up --build` | Sobe o banco e o aplicativo via Docker Compose.                               |
-| `docker compose down`       | Derruba o ambiente.                                                           |
-| `npm run criar-admin`       | Cria o administrador inicial de forma idempotente.                            |
-| `npm run test:destrutivas`  | Roda a suíte de ações destrutivas e lixeira.                                  |
-| `npm run format`            | Corrige a formatação com o Prettier.                                          |
-| `npm run format:check`      | Confere a formatação sem alterar arquivos.                                    |
-| `npm run etiquetas:sync`    | Sincroniza as etiquetas do GitHub com o catálogo.                             |
-| `npm run vercel-build`      | Build da Vercel, com `prisma generate` e `next build`.                        |
-| `npx prisma generate`       | Regenera o cliente Prisma (o `postinstall` também executa e copia o TikZJax). |
-| `npx prisma migrate deploy` | Aplica as migrações pendentes.                                                |
+| Comando                           | Efeito                                                                        |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| `pnpm run dev`                    | Servidor de desenvolvimento em `http://localhost:3000`.                       |
+| `docker compose up --build`       | Sobe o banco e o aplicativo via Docker Compose.                               |
+| `docker compose down`             | Derruba o ambiente.                                                           |
+| `pnpm run criar-admin`            | Cria o administrador inicial de forma idempotente.                            |
+| `pnpm run test:destrutivas`       | Roda a suíte de ações destrutivas e lixeira.                                  |
+| `pnpm run format`                 | Corrige a formatação com o Prettier.                                          |
+| `pnpm run format:check`           | Confere a formatação sem alterar arquivos.                                    |
+| `pnpm run etiquetas:sync`         | Sincroniza as etiquetas do GitHub com o catálogo.                             |
+| `pnpm run vercel-build`           | Build da Vercel, com `prisma generate` e `next build`.                        |
+| `pnpm exec prisma generate`       | Regenera o cliente Prisma (o `postinstall` também executa e copia o TikZJax). |
+| `pnpm exec prisma migrate deploy` | Aplica as migrações pendentes.                                                |
 
 ## Fluxo de contribuição e pull requests
 
@@ -100,7 +100,7 @@ Toda issue e todo pull request recebe ao menos uma etiqueta de tipo e uma de ár
 | Prioridade | `prioridade: alta`, `prioridade: media`, `prioridade: baixa`                                  | Urgência definida na triagem.                      |
 | Triagem    | `triagem`                                                                                     | Aguardando confirmação de tipo, área e prioridade. |
 
-O catálogo fica em [.github/labels.json](../.github/labels.json) e é aplicado com `npm run etiquetas:sync`, que cria ou atualiza as etiquetas pelo GitHub CLI. O workflow `etiquetas.yml` aplica `area:` pelos caminhos alterados e o tipo pelo prefixo do título, e o check `validar` reprova pull requests sem etiqueta obrigatória ou com título fora do padrão Conventional Commits. Pull requests do tipo `docs` dispensam etiqueta de área.
+O catálogo fica em [.github/labels.json](../.github/labels.json) e é aplicado com `pnpm run etiquetas:sync`, que cria ou atualiza as etiquetas pelo GitHub CLI. O workflow `etiquetas.yml` aplica `area:` pelos caminhos alterados e o tipo pelo prefixo do título, e o check `validar` reprova pull requests sem etiqueta obrigatória ou com título fora do padrão Conventional Commits. Pull requests do tipo `docs` dispensam etiqueta de área.
 
 Antes de criar uma etiqueta nova, confirme que ela tem público, dono e regra automatizada no mesmo pull request, seja pelo catálogo, pelo mapeamento de caminhos ou pelo título. Etiqueta sem automação tende a não ser aplicada.
 
@@ -200,12 +200,12 @@ Quando a mudança tocar dependências, autenticação, permissões, workflows ou
 Antes de abrir, rode as verificações locais:
 
 ```bash
-npm run format:check
-npm run lint
-npm run tsc
-npm run test:unit     # unidade, guarda editorial e bibliotecas puras
-npm test              # com o aplicativo no ar e o banco migrado
-npm run test:e2e:docker   # Playwright na imagem oficial, com o aplicativo no ar
+pnpm run format:check
+pnpm run lint
+pnpm run tsc
+pnpm run test:unit     # unidade, guarda editorial e bibliotecas puras
+pnpm test              # com o aplicativo no ar e o banco migrado
+pnpm run test:e2e:docker   # Playwright na imagem oficial, com o aplicativo no ar
 ```
 
 Preencha o checklist do template de pull request. Ao alterar comportamento, atualize a documentação correspondente e os testes.
@@ -241,11 +241,11 @@ Mescle por squash, em um único commit por pull request. Apague a branch após o
 
 ### Banco e migrações
 
-Crie migrações com `npx prisma migrate dev --name ajuste`. Nunca edite uma migração aplicada; qualquer ajuste entra como migração nova. O schema é a fonte da verdade em `prisma/schema.prisma`, e os comandos do dia a dia estão em [docs/banco.md](docs/banco.md). As regras que não cabem no schema (CHECKs, funções, gatilhos, RLS e índices funcionais) vivem no SQL das migrações e são preservadas.
+Crie migrações com `pnpm exec prisma migrate dev --name ajuste`. Nunca edite uma migração aplicada; qualquer ajuste entra como migração nova. O schema é a fonte da verdade em `prisma/schema.prisma`, e os comandos do dia a dia estão em [docs/banco.md](docs/banco.md). As regras que não cabem no schema (CHECKs, funções, gatilhos, RLS e índices funcionais) vivem no SQL das migrações e são preservadas.
 
 ### Formatação e análise estática
 
-O Prettier cuida do estilo, com `prettier-plugin-tailwindcss` para ordenar as classes, e o ESLint cobre as regras do Next e do projeto. Rode `npm run format` e `npm run lint` antes de commitar. Não desative regras sem justificativa no código.
+O Prettier cuida do estilo, com `prettier-plugin-tailwindcss` para ordenar as classes, e o ESLint cobre as regras do Next e do projeto. Rode `pnpm run format` e `pnpm run lint` antes de commitar. Não desative regras sem justificativa no código.
 
 ### Comentários no código
 
@@ -261,17 +261,17 @@ Ferramentas de IA são bem-vindas como apoio, mas a responsabilidade pela mudan�
 
 As suítes combinam unidade, integração da API, isolamento no banco, ações destrutivas e testes de ponta a ponta. Os comandos e pré-requisitos estão em [tests/README.md](tests/README.md); a convenção e a cobertura, em [docs/testes.md](docs/testes.md).
 
-| Suíte              | Requisito                         | Comando                                         |
-| ------------------ | --------------------------------- | ----------------------------------------------- |
-| Unidade            | Nenhum                            | `npm run test:unit`                             |
-| Guarda editorial   | Nenhum (roda com a unidade)       | `npm run test:unit`                             |
-| Isolamento (RLS)   | Banco migrado e papel `app_teste` | `npm run test:api`                              |
-| Contratos          | Aplicativo no ar                  | `npm run test:contratos`                        |
-| Códigos e admin    | Aplicativo no ar e banco          | `npm run test:codigos`                          |
-| Segurança e sessão | Aplicativo no ar e banco          | `npm run test:seguranca`                        |
-| Destrutivas        | Aplicativo no ar e banco          | `npm run test:destrutivas`                      |
-| E2E (Playwright)   | Aplicativo no ar                  | `npm run test:e2e:docker` ou `npm run test:e2e` |
-| Capturas do README | Aplicativo no ar e banco migrado  | `npm run capturas:readme`                       |
+| Suíte              | Requisito                         | Comando                                           |
+| ------------------ | --------------------------------- | ------------------------------------------------- |
+| Unidade            | Nenhum                            | `pnpm run test:unit`                              |
+| Guarda editorial   | Nenhum (roda com a unidade)       | `pnpm run test:unit`                              |
+| Isolamento (RLS)   | Banco migrado e papel `app_teste` | `pnpm run test:api`                               |
+| Contratos          | Aplicativo no ar                  | `pnpm run test:contratos`                         |
+| Códigos e admin    | Aplicativo no ar e banco          | `pnpm run test:codigos`                           |
+| Segurança e sessão | Aplicativo no ar e banco          | `pnpm run test:seguranca`                         |
+| Destrutivas        | Aplicativo no ar e banco          | `pnpm run test:destrutivas`                       |
+| E2E (Playwright)   | Aplicativo no ar                  | `pnpm run test:e2e:docker` ou `pnpm run test:e2e` |
+| Capturas do README | Aplicativo no ar e banco migrado  | `pnpm run capturas:readme`                        |
 
 Regras:
 
@@ -283,19 +283,19 @@ Regras:
 O Playwright roda primariamente na imagem oficial da Microsoft, sem instalar navegadores no host, com o aplicativo no ar:
 
 ```bash
-npm run test:e2e:docker            # todos os projetos
-npm run test:e2e:docker:chromium   # apenas o Chromium
+pnpm run test:e2e:docker            # todos os projetos
+pnpm run test:e2e:docker:chromium   # apenas o Chromium
 ```
 
 A variável `TEST_BASE_URL` aponta para o aplicativo (padrão `http://localhost:3000`), e `tests/playwright-container.sh` aceita `PLAYWRIGHT_IMAGE`, `PLAYWRIGHT_DOCKER_NETWORK` e `PLAYWRIGHT_DOCKER_USER`. Mantenha a versão da imagem igual à do `@playwright/test` em `package.json`. Use `localhost`, e não `127.0.0.1`, porque o Playwright só trata esse host como local para enviar o cookie de sessão `Secure`.
 
-As capturas do README são geradas por `e2e/imagens.spec.ts` e gravadas em `docs/imagens/`, com o aplicativo no ar e o banco migrado. Regenera pelo comando `npm run capturas:readme` (ou `npm run capturas:readme:docker`, na imagem oficial). Os PNGs são versionados e não devem ser editados à mão; mudanças de interface pedem uma nova geração e revisão do diff.
+As capturas do README são geradas por `e2e/imagens.spec.ts` e gravadas em `docs/imagens/`, com o aplicativo no ar e o banco migrado. Regenera pelo comando `pnpm run capturas:readme` (ou `pnpm run capturas:readme:docker`, na imagem oficial). Os PNGs são versionados e não devem ser editados à mão; mudanças de interface pedem uma nova geração e revisão do diff.
 
 A instalação local de navegadores fica como alternativa para Firefox e WebKit:
 
 ```bash
-npm run test:e2e:install
-npm run test:e2e
+pnpm run test:e2e:install
+pnpm run test:e2e
 ```
 
 ## Documentação e ADRs
@@ -314,7 +314,7 @@ Restrições de formatação:
 - Siga a sintaxe Markdown do GitHub: um único título de nível 1 por arquivo, hierarquia de títulos sem saltos, listas com `-`, cercas de código com linguagem e texto alternativo em imagens.
 - Use links relativos para arquivos do repositório e mantenha o texto do link em uma única linha.
 - Use alertas (`> [!NOTE]`, `> [!WARNING]`) com parcimônia, no máximo um ou dois por documento.
-- Valide com `npm run format` antes de enviar.
+- Valide com `pnpm run format` antes de enviar.
 
 ### Padrão da interface
 

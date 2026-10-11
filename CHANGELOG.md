@@ -28,6 +28,7 @@ Enquanto a primeira versão pública não é lançada, a versão do projeto perm
 
 ### Modificado
 
+- Gerenciamento de dependências migrado de npm para pnpm, com o `packageManager` fixado, `pnpm-lock.yaml` versionado e `pnpm-workspace.yaml` autorizando os scripts de build; `pg` e `@types/pg` passam a ser declarados e o Dockerfile usa dependências de produção do pnpm para o migrador.
 - Guia de contribuição e AGENTS.md passam a exigir etiquetas em issues e pull requests, commits atômicos organizados em um único pull request e abertura somente com o trabalho finalizado.
 - Workflows renomeados para `qualidade.yml`, `testes.yml` e `migracoes.yml`, com o padrão de nomes em português.
 - Referências de documentação corrigidas no deploy, nos testes e nas configurações de Git.

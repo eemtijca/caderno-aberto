@@ -161,7 +161,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-O Compose sobe o PostgreSQL 17 (`db:5432`, volume `pgdata`), aplica as migrações na partida e inicia o aplicativo em http://localhost:3000. Com `STORAGE_DRIVER=disk` (padrão), as imagens ficam no volume `uploads`. Defina `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME` no `.env` para criar o administrador na partida, ou rode `npm run criar-admin` depois.
+O Compose sobe o PostgreSQL 17 (`db:5432`, volume `pgdata`), aplica as migrações na partida e inicia o aplicativo em http://localhost:3000. Com `STORAGE_DRIVER=disk` (padrão), as imagens ficam no volume `uploads`. Defina `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME` no `.env` para criar o administrador na partida, ou rode `pnpm run criar-admin` depois.
 
 Instruções sem Docker e demais variáveis: [docs/ambiente.md](docs/ambiente.md). Publicação: [docs/deploy.md](docs/deploy.md).
 
@@ -205,17 +205,17 @@ As camadas, o fluxo de uma requisição autenticada e as decisões registradas e
 
 ## Testes e qualidade
 
-| Comando                    | Efeito                                                |
-| -------------------------- | ----------------------------------------------------- |
-| `npm run format:check`     | Prettier em modo verificação.                         |
-| `npm run lint`             | ESLint com regras do Next e ajustes do projeto.       |
-| `npm run tsc`              | Verificação de tipos sem emissão.                     |
-| `npm run test:unit`        | Bibliotecas puras e guarda editorial.                 |
-| `npm run test:api`         | Isolamento por RLS com o papel `app_teste`.           |
-| `npm run test:contratos`   | Contratos HTTP com o aplicativo no ar.                |
-| `npm run test:destrutivas` | Lixeira, step-up e dry-run do backup.                 |
-| `npm run test:e2e:docker`  | Playwright na imagem oficial, com o aplicativo no ar. |
-| `npm run capturas:readme`  | Regenera as capturas do README em `docs/imagens/`.    |
+| Comando                     | Efeito                                                |
+| --------------------------- | ----------------------------------------------------- |
+| `pnpm run format:check`     | Prettier em modo verificação.                         |
+| `pnpm run lint`             | ESLint com regras do Next e ajustes do projeto.       |
+| `pnpm run tsc`              | Verificação de tipos sem emissão.                     |
+| `pnpm run test:unit`        | Bibliotecas puras e guarda editorial.                 |
+| `pnpm run test:api`         | Isolamento por RLS com o papel `app_teste`.           |
+| `pnpm run test:contratos`   | Contratos HTTP com o aplicativo no ar.                |
+| `pnpm run test:destrutivas` | Lixeira, step-up e dry-run do backup.                 |
+| `pnpm run test:e2e:docker`  | Playwright na imagem oficial, com o aplicativo no ar. |
+| `pnpm run capturas:readme`  | Regenera as capturas do README em `docs/imagens/`.    |
 
 A convenção das suítes está em [docs/testes.md](docs/testes.md) e [tests/README.md](tests/README.md).
 
@@ -226,7 +226,7 @@ A convenção das suítes está em [docs/testes.md](docs/testes.md) e [tests/REA
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Feemtijca%2Fcaderno-aberto&project-name=caderno-aberto&repository-name=caderno-aberto&env=DATABASE_URL,DIRECT_URL,AUTH_SECRET,CRON_SECRET,ADMIN_EMAIL,ADMIN_SENHA,ADMIN_NOME,STORAGE_DRIVER&envDescription=Vari%C3%A1veis%20do%20Caderno%20Aberto%3A%20banco%2C%20segredos%2C%20administrador%20inicial%20e%20armazenamento&envLink=https%3A%2F%2Fgithub.com%2Feemtijca%2Fcaderno-aberto%2Fblob%2Fmain%2Fdocs%2Fambiente.md)
 
-Na Vercel, o disco é efêmero: use `STORAGE_DRIVER=s3` com um bucket compatível. O build não aplica migrações; depois do primeiro deploy, rode `npm run db:deploy` apontando para o banco de produção. As demais formas de publicação e o agendador estão em [docs/deploy.md](docs/deploy.md).
+Na Vercel, o disco é efêmero: use `STORAGE_DRIVER=s3` com um bucket compatível. O build não aplica migrações; depois do primeiro deploy, rode `pnpm run db:deploy` apontando para o banco de produção. As demais formas de publicação e o agendador estão em [docs/deploy.md](docs/deploy.md).
 
 ## Privacidade e dados
 

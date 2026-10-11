@@ -1,5 +1,5 @@
 // Prova das políticas com o papel restrito app_teste.
-// Uso: npm run test:api (aplica prisma/scripts/rls-teste.sql antes)
+// Uso: pnpm run test:api (aplica prisma/scripts/rls-teste.sql antes)
 // O papel de teste não contorna o RLS. Só existe em local/CI.
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";

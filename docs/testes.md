@@ -36,8 +36,8 @@ Comandos e pré-requisitos estão em [../tests/README.md](../tests/README.md). E
 As imagens do README são geradas por `e2e/imagens.spec.ts` e gravadas em `docs/imagens/`, com o aplicativo no ar e o banco migrado. O spec cria a própria conta e a nota de exemplo, captura o editor em 1440x900 e a vista pública `/l/demo-landing` em 390x844, nos temas claro e escuro, sem dados reais. Para regenerar:
 
 ```bash
-npm run capturas:readme         # Playwright local, com o aplicativo no ar
-npm run capturas:readme:docker  # imagem oficial da Microsoft, com o aplicativo no ar
+pnpm run capturas:readme         # Playwright local, com o aplicativo no ar
+pnpm run capturas:readme:docker  # imagem oficial da Microsoft, com o aplicativo no ar
 ```
 
 Os PNGs versionados em `docs/imagens/` não são editados à mão. Quando a interface mudar, regenere as capturas e confira o diff das imagens no pull request.
@@ -47,7 +47,7 @@ Os PNGs versionados em `docs/imagens/` não são editados à mão. Quando a inte
 - `qualidade.yml`: formato, lint, tipos e testes unitários.
 - `build.yml`: compilação com valores fictícios de ambiente.
 - `testes.yml`: sobe o Compose, aplica o RLS de teste e roda isolamento, contratos, códigos, admin, segurança, sessão e os testes e2e no Chromium.
-- A suíte destrutivas não roda no CI; execute `npm run test:destrutivas` antes de abrir o pull request.
-- Os testes e2e completos (Firefox e WebKit) e a suíte de PWA podem ser executados localmente; o fluxo principal é `npm run test:e2e:docker`, com o aplicativo no ar.
+- A suíte destrutivas não roda no CI; execute `pnpm run test:destrutivas` antes de abrir o pull request.
+- Os testes e2e completos (Firefox e WebKit) e a suíte de PWA podem ser executados localmente; o fluxo principal é `pnpm run test:e2e:docker`, com o aplicativo no ar.
 
 Detalhes de deploy em [deploy.md](deploy.md).

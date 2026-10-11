@@ -4,3 +4,4 @@ generated/
 public/vendor/
 coverage/
 .devcontainer/devcontainer-lock.json
+pnpm-lock.yaml
