@@ -59,9 +59,10 @@ Os elementos clicáveis usam `cursor: pointer` por uma regra global em `globals.
 - Rotas hash: `#/`, `#/notas`, `#/organizacao`, `#/links`, `#/lixeira`, `#/configuracoes` com as seções `#/configuracoes/perfil`, `#/configuracoes/seguranca`, `#/configuracoes/disciplinas`, `#/configuracoes/turmas`, `#/configuracoes/dados` e `#/configuracoes/exclusao`, `#/admin`, `#/recuperacao`, `#/editor/:id`, `#/nota/:id`, `#/l/:token`, `#/entrar`, `#/codigo` e `#/solicitar`. O alias `#/conta` abre Configurações. Rota desconhecida volta ao início. A raiz anônima é a tela de login.
 - Rotas reais: `/` (shell), `/l/[token]` (página pública com metadados e OpenGraph) e `/api/**`.
 - Busca global com `Ctrl` ou `Cmd` mais `K`, com debounce, mínimo de 2 caracteres e tolerância a acentos.
-- No mobile, a barra superior concentra a busca, o seletor de tema e o menu de perfil (Configurações e Sair). A barra inferior mantém cinco itens; o botão Mais abre um painel inferior (`Drawer`) com as opções que não cabem, como Turmas e Administração para contas admin.
+- No mobile, a barra superior concentra a busca, o seletor de tema e o menu de perfil (Configurações, Sobre e Sair). A barra inferior mantém cinco itens; o botão Mais abre um painel inferior (`Drawer`) com as opções que não cabem, como Turmas e Administração para contas admin.
 - A tela de login reúne "Tenho um código", "Esqueci minha senha" e "Solicitar acesso" em um único menu "Outras formas de acesso", que leva às rotas `#/codigo` e `#/solicitar`.
 - A tela de login oferece "Manter conectado neste dispositivo", marcado por padrão e lembrado no navegador para os próximos acessos, inclusive no uso de código e na troca de senha. Desmarcado, a sessão usa cookie de sessão e expira em 24 horas no servidor.
+- A tela de login reúne os links do repositório no GitHub, da documentação da API e o diálogo Sobre, com os desenvolvedores, o repositório, a instituição e a licença; o mesmo Sobre fica no rodapé da barra lateral e no menu de perfil. A raiz anônima publica o link oculto para `/llms.txt`, que orienta agentes de IA.
 
 ## Responsividade
 

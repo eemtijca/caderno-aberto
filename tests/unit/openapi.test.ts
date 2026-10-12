@@ -6,7 +6,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import especificacao from "../../docs/openapi.json";
 import { criarPoliticaDeSeguranca } from "@/lib/api/csp";
-import { paginaDocumentacao, URL_ESPECIFICACAO } from "@/lib/api/documentacao";
+import {
+  CAMINHO_INDICE_AGENTES,
+  paginaDocumentacao,
+  URL_ESPECIFICACAO,
+  urlDoIndiceDeAgentes,
+} from "@/lib/api/documentacao";
 
 const RAIZ = path.resolve(fileURLToPath(new URL("../../src/app/api", import.meta.url)));
 
@@ -34,7 +39,7 @@ interface Operacao {
 
 interface Documento {
   openapi: string;
-  info: { title: string };
+  info: { title: string; description?: string };
   servers?: unknown[];
   security?: unknown[];
   tags?: { name: string; description?: string }[];
@@ -128,6 +133,12 @@ describe("especificação OpenAPI", () => {
     expect(documento.security).toEqual([{ sessao: [] }]);
     expect(documento.components?.securitySchemes).toHaveProperty("sessao");
     expect(documento.components?.securitySchemes).toHaveProperty("segredoAgendador");
+  });
+
+  it("não repete o título no topo da descrição", () => {
+    const descricao = documento.info.description ?? "";
+    expect(descricao).not.toMatch(/^#\s/);
+    expect(descricao).not.toContain(`# ${documento.info.title}`);
   });
 
   it("cobre exatamente as rotas da API, sem vazar rotas internas", async () => {
@@ -246,5 +257,26 @@ describe("documentação interativa", () => {
     expect(nonces.length).toBe(scripts.length);
     expect(pagina).toContain("/vendor/swagger-ui/swagger-ui-bundle.js");
     expect(pagina).toContain(URL_ESPECIFICACAO);
+  });
+});
+
+describe("índice para agentes", () => {
+  it("prefere o APP_URL e cai no host da requisição", () => {
+    expect(urlDoIndiceDeAgentes(new Headers(), "https://cadernoabertojca.vercel.app")).toBe(
+      "https://cadernoabertojca.vercel.app/llms.txt",
+    );
+
+    expect(
+      urlDoIndiceDeAgentes(
+        new Headers({ host: "caderno.exemplo.br", "x-forwarded-proto": "https" }),
+      ),
+    ).toBe("https://caderno.exemplo.br/llms.txt");
+  });
+
+  it("usa HTTP em localhost e o caminho relativo sem host", () => {
+    expect(urlDoIndiceDeAgentes(new Headers({ host: "localhost:3000" }))).toBe(
+      `http://localhost:3000${CAMINHO_INDICE_AGENTES}`,
+    );
+    expect(urlDoIndiceDeAgentes(new Headers())).toBe(CAMINHO_INDICE_AGENTES);
   });
 });

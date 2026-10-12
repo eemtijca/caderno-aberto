@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
+  Info,
   Link2,
   Loader2,
   LogOut,
@@ -51,6 +52,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { SeletorTema } from "@/components/seletor-tema";
+import { DialogoSobre } from "@/components/dialogo-sobre";
 import { useBusca } from "@/lib/notas/api-client";
 import { useSessao } from "@/hooks/use-sessao";
 import { corDisciplina } from "@/lib/notas/cores";
@@ -97,6 +99,7 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
   const [saindo, setSaindo] = useState(false);
   const [maisAberto, setMaisAberto] = useState(false);
   const [recolhida, setRecolhida] = useState(false);
+  const [sobreAberto, setSobreAberto] = useState(false);
 
   const itensNav = ehAdmin ? [...ITENS_NAV, ITEM_ADMIN] : ITENS_NAV;
   const itensMais = ehAdmin ? [...ITENS_MAIS, ITEM_ADMIN] : ITENS_MAIS;
@@ -256,6 +259,16 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
               <Button
                 variant="ghost"
                 size="icon"
+                className="text-muted-foreground h-8 w-8 rounded-lg"
+                aria-label="Sobre"
+                title="Sobre"
+                onClick={() => setSobreAberto(true)}
+              >
+                <Info className="h-4 w-4" aria-hidden />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 className="text-muted-foreground hover:text-destructive h-8 w-8 rounded-lg"
                 aria-label="Sair da conta"
                 title="Sair da conta"
@@ -284,6 +297,16 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
                     {usuario?.email}
                   </span>
                 </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground h-8 w-8 rounded-lg"
+                  aria-label="Sobre"
+                  title="Sobre"
+                  onClick={() => setSobreAberto(true)}
+                >
+                  <Info className="h-4 w-4" aria-hidden />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -362,6 +385,10 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
               <DropdownMenuItem className="gap-2" onClick={() => navegar("/configuracoes")}>
                 <Settings className="h-4 w-4" aria-hidden />
                 Configurações
+              </DropdownMenuItem>
+              <DropdownMenuItem className="gap-2" onClick={() => setSobreAberto(true)}>
+                <Info className="h-4 w-4" aria-hidden />
+                Sobre
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -476,6 +503,8 @@ export function AppShell({ rota, navegar, onNovaNota, children }: PropsShell) {
       {buscaAberta ? (
         <BuscaGlobal aberta aoFechar={() => setBuscaAberta(false)} navegar={navegar} />
       ) : null}
+
+      <DialogoSobre aberto={sobreAberto} aoFechar={() => setSobreAberto(false)} />
     </div>
   );
 }

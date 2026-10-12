@@ -28,9 +28,13 @@ Enquanto a primeira versão pública não é lançada, a versão do projeto perm
 - Documentação interativa da API em `GET /api/docs` com Swagger UI, especificação OpenAPI 3.1 em `GET /api/docs/openapi.json` e referência em Markdown em `GET /api/docs/api.md`, com `operationId`, descrições, exemplos e erros por operação.
 - Lint da especificação OpenAPI com Redocly CLI (`pnpm run lint:api`) no workflow de qualidade, com o ruleset em `redocly.yaml`.
 - Índice `public/llms.txt` para agentes de IA, com o contrato, a referência e a orientação de uso seguro.
+- Descoberta do índice para agentes de IA na raiz anônima: link oculto com o `APP_URL` ou o domínio que atendeu a requisição, `rel=alternate` no HTML e cabeçalho `Link` da resposta.
+- Tela de login com os links do repositório no GitHub e da documentação da API, e diálogo Sobre com os desenvolvedores, o repositório, a instituição e a licença, também aberto na barra lateral e no menu de perfil.
 - ADR-012 sobre a documentação interativa e o CSP por URL.
 
 ### Modificado
+
+- Imagem oficial do Playwright sobe para a v1.64.0, alinhada à versão do `@playwright/test` instalada, e a suíte de ponta a ponta volta a rodar.
 
 - CSP passa a ser montado por URL em `src/lib/api/csp.ts`: `'unsafe-eval'` apenas na documentação interativa, exigido pela validação do "Try it out".
 - O `postinstall` também copia os assets do Swagger UI para `public/vendor/swagger-ui`, e `@scarf/scarf` (telemetria transitiva) fica explicitamente negado nos scripts de instalação.
