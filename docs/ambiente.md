@@ -56,6 +56,27 @@ No Compose, defina `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME` no `.env`; o entr
 
 `disk` grava em `UPLOAD_DIR` (volume Docker no Compose). `s3` usa as variáveis `STORAGE_S3_*` e serve qualquer provedor compatível, como MinIO, Cloudflare R2, AWS ou GCS com chaves HMAC. O bucket precisa existir e aceitar os tipos de imagem permitidos. `azure-blob` usa o contêiner `AZURE_STORAGE_CONTAINER`, com `AZURE_STORAGE_CONNECTION_STRING` (emulador e testes) ou `AZURE_STORAGE_ACCOUNT_URL` com identidade gerenciada. Na Vercel o disco é efêmero, portanto imagens exigem outro driver. Detalhes em [operacao.md](operacao.md).
 
+## Semente de desenvolvimento
+
+`pnpm run seed` cria uma massa de demonstração realista, determinística e idempotente para desenvolvimento e capturas, sem tocar em dados reais. O script está em `scripts/seed.mjs`, usa `DIRECT_URL` (ou `DATABASE_URL`) e exige o banco migrado. Reaplicar não duplica nada: os registros são atualizados pelos identificadores determinísticos da própria semente.
+
+| Parâmetro      | Padrão           | Efeito                                                                                   |
+| -------------- | ---------------- | ---------------------------------------------------------------------------------------- |
+| `SEED_PERFIL`  | `padrao`         | Volume da massa: `leve` (64 notas), `padrao` (80 notas) ou `pesado` (88 notas).          |
+| `SEED_SEMENTE` | `caderno-aberto` | Semente do PRNG determinístico; trocar o valor gera outra massa, com os mesmos formatos. |
+| `SEED_LIMPAR`  | vazio            | Com `true`, remove apenas o que a semente criou e encerra, sem recriar a massa.          |
+
+A massa reúne 3 professores com senha definida (`helena.duarte@exemplo.br`, `marcos.pereira@exemplo.br` e `sofia.almeida@exemplo.br`, senha `semente123`), 8 disciplinas, 9 turmas do 1º ao 3º ano e links públicos determinísticos, como `/l/semente-nota-leis-de-newton`, `/l/semente-turma-1a` e `/l/semente-disciplina-matematica`. As senhas são regravadas a cada execução, sempre com o mesmo formato de hash do aplicativo (scrypt).
+
+Com `STORAGE_DRIVER=disk`, as figuras são PNGs sintéticos gravados em `UPLOAD_DIR` (volume `uploads` no Compose) e referenciados pelas notas. Com outro driver, as imagens são ignoradas com aviso e as notas seguem sem figura. No Compose, rode o script dentro do contêiner para compartilhar o volume de imagens:
+
+```bash
+docker compose exec app node scripts/seed.mjs
+docker compose exec app env SEED_LIMPAR=true node scripts/seed.mjs
+```
+
+`SEED_LIMPAR=true` remove somente os professores da semente (e, em cascata, disciplinas, turmas, notas e links), os links com token iniciado por `semente-` e as imagens com esse prefixo. Contas de teste (`captura_` e `e2e`) e dados reais não são tocados. A semente é apenas de desenvolvimento: não roda na Vercel, no Docker de produção nem no entrypoint.
+
 ## Regras
 
 - Nunca reutilizar segredos de desenvolvimento (o valor `caderno` e os fictícios do CI) em produção.

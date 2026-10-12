@@ -41,6 +41,7 @@ Comandos úteis na raiz:
 | `docker compose up --build`       | Sobe o banco e o aplicativo via Docker Compose.                               |
 | `docker compose down`             | Derruba o ambiente.                                                           |
 | `pnpm run criar-admin`            | Cria o administrador inicial de forma idempotente.                            |
+| `pnpm run seed`                   | Cria a massa de demonstração de desenvolvimento (somente dev).                |
 | `pnpm run test:destrutivas`       | Roda a suíte de ações destrutivas e lixeira.                                  |
 | `pnpm run format`                 | Corrige a formatação com o Prettier.                                          |
 | `pnpm run format:check`           | Confere a formatação sem alterar arquivos.                                    |
@@ -261,17 +262,17 @@ Ferramentas de IA são bem-vindas como apoio, mas a responsabilidade pela mudan�
 
 As suítes combinam unidade, integração da API, isolamento no banco, ações destrutivas e testes de ponta a ponta. Os comandos e pré-requisitos estão em [tests/README.md](tests/README.md); a convenção e a cobertura, em [docs/testes.md](docs/testes.md).
 
-| Suíte              | Requisito                         | Comando                                           |
-| ------------------ | --------------------------------- | ------------------------------------------------- |
-| Unidade            | Nenhum                            | `pnpm run test:unit`                              |
-| Guarda editorial   | Nenhum (roda com a unidade)       | `pnpm run test:unit`                              |
-| Isolamento (RLS)   | Banco migrado e papel `app_teste` | `pnpm run test:api`                               |
-| Contratos          | Aplicativo no ar                  | `pnpm run test:contratos`                         |
-| Códigos e admin    | Aplicativo no ar e banco          | `pnpm run test:codigos`                           |
-| Segurança e sessão | Aplicativo no ar e banco          | `pnpm run test:seguranca`                         |
-| Destrutivas        | Aplicativo no ar e banco          | `pnpm run test:destrutivas`                       |
-| E2E (Playwright)   | Aplicativo no ar                  | `pnpm run test:e2e:docker` ou `pnpm run test:e2e` |
-| Capturas do README | Aplicativo no ar e banco migrado  | `pnpm run capturas:readme`                        |
+| Suíte              | Requisito                                 | Comando                                           |
+| ------------------ | ----------------------------------------- | ------------------------------------------------- |
+| Unidade            | Nenhum                                    | `pnpm run test:unit`                              |
+| Guarda editorial   | Nenhum (roda com a unidade)               | `pnpm run test:unit`                              |
+| Isolamento (RLS)   | Banco migrado e papel `app_teste`         | `pnpm run test:api`                               |
+| Contratos          | Aplicativo no ar                          | `pnpm run test:contratos`                         |
+| Códigos e admin    | Aplicativo no ar e banco                  | `pnpm run test:codigos`                           |
+| Segurança e sessão | Aplicativo no ar e banco                  | `pnpm run test:seguranca`                         |
+| Destrutivas        | Aplicativo no ar e banco                  | `pnpm run test:destrutivas`                       |
+| E2E (Playwright)   | Aplicativo no ar                          | `pnpm run test:e2e:docker` ou `pnpm run test:e2e` |
+| Capturas do README | Aplicativo no ar, banco migrado e semente | `pnpm run capturas:readme`                        |
 
 Regras:
 
@@ -289,7 +290,7 @@ pnpm run test:e2e:docker:chromium   # apenas o Chromium
 
 A variável `TEST_BASE_URL` aponta para o aplicativo (padrão `http://localhost:3000`), e `tests/playwright-container.sh` aceita `PLAYWRIGHT_IMAGE`, `PLAYWRIGHT_DOCKER_NETWORK` e `PLAYWRIGHT_DOCKER_USER`. Mantenha a versão da imagem igual à do `@playwright/test` em `package.json`. Use `localhost`, e não `127.0.0.1`, porque o Playwright só trata esse host como local para enviar o cookie de sessão `Secure`.
 
-As capturas do README são geradas por `e2e/imagens.spec.ts` e gravadas em `docs/imagens/`, com o aplicativo no ar e o banco migrado. Regenera pelo comando `pnpm run capturas:readme` (ou `pnpm run capturas:readme:docker`, na imagem oficial). Os PNGs são versionados e não devem ser editados à mão; mudanças de interface pedem uma nova geração e revisão do diff.
+As capturas do README são geradas por `e2e/imagens.spec.ts` e gravadas em `docs/imagens/`, com o aplicativo no ar, o banco migrado e a semente de desenvolvimento aplicada (`pnpm run seed`). Regenera pelo comando `pnpm run capturas:readme` (ou `pnpm run capturas:readme:docker`, na imagem oficial). Os PNGs são versionados e não devem ser editados à mão; mudanças de interface pedem uma nova geração e revisão do diff.
 
 A instalação local de navegadores fica como alternativa para Firefox e WebKit:
 

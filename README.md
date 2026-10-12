@@ -46,6 +46,15 @@ Aplicação publicada em https://cadernoabertojca.vercel.app, com uma página de
 
 O editor exige uma conta de professor, criada pela administração com um código de primeiro acesso. O ambiente local cria o administrador na partida do Compose, conforme a seção [Começando](#começando).
 
+Para demonstração local, a semente de desenvolvimento cria uma massa completa, determinística e idempotente:
+
+```bash
+pnpm exec prisma migrate deploy
+pnpm run seed
+```
+
+A semente cria três professores (por exemplo, `helena.duarte@exemplo.br` com a senha `semente123`), oito disciplinas, nove turmas, de 64 a 88 notas com blocos reais e links públicos determinísticos, como `/l/semente-nota-leis-de-newton`. O volume vem de `SEED_PERFIL` (`leve`, `padrao` ou `pesado`) e a limpeza dos dados criados pela própria semente, de `SEED_LIMPAR=true`. Com Docker Compose, rode `docker compose exec app node scripts/seed.mjs` para compartilhar o volume `uploads`. Detalhes em [docs/ambiente.md](docs/ambiente.md).
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/imagens/aluno-mobile-escuro.png">
   <img alt="Vista do aluno no celular" src="docs/imagens/aluno-mobile-claro.png">
@@ -163,6 +172,12 @@ docker compose up --build
 
 O Compose sobe o PostgreSQL 17 (`db:5432`, volume `pgdata`), aplica as migrações na partida e inicia o aplicativo em http://localhost:3000. Com `STORAGE_DRIVER=disk` (padrão), as imagens ficam no volume `uploads`. Defina `ADMIN_EMAIL`, `ADMIN_SENHA` e `ADMIN_NOME` no `.env` para criar o administrador na partida, ou rode `pnpm run criar-admin` depois.
 
+Com o banco migrado e o aplicativo no ar, a semente de desenvolvimento cria a massa de demonstração (3 professores, 8 disciplinas, 9 turmas e 64 a 88 notas realistas, com links públicos):
+
+```bash
+pnpm run seed
+```
+
 Instruções sem Docker e demais variáveis: [docs/ambiente.md](docs/ambiente.md). Publicação: [docs/deploy.md](docs/deploy.md).
 
 ## Como usar
@@ -211,6 +226,7 @@ As camadas, o fluxo de uma requisição autenticada e as decisões registradas e
 | `pnpm run lint`             | ESLint com regras do Next e ajustes do projeto.       |
 | `pnpm run tsc`              | Verificação de tipos sem emissão.                     |
 | `pnpm run test:unit`        | Bibliotecas puras e guarda editorial.                 |
+| `pnpm run seed`             | Cria a massa de demonstração local (somente dev).     |
 | `pnpm run test:api`         | Isolamento por RLS com o papel `app_teste`.           |
 | `pnpm run test:contratos`   | Contratos HTTP com o aplicativo no ar.                |
 | `pnpm run test:destrutivas` | Lixeira, step-up e dry-run do backup.                 |

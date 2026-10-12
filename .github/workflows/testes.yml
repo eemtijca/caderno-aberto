@@ -84,6 +84,10 @@ jobs:
           TEST_BASE_URL: http://127.0.0.1:3000
           DATABASE_URL: postgresql://caderno:caderno@localhost:5432/caderno
 
+      - name: Semente de desenvolvimento
+        # Dentro do contêiner para compartilhar o volume uploads das imagens.
+        run: docker compose -f compose.yml -f compose.ci.yml exec -T app node scripts/seed.mjs
+
       - name: Instalar navegador (Chromium)
         run: pnpm exec playwright install --with-deps chromium
 
