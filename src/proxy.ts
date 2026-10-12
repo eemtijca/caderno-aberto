@@ -4,6 +4,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import * as jose from "jose";
 import { AUTH_SECRET, MANUTENCAO } from "@/lib/ambiente";
+import { criarPoliticaDeSeguranca } from "@/lib/api/csp";
 
 const SEGREDO = new TextEncoder().encode(AUTH_SECRET);
 
@@ -96,24 +97,9 @@ export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
 
-  const csp = [
-    "default-src 'self'",
-    `script-src 'self' 'wasm-unsafe-eval' ${isDev ? "'unsafe-inline' 'unsafe-eval'" : `'nonce-${nonce}' 'strict-dynamic'`}`,
-    "style-src 'self' 'unsafe-inline'",
-    "style-src-elem 'self' 'unsafe-inline'",
-    "style-src-attr 'unsafe-inline'",
-    "worker-src 'self' blob:",
-    "child-src blob:",
-    "connect-src 'self'",
-    "font-src 'self' data:",
-    "img-src 'self' data: blob:",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'none'",
-    // Produção usa HTTPS; desenvolvimento mantém loopback.
-    ...(isDev ? [] : ["upgrade-insecure-requests"]),
-  ].join("; ");
+  // A política é montada por URL: a documentação interativa precisa de
+  // `unsafe-eval` na validação do "Try it out" e o restante da aplicação não.
+  const csp = criarPoliticaDeSeguranca(nonce, isDev, request.nextUrl.pathname);
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
