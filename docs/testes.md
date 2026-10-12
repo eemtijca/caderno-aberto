@@ -11,18 +11,18 @@ Comandos e pré-requisitos estão em [../tests/README.md](../tests/README.md). E
 
 ## Estrutura das suítes
 
-| Suíte              | Arquivo                         | Dependências                          | Cobertura                                                                                    |
-| ------------------ | ------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Unit               | `tests/unit/*.test.ts`          | Nenhuma                               | LaTeX e Markdown, código de acesso, HMAC, limites e guarda editorial                         |
-| Isolamento         | `tests/api/isolamento.test.ts`  | `DATABASE_URL` e papel `app_teste`    | Políticas RLS sem e com contexto, escrita cruzada e tabelas novas                            |
-| Contratos          | `tests/api/contratos.test.ts`   | App no ar                             | Rotas HTTP de conta, CRUD, links públicos, imagens e backup                                  |
-| Códigos            | `tests/api/codigos.test.ts`     | App no ar e `DATABASE_URL`            | Solicitar, atender, usar, expirar, reuso e bloqueio                                          |
-| Admin              | `tests/api/admin.test.ts`       | App no ar e `DATABASE_URL`            | Guarda de papel e CRUD de contas                                                             |
-| Segurança          | `tests/api/seguranca.test.ts`   | App no ar                             | CSRF, cabeçalhos, cron e não enumeração                                                      |
-| Sessão             | `tests/api/sessao.test.ts`      | App no ar e `DATABASE_URL`            | Rotação e reuso de refresh, logout e troca de senha                                          |
-| Destrutivas        | `tests/api/destrutivas.test.ts` | App no ar e `DATABASE_URL`            | Suspensão com step-up, lixeira e dry-run do backup                                           |
-| E2E                | `e2e/*.spec.ts`                 | App no ar e Playwright                | Autenticação, código, admin, notas, links, conta e casos extremos                            |
-| Capturas do README | `e2e/imagens.spec.ts`           | App no ar, banco migrado e Playwright | PNGs de `docs/imagens/` em 1440x900 e 390x844, nos temas claro e escuro, com massa sintética |
+| Suíte              | Arquivo                         | Dependências                       | Cobertura                                                                                   |
+| ------------------ | ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------- |
+| Unit               | `tests/unit/*.test.ts`          | Nenhuma                            | LaTeX e Markdown, código de acesso, HMAC, limites e guarda editorial                        |
+| Isolamento         | `tests/api/isolamento.test.ts`  | `DATABASE_URL` e papel `app_teste` | Políticas RLS sem e com contexto, escrita cruzada e tabelas novas                           |
+| Contratos          | `tests/api/contratos.test.ts`   | App no ar                          | Rotas HTTP de conta, CRUD, links públicos, imagens e backup                                 |
+| Códigos            | `tests/api/codigos.test.ts`     | App no ar e `DATABASE_URL`         | Solicitar, atender, usar, expirar, reuso e bloqueio                                         |
+| Admin              | `tests/api/admin.test.ts`       | App no ar e `DATABASE_URL`         | Guarda de papel e CRUD de contas                                                            |
+| Segurança          | `tests/api/seguranca.test.ts`   | App no ar                          | CSRF, cabeçalhos, cron e não enumeração                                                     |
+| Sessão             | `tests/api/sessao.test.ts`      | App no ar e `DATABASE_URL`         | Rotação e reuso de refresh, logout e troca de senha                                         |
+| Destrutivas        | `tests/api/destrutivas.test.ts` | App no ar e `DATABASE_URL`         | Suspensão com step-up, lixeira e dry-run do backup                                          |
+| E2E                | `e2e/*.spec.ts`                 | App no ar e Playwright             | Autenticação, código, admin, notas, links, conta e casos extremos                           |
+| Capturas do README | `e2e/imagens.spec.ts`           | App no ar, banco migrado e semente | PNGs de `docs/imagens/` em 1440x900 e 390x844, nos temas claro e escuro, com massa realista |
 
 ## Boas práticas
 
@@ -33,14 +33,28 @@ Comandos e pré-requisitos estão em [../tests/README.md](../tests/README.md). E
 
 ## Capturas do README
 
-As imagens do README são geradas por `e2e/imagens.spec.ts` e gravadas em `docs/imagens/`, com o aplicativo no ar e o banco migrado. O spec cria a própria conta e a nota de exemplo, captura o editor em 1440x900 e a vista pública `/l/demo-landing` em 390x844, nos temas claro e escuro, sem dados reais. Para regenerar:
+As imagens do README são geradas por `e2e/imagens.spec.ts` e gravadas em `docs/imagens/`, com o aplicativo no ar e a semente de desenvolvimento aplicada. O spec não cria conta nem nota: ele entra com o professor semeado (`helena.duarte@exemplo.br`, definido em `scripts/seed.mjs`), abre a nota `Leis de Newton` no editor e a vista pública `/l/semente-nota-leis-de-newton`. Sem a massa, o spec falha com a orientação de rodar `pnpm run seed`.
+
+Capturas em 1440x900 (lista de Notas, lista de Links e editor, claro e escuro) e 390x844 (vista do aluno, claro e escuro):
+
+| Arquivo                     | Tela                                      |
+| --------------------------- | ----------------------------------------- |
+| `notas-desktop-claro.png`   | Lista de Notas no desktop.                |
+| `links-desktop-claro.png`   | Lista de Links no desktop.                |
+| `editor-desktop-claro.png`  | Editor de blocos no desktop, tema claro.  |
+| `editor-desktop-escuro.png` | Editor de blocos no desktop, tema escuro. |
+| `aluno-mobile-claro.png`    | Vista do aluno no celular, tema claro.    |
+| `aluno-mobile-escuro.png`   | Vista do aluno no celular, tema escuro.   |
+
+Para regenerar, com o banco migrado e o aplicativo no ar:
 
 ```bash
-pnpm run capturas:readme         # Playwright local, com o aplicativo no ar
-pnpm run capturas:readme:docker  # imagem oficial da Microsoft, com o aplicativo no ar
+pnpm run seed                    # cria a massa realista da semente
+pnpm run capturas:readme         # Playwright local
+pnpm run capturas:readme:docker  # imagem oficial da Microsoft
 ```
 
-Os PNGs versionados em `docs/imagens/` não são editados à mão. Quando a interface mudar, regenere as capturas e confira o diff das imagens no pull request.
+No Compose, a semente roda dentro do contêiner com `docker compose exec app node scripts/seed.mjs`, para compartilhar o volume `uploads`. O volume, os parâmetros (`SEED_PERFIL`, `SEED_SEMENTE` e `SEED_LIMPAR`) e a limpeza estão em [ambiente.md](ambiente.md#semente-de-desenvolvimento). Os PNGs versionados em `docs/imagens/` não são editados à mão. Quando a interface mudar, regenere as capturas e confira o diff das imagens no pull request.
 
 ## CI
 
