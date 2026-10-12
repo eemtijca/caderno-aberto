@@ -358,4 +358,22 @@ describe("ações em lote", () => {
     });
     expect(ultrapassa.status, "acima do teto responde 400").toBe(400);
   });
+
+  it("publica a documentação interativa e a especificação", async () => {
+    const interfaceDocs = await fetch(`${BASE}/api/docs`);
+    expect(interfaceDocs.status === 200, "página da documentação responde").toBe(true);
+    expect(
+      interfaceDocs.headers.get("content-type")?.includes("text/html") === true,
+      "página da documentação é HTML",
+    ).toBe(true);
+
+    const especificacao = await fetch(`${BASE}/api/docs/openapi.json`);
+    expect(especificacao.status === 200, "especificação responde").toBe(true);
+    expect((await especificacao.json()).openapi === "3.1.0", "especificação é OpenAPI 3.1").toBe(
+      true,
+    );
+
+    const referencia = await fetch(`${BASE}/api/docs/api.md`);
+    expect(referencia.status === 200, "referência em Markdown responde").toBe(true);
+  });
 });
