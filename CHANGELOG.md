@@ -19,6 +19,7 @@ Enquanto a primeira versão pública não é lançada, a versão do projeto perm
 - README reestruturado no padrão de repositórios de referência, com selos, sumário, demonstração, arquitetura, deploy, FAQ, suporte e créditos.
 - Spec `e2e/imagens.spec.ts` e comandos `capturas:readme` para gerar as capturas versionadas em `docs/imagens/`.
 - Semente de desenvolvimento `pnpm run seed`, determinística e idempotente, com professores, disciplinas, turmas, notas realistas e links públicos.
+- Capturas do README geradas a partir da semente, com as telas de Notas e Links no desktop.
 - Catálogo de etiquetas em `.github/labels.json` e script `npm run etiquetas:sync` para sincronizá-las pelo GitHub CLI.
 - Workflow `etiquetas.yml`, que aplica etiquetas de área pelos caminhos e de tipo pelo título e valida título e etiquetas em pull requests.
 - Templates de issue ampliados (Bug, Melhoria e Tarefa) e template de pull request com etiquetas, commits atômicos, ciclo de rascunho e uso de IA.

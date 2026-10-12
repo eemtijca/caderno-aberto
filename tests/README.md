@@ -33,14 +33,15 @@ pnpm run capturas:readme     # capturas do README em docs/imagens
 
 ## Capturas do README
 
-As imagens do README ficam em `docs/imagens/` e são geradas por `e2e/imagens.spec.ts`, com o aplicativo no ar e o banco migrado:
+As imagens do README ficam em `docs/imagens/` e são geradas por `e2e/imagens.spec.ts`, com o aplicativo no ar, o banco migrado e a semente de desenvolvimento aplicada:
 
 ```bash
+pnpm run seed                    # cria a massa realista da semente
 pnpm run capturas:readme         # Playwright local
 pnpm run capturas:readme:docker  # imagem oficial, com o aplicativo no ar
 ```
 
-O spec cria a própria conta e a nota de exemplo, captura o editor em 1440x900 e a vista pública `/l/demo-landing` em 390x844, nos temas claro e escuro, sempre com massa sintética. Não edite os PNGs à mão: regenere pelo comando e revise o diff.
+O spec entra com o professor semeado, abre a nota `Leis de Newton` no editor e a vista pública `/l/semente-nota-leis-de-newton`, e captura a lista de Notas, a lista de Links e o editor em 1440x900 e a vista do aluno em 390x844, nos temas claro e escuro. Sem a massa, o spec falha com a orientação de rodar `pnpm run seed`. Não edite os PNGs à mão: regenere pelo comando e revise o diff.
 
 ## Limites de tentativas
 
