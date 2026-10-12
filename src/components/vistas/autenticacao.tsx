@@ -32,6 +32,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Label } from "@/components/ui/label";
 import { SeletorTema } from "@/components/seletor-tema";
 import { TelaEstado } from "@/components/tela-estado";
+import { DialogoSobre } from "@/components/dialogo-sobre";
 import { toast } from "sonner";
 import { useSessao } from "@/hooks/use-sessao";
 import { ErroApi } from "@/lib/api/erro";
@@ -103,6 +104,7 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
+  const [sobreAberto, setSobreAberto] = useState(false);
   const [estadoConta, setEstadoConta] = useState<{
     codigo: "CONTA_PENDENTE" | "CONTA_SUSPENSA";
     motivo?: string;
@@ -501,6 +503,37 @@ function PainelAuth({ modo, navegar }: { modo: Modo; navegar: (para: string) => 
               )}
             </div>
           </div>
+
+          <nav
+            aria-label="Projeto"
+            className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs"
+          >
+            <a
+              href="https://github.com/eemtijca/caderno-aberto"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              GitHub
+            </a>
+            <a
+              href="/api/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              Documentação da API
+            </a>
+            <button
+              type="button"
+              onClick={() => setSobreAberto(true)}
+              className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              Sobre
+            </button>
+          </nav>
+
+          <DialogoSobre aberto={sobreAberto} aoFechar={() => setSobreAberto(false)} />
 
           <p className="text-muted-foreground mt-4 flex items-center justify-center gap-1.5 text-center text-[0.72rem] lg:hidden">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden />

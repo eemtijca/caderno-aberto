@@ -28,6 +28,20 @@ describe("contratos.test", () => {
     expect(r.ok, "saúde /api responde").toBe(true);
   });
 
+  it("Índice para agentes na raiz", async () => {
+    const raiz = await fetch(`${BASE}/`);
+    expect(raiz.ok, "raiz responde").toBe(true);
+    expect(raiz.headers.get("link") ?? "", "cabeçalho Link da raiz").toContain("</llms.txt>");
+
+    const html = await raiz.text();
+    expect(html, "alternate no HTML").toContain('rel="alternate"');
+    expect(html, "link oculto no HTML").toContain("llms.txt");
+
+    const indice = await fetch(`${BASE}/llms.txt`);
+    expect(indice.ok, "llms.txt responde").toBe(true);
+    expect(await indice.text()).toContain("# Caderno Aberto");
+  });
+
   it("Conta A: sessão ativa e papel", async () => {
     const conta = await a.get("/api/conta");
     expect(

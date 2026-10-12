@@ -18,6 +18,7 @@ import { Toaster as ToasterSonner } from "@/components/ui/sonner";
 import { Provedores } from "@/components/provedores";
 import { ThemeProvider } from "next-themes";
 import { APP_URL } from "@/lib/ambiente";
+import { urlDoIndiceDeAgentes } from "@/lib/api/documentacao";
 
 // O nonce do CSP exige renderização por requisição.
 export const dynamic = "force-dynamic";
@@ -69,6 +70,9 @@ export const metadata: Metadata = {
   description:
     "Escreva notas de aula de qualquer disciplina e gere automaticamente a versão web responsiva, o PDF de impressão e os arquivos de texto. E compartilhe com os alunos por links únicos e gerenciáveis.",
   applicationName: "Caderno Aberto",
+  alternates: {
+    types: { "text/markdown": "/llms.txt" },
+  },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },
@@ -89,12 +93,18 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // O proxy gera o nonce; sem ele os scripts ficariam bloqueados pelo CSP.
-  const nonce = (await headers()).get("x-nonce") ?? "";
+  const cabecalhos = await headers();
+  const nonce = cabecalhos.get("x-nonce") ?? "";
+  const urlIndiceAgentes = urlDoIndiceDeAgentes(cabecalhos, APP_URL);
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
         className={`${sora.variable} ${jakarta.variable} ${mono.variable} ${lora.variable} ${atkinson.variable} ${lexend.variable} bg-background text-foreground font-[family-name:var(--font-corpo)] antialiased`}
       >
+        {/* Link oculto para agentes de IA: a raiz anônima aponta o índice do projeto. */}
+        <a href={urlIndiceAgentes} hidden aria-hidden="true">
+          llms.txt
+        </a>
         <Script id="tikzjax-config" strategy="beforeInteractive" nonce={nonce}>
           {`window.TikzJaxOptions={assetBaseUrl:"/vendor/tikzjax",workerMode:"direct",renderTimeout:30000,maxRetries:1,restartWorkerOnFail:true,workerPool:{enabled:true,maxWorkers:3},tex:{tikzLibraries:"arrows.meta,positioning,calc,decorations.markings"}}`}
         </Script>
