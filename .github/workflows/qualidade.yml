@@ -43,3 +43,6 @@ jobs:
 
       - name: Testes unitários
         run: pnpm run test:unit
+
+      - name: Lint da especificação OpenAPI
+        run: pnpm run lint:api

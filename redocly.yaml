@@ -1,0 +1,9 @@
+# Regras do linter da especificação OpenAPI (Redocly CLI).
+# Documentação: https://redocly.com/docs/cli/rules/
+extends:
+  - recommended-strict
+
+rules:
+  # A sonda de saúde responde apenas 200; a guarda tests/unit/openapi.test.ts
+  # exige 4xx nas demais operações.
+  operation-4xx-response: warn

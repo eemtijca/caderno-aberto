@@ -31,7 +31,7 @@ As principais ameaças consideradas são enumeração de contas, força bruta de
 
 - CSRF: `src/proxy.ts` nega mutações cross-site com base em `Sec-Fetch-Site` e, na ausência dele, na comparação de `Origin` ou `Referer` com o host próprio. O estado nunca muda por `GET`, exceto a purga agendada, que exige segredo.
 - Limite de tentativas no banco, com janela fixa de 5 minutos por rota e IP, persistido em `tentativas_limite`. Se o banco estiver inacessível, a requisição é permitida para não bloquear o login.
-- CSP com nonce e `strict-dynamic` em produção, além de `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` e `Permissions-Policy` em todas as respostas.
+- CSP com nonce e `strict-dynamic` em produção, montado por URL em `src/lib/api/csp.ts`: estrito em toda a aplicação, com `'unsafe-eval'` apenas na documentação interativa, exigido pela validação do "Try it out". Além dele, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` e `Permissions-Policy` em todas as respostas. Ver [ADR-012](adr/012-documentacao-interativa-e-csp.md).
 
 ## Dados e arquivos
 

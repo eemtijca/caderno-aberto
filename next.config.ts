@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
   output: process.env.VERCEL ? undefined : "standalone",
   reactStrictMode: true,
   allowedDevOrigins: ["*.app.github.dev", "127.0.0.1", "localhost"],
+  // A versão em Markdown da referência é lida do disco na rota /api/docs/api.md;
+  // o arquivo precisa acompanhar a função no standalone e na Vercel.
+  outputFileTracingIncludes: {
+    "/api/docs/api.md": ["./docs/api.md"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: cabecalhosSeguranca }];
   },

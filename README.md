@@ -268,7 +268,7 @@ A conta é criada pela administração da escola, que entrega um código de prim
 | [docs/arquitetura.md](docs/arquitetura.md)         | Camadas, fluxo de requisição e organização do código  |
 | [docs/ambiente.md](docs/ambiente.md)               | Variáveis de ambiente e execução local                |
 | [docs/banco.md](docs/banco.md)                     | Esquema, migrações, RLS e rotinas de banco            |
-| [docs/api.md](docs/api.md)                         | Referência das rotas HTTP                             |
+| [docs/api.md](docs/api.md)                         | Referência das rotas HTTP e Swagger UI em /api/docs   |
 | [docs/modelo-de-dados.md](docs/modelo-de-dados.md) | Entidades, relações e glossário do domínio            |
 | [docs/editor.md](docs/editor.md)                   | Tipos de bloco, formatação inline e aparência         |
 | [docs/interface.md](docs/interface.md)             | Design system, temas, responsividade e acessibilidade |
