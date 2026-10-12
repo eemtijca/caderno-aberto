@@ -375,5 +375,8 @@ describe("ações em lote", () => {
 
     const referencia = await fetch(`${BASE}/api/docs/api.md`);
     expect(referencia.status === 200, "referência em Markdown responde").toBe(true);
+
+    const asset = await fetch(`${BASE}/vendor/swagger-ui/swagger-ui-bundle.js`);
+    expect(asset.status === 200, "assets do Swagger UI respondem").toBe(true);
   });
 });
