@@ -34,6 +34,8 @@ Enquanto a primeira versão pública não é lançada, a versão do projeto perm
 
 ### Modificado
 
+- Imagem oficial do Playwright sobe para a v1.64.0, alinhada à versão do `@playwright/test` instalada, e a suíte de ponta a ponta volta a rodar.
+
 - CSP passa a ser montado por URL em `src/lib/api/csp.ts`: `'unsafe-eval'` apenas na documentação interativa, exigido pela validação do "Try it out".
 - O `postinstall` também copia os assets do Swagger UI para `public/vendor/swagger-ui`, e `@scarf/scarf` (telemetria transitiva) fica explicitamente negado nos scripts de instalação.
 - Gerenciamento de dependências migrado de npm para pnpm, com o `packageManager` fixado, `pnpm-lock.yaml` versionado e `pnpm-workspace.yaml` autorizando os scripts de build; `pg` e `@types/pg` passam a ser declarados e o Dockerfile usa dependências de produção do pnpm para o migrador.

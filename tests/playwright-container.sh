@@ -5,7 +5,7 @@
 set -euo pipefail
 
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
-IMAGEM="${PLAYWRIGHT_IMAGE:-mcr.microsoft.com/playwright:v1.63.0-noble}"
+IMAGEM="${PLAYWRIGHT_IMAGE:-mcr.microsoft.com/playwright:v1.64.0-noble}"
 REDE="${PLAYWRIGHT_DOCKER_NETWORK:-host}"
 USUARIO="${PLAYWRIGHT_DOCKER_USER:-$(id -u):$(id -g)}"
 BASE_URL="${TEST_BASE_URL:-http://localhost:3000}"
