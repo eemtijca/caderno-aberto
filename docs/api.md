@@ -2,6 +2,20 @@
 
 Rotas HTTP do Caderno Aberto. Todas ficam sob `/api` e respondem JSON, exceto downloads e imagens. As rotas dinâmicas recebem o parâmetro `id` no caminho.
 
+## Documentação interativa
+
+A especificação OpenAPI 3.1 é mantida em `docs/openapi.json` e servida em `GET /api/docs/openapi.json`; a interface Swagger UI fica em `GET /api/docs` e a referência em Markdown em `GET /api/docs/api.md`. Cada operação traz `operationId` estável, resumo, descrição, exemplos e as respostas de erro do envelope. O "Try it out" reaproveita a sessão do navegador: entre no aplicativo antes de testar.
+
+- Em desenvolvimento: `http://localhost:3000/api/docs`.
+- Lint da especificação: `pnpm run lint:api`, com o ruleset em `redocly.yaml`.
+- Guarda de cobertura: `tests/unit/openapi.test.ts` confere a especificação contra as rotas. A decisão está no [ADR-012](adr/012-documentacao-interativa-e-csp.md).
+
+## Consumo por agentes de IA
+
+- A especificação em `/api/docs/openapi.json` é a fonte da verdade para modelos e agentes: operações, schemas, exemplos e erros.
+- O índice [../public/llms.txt](../public/llms.txt) é servido em `/llms.txt` e aponta o contrato, a referência e a orientação de uso seguro.
+- Os `operationId` em português são estáveis e viram nome de ferramenta em geradores de SDK e de servidores MCP. A versão em Markdown da referência fica em `/api/docs/api.md`.
+
 ## Convenções
 
 - **Sessão:** as rotas privadas resolvem o usuário pelo cookie `sessao` (JWT de 1 hora) e, se necessário, renovam pelo cookie `sessao_refresh` (30 dias). Sem sessão válida, respondem `401` com `{ "erro": "Faça login para continuar." }`. As rotas administrativas exigem `usuarios.papel = 'admin'` e respondem `403` com `{ "erro": "Acesso restrito à administração." }` quando o papel não confere.

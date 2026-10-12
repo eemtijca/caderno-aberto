@@ -25,9 +25,15 @@ Enquanto a primeira versão pública não é lançada, a versão do projeto perm
 - Script `test:destrutivas` para a suíte de ações destrutivas e lixeira.
 - CHANGELOG.md e seção de releases no guia de contribuição.
 - GitHub CLI no devcontainer.
+- Documentação interativa da API em `GET /api/docs` com Swagger UI, especificação OpenAPI 3.1 em `GET /api/docs/openapi.json` e referência em Markdown em `GET /api/docs/api.md`, com `operationId`, descrições, exemplos e erros por operação.
+- Lint da especificação OpenAPI com Redocly CLI (`pnpm run lint:api`) no workflow de qualidade, com o ruleset em `redocly.yaml`.
+- Índice `public/llms.txt` para agentes de IA, com o contrato, a referência e a orientação de uso seguro.
+- ADR-012 sobre a documentação interativa e o CSP por URL.
 
 ### Modificado
 
+- CSP passa a ser montado por URL em `src/lib/api/csp.ts`: `'unsafe-eval'` apenas na documentação interativa, exigido pela validação do "Try it out".
+- O `postinstall` também copia os assets do Swagger UI para `public/vendor/swagger-ui`, e `@scarf/scarf` (telemetria transitiva) fica explicitamente negado nos scripts de instalação.
 - Gerenciamento de dependências migrado de npm para pnpm, com o `packageManager` fixado, `pnpm-lock.yaml` versionado e `pnpm-workspace.yaml` autorizando os scripts de build; `pg` e `@types/pg` passam a ser declarados e o Dockerfile usa dependências de produção do pnpm para o migrador.
 - Guia de contribuição e AGENTS.md passam a exigir etiquetas em issues e pull requests, commits atômicos organizados em um único pull request e abertura somente com o trabalho finalizado.
 - Workflows renomeados para `qualidade.yml`, `testes.yml` e `migracoes.yml`, com o padrão de nomes em português.

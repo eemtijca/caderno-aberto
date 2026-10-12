@@ -1,0 +1,25 @@
+# Caderno Aberto
+
+> Plataforma de notas de aula: editor de blocos com exportação para PDF A4, LaTeX, Markdown e JSON, e links únicos e gerenciáveis para os alunos.
+
+A API responde JSON sob `/api` e usa o formato de erro `{ erro, codigo?, detalhe? }`. Datas trafegam em ISO 8601, o isolamento é por professor dono e recursos de outro professor respondem 404.
+
+## Contrato e documentação
+
+- [Especificação OpenAPI 3.1](/api/docs/openapi.json): contrato completo com schemas, exemplos e erros por operação.
+- [Interface Swagger UI](/api/docs): navegação interativa; o "Try it out" usa a sessão do navegador.
+- [Referência em Markdown](/api/docs/api.md): a mesma referência em texto limpo, para leitura direta.
+- [Referência no GitHub](https://github.com/eemtijca/caderno-aberto/blob/main/docs/api.md): convenções, fluxos e catálogo de erros.
+
+## Orientação para agentes
+
+- Use a especificação OpenAPI como fonte da verdade para requisições, respostas e erros.
+- Faça login em `POST /api/auth/entrar` para obter os cookies de sessão antes das rotas privadas.
+- Recursos de outro professor se comportam como inexistentes (404); não presuma erro de digitação.
+- Não chame rotas destrutivas, como exclusão de conta, lixeira e purga, sem pedido explícito.
+- As rotas com `CRON_SECRET` usam `Authorization: Bearer <segredo>` e não aceitam sessão de usuário.
+
+## Optional
+
+- [Arquitetura](https://github.com/eemtijca/caderno-aberto/blob/main/docs/arquitetura.md) e [modelo de dados](https://github.com/eemtijca/caderno-aberto/blob/main/docs/modelo-de-dados.md).
+- [Segurança](https://github.com/eemtijca/caderno-aberto/blob/main/docs/seguranca.md): controles, decisões e lacunas conhecidas.
