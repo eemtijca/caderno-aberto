@@ -51,12 +51,25 @@ test.describe("Navegação e roteamento", () => {
 
     const sidebar = page.locator("aside").first();
     const botao = sidebar.getByRole("button", { name: "Nova nota" });
-    const caixaSidebar = await sidebar.boundingBox();
-    const caixaBotao = await botao.boundingBox();
-    expect(caixaSidebar && caixaBotao).toBeTruthy();
-    const centroSidebar = caixaSidebar!.x + caixaSidebar!.width / 2;
-    const centroBotao = caixaBotao!.x + caixaBotao!.width / 2;
-    expect(Math.abs(centroSidebar - centroBotao)).toBeLessThanOrEqual(2);
+    // A largura da sidebar anima por 200ms. Medir logo após o clique pega o
+    // meio da transição; o poll espera o layout assentar antes de comparar.
+    await expect
+      .poll(
+        async () => {
+          const caixaSidebar = await sidebar.boundingBox();
+          const caixaBotao = await botao.boundingBox();
+          if (!caixaSidebar || !caixaBotao) return Number.POSITIVE_INFINITY;
+          const centroSidebar = caixaSidebar.x + caixaSidebar.width / 2;
+          const centroBotao = caixaBotao.x + caixaBotao.width / 2;
+          return Math.abs(centroSidebar - centroBotao);
+        },
+        {
+          timeout: 5000,
+          intervals: [50, 100, 200, 500],
+          message: "o botão Nova nota deve ficar centralizado na sidebar recolhida",
+        },
+      )
+      .toBeLessThanOrEqual(2);
   });
 
   test("menu de perfil e botão Mais no mobile", async ({ page }) => {
